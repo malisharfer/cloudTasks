@@ -1,0 +1,17 @@
+azure-cli
+azure-identity
+azure-mgmt-monitor
+azure-mgmt-consumption
+azure-mgmt-storage
+azure-mgmt-resource
+azure-storage-blob
+pytest
+pytest_mock
+black
+python-dateutil
+pytest-cov
+python-dotenv
+pytz
+azure-functions
+requests
+openpyxl

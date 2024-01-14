@@ -1,0 +1,12 @@
+azure-functions
+azure-cli
+azure-mgmt-resource
+azure-keyvault-secrets
+azure-storage-blob
+azure-identity
+azure-data-tables
+python-dotenv
+python-dateutil
+pytz
+requests
+openpyxl

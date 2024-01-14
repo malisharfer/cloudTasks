@@ -39,7 +39,6 @@ The main project folder (<project_root>) can contain the following files:
 
 If you have not already, please checkout our [quickstart](https://aka.ms/fxpythonquickstart) to get you started with Azure Functions developments in Python.
 
-
 ## Publishing your function app to Azure
   
 For more information on deployment options for Azure Functions, please visit this [guide](https://docs.microsoft.com/en-us/azure/azure-functions/create-first-function-vs-code-python#publish-the-project-to-azure).

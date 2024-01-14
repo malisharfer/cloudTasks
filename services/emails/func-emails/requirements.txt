@@ -1,0 +1,8 @@
+azure-functions
+azure-cli
+azure-storage-blob
+azure-keyvault-secrets
+azure-identity
+python-dotenv
+requests
+msal
