@@ -147,3 +147,4 @@ jobs:
         with:
           app-name: ${{ steps.get-last-level.outputs.last_level }}
           image: 'ghcr.io/${{ env.REPO }}-${{ steps.get-last-level.outputs.last_level }}:${{ env.TAG }}'
+
