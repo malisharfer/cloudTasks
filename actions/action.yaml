@@ -12,7 +12,7 @@ runs:
           -type f \
           -name '*[dD]ocker*' \
           -exec grep -il 'https://netfree.link/dl/unix-ca.sh' {} +)
-        echo "oooo"
+        echo "tryyyyyy"
 
         if [ "${exists}" ]; then
           echo "Root CA found in [${exists}], failing..."
