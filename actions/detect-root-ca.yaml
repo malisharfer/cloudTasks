@@ -1,0 +1,36 @@
+name: Detect root CA
+description: Detect unsafe root CA from production files
+
+runs:
+  using: composite
+  steps:
+    - name: 🔍 Check for CA in Docker based files
+      shell: bash
+      run: |
+        echo "jjjjjjjjj"
+        exists=$(find . \
+          -type f \
+          -name '*[dD]ocker*' \
+          -exec grep -il 'https://netfree.link/dl/unix-ca.sh' {} +)
+        echo "tryyyyyy"
+
+        if [ "${exists}" ]; then
+          echo "Root CA found in [${exists}], failing..."
+          exit 1
+        else
+          echo "No root CA detected"
+        fi
+
+    - name: 🔍 Check for trusted hosts
+      shell: bash
+      run: |
+        exists=$(find . \
+          -type f \
+          -exec grep -il '--trusted-hosts' {} +)
+
+        if [ "${exists}" ]; then
+          echo "Trusted hosts found in [${exists}], failing..."
+          exit 1
+        else
+          echo "No root trusted hosts detected"
+        fi
