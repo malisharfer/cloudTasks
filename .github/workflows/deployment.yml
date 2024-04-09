@@ -15,7 +15,7 @@ jobs:
           fetch-depth: 0
 
       - name: detect-root-ca     
-        uses: malisharfer/cloudTasks/actions/detect-root-ca@main
+        uses: malisharfer/cloudTasks/actions/detect-root-ca@v1
 
   #     - name: 🔎 Determine modified directories
   #       id: determine_directories
