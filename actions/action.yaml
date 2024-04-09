@@ -7,6 +7,7 @@ runs:
     - name: 🔍 Check for CA in Docker based files
       shell: bash
       run: |
+        echo "jjjjjjjjj"
         exists=$(find . \
           -type f \
           -name '*[dD]ocker*' \
