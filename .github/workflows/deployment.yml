@@ -15,8 +15,8 @@ jobs:
           fetch-depth: 0
 
       - name: detect-root-ca  
-        # uses: malisharfer/conflicts/actions@main
-        uses: skyvar/.github-private/detect-root-ca@main
+        uses: malisharfer/conflicts/actions@main
+        # uses: skyvar/.github-private/detect-root-ca@main
 
   #     - name: 🔎 Determine modified directories
   #       id: determine_directories
