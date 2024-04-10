@@ -15,8 +15,7 @@ jobs:
           fetch-depth: 0
 
       - name: detect-root-ca  
-        # uses : malisharfer/cloudTasks/actions/hello-world-composite-action@v1   
-        uses: malisharfer/conflicts/actions/detect-root-ca@main
+        uses: malisharfer/conflicts/actions/action@main
 
   #     - name: 🔎 Determine modified directories
   #       id: determine_directories
