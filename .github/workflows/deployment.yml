@@ -18,7 +18,6 @@ jobs:
         uses: malisharfer/conflicts/actions@main
 
 
-
   #     - name: 🔎 Determine modified directories
   #       id: determine_directories
   #       run: |   
