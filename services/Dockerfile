@@ -8,6 +8,3 @@ RUN pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted
 COPY requirements.txt /
 RUN pip install -r /requirements.txt
 COPY . /home/site/wwwroot
-
-
-
