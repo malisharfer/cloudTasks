@@ -6,3 +6,4 @@ ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
 COPY requirements.txt /
 RUN pip install -r /requirements.txt
 COPY . /home/site/wwwroot
+# export SSL_CERT_FILE=/etc/ca-bundle.crt
