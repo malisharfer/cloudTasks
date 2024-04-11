@@ -3,10 +3,8 @@ ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
     AzureFunctionsJobHost__Logging__Console__IsEnabled=true \
     AzureWebJobsFeatureFlags=EnableWorkerIndexing \ 
     AzureWebJobsStorage=UseDevelopmentStorage=true 
-RUN pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org docker    
 COPY requirements.txt /
 RUN pip install -r /requirements.txt
 COPY . /home/site/wwwroot
-# export SSL_CERT_FILE=/etc/ca-bundle.crt
 
 
