@@ -3,6 +3,17 @@ variable subscription_id {
   type        = string
 }
 
+variable DOCKER_REGISTRY_SERVER_URL {
+  type = string
+}
+
+variable DOCKER_REGISTRY_SERVER_USERNAME {
+  type = string
+}
+
+variable DOCKER_REGISTRY_SERVER_PASSWORD {
+  type = string
+}
 # end secrets
 
 variable rg_name {
@@ -91,7 +102,13 @@ variable key_vault_secret_name {
   default     = "CONNECTION-STRING"
 }
 
-variable linux_fx_version {
-  type = string
-  default = "DOCKER|mcr.microsoft.com/azure-functions/dotnet:4-appservice-quickstart"
+
+variable IMAGE_NAME {
+  type    = string
+  default = "mcr.microsoft.com/azure-functions/dotnet"
+}
+
+variable IMAGE_TAG {
+  type    = string
+  default = "4-appservice-quickstart"
 }

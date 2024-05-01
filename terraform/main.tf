@@ -48,13 +48,15 @@ resource "azurerm_linux_function_app" "linux_function_app" {
   site_config {
     always_on = true
     container_registry_use_managed_identity = true
-    # application_stack {
-    #   # docker {
-    #   #   registry_url = "containerregistryautomationdev.azurecr.io"
-    #   #   image_name = "services/emails/func_emails"
-    #   #   image_tag = "b57fb37c99bd68d1488b979d06bebbe92182c7aa"
-    #   # }
-    # }
+    application_stack {
+      docker {
+        registry_url = var.DOCKER_REGISTRY_SERVER_URL
+        image_name = var.IMAGE_NAME
+        image_tag = var.IMAGE_TAG
+        registry_username = var.DOCKER_REGISTRY_SERVER_USERNAME
+        registry_password = var.DOCKER_REGISTRY_SERVER_PASSWORD
+      }
+    }
   }
 
 
