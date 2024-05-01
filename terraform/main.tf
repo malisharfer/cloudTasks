@@ -24,7 +24,7 @@ data "azurerm_storage_account" "storage_account"{
 }
 
 resource "azurerm_service_plan" "service_plan" {
-  name                = "service-plan-1"
+  name                = "service-plan-2"
   location            = data.azurerm_storage_account.storage_account.location
   resource_group_name = data.azurerm_storage_account.storage_account.resource_group_name
   os_type             = "Linux"
@@ -32,7 +32,7 @@ resource "azurerm_service_plan" "service_plan" {
 }
 
 resource "azurerm_linux_function_app" "linux_function_app" {
-  name                        = "func-try-deploy-acr"
+  name                        = "func-try-deploy-acr-2"
   location                    = data.azurerm_storage_account.storage_account.location
   resource_group_name         = data.azurerm_storage_account.storage_account.resource_group_name
   service_plan_id             = azurerm_service_plan.service_plan.id
