@@ -70,6 +70,7 @@ data "azurerm_container_registry" "example" {
   resource_group_name = data.azurerm_storage_account.storage_account.resource_group_name
 }
 
+
 resource "azurerm_role_assignment" "example" {
   # object_id    = azurerm_linux_function_app.linux_function_app.identity.principal_id
   principal_id                     = azurerm_linux_function_app.linux_function_app.identity[0].principal_id
