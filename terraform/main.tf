@@ -40,21 +40,21 @@ resource "azurerm_linux_function_app" "linux_function_app" {
   storage_account_access_key  = data.azurerm_storage_account.storage_account.primary_access_key
   functions_extension_version = "~4"
 
-  # app_settings = {
-  #   FUNCTIONS_WORKER_RUNTIME = "python"
-  #   WEBSITES_ENABLE_APP_SERVICE_STORAGE = false
-  # }
+  app_settings = {
+    FUNCTIONS_WORKER_RUNTIME = "python"
+    WEBSITES_ENABLE_APP_SERVICE_STORAGE = false
+  }
 
   site_config {
     always_on = true
     container_registry_use_managed_identity = true
-    application_stack {
-      docker {
-        registry_url = "containerregistryautomationdev.azurecr.io"
-        image_name = "services/emails/func_emails"
-        image_tag = "b57fb37c99bd68d1488b979d06bebbe92182c7aa"
-      }
-    }
+    # application_stack {
+    #   docker {
+    #     registry_url = "containerregistryautomationdev.azurecr.io"
+    #     image_name = "services/emails/func_emails"
+    #     image_tag = "b57fb37c99bd68d1488b979d06bebbe92182c7aa"
+    #   }
+    # }
   }
 
   identity {
