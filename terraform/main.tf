@@ -47,6 +47,7 @@ resource "azurerm_linux_function_app" "linux_function_app" {
 
   site_config {
     always_on = true
+    container_registry_use_managed_identity = true
     application_stack {
       docker {
         registry_url = "containerregistryautomationdev.azurecr.io"
@@ -54,7 +55,6 @@ resource "azurerm_linux_function_app" "linux_function_app" {
         image_tag = "b57fb37c99bd68d1488b979d06bebbe92182c7aa"
       }
     }
-
   }
 
   identity {
