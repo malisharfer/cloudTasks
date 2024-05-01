@@ -45,18 +45,18 @@ resource "azurerm_linux_function_app" "linux_function_app" {
     WEBSITES_ENABLE_APP_SERVICE_STORAGE = false
   }
 
-  # site_config {
-  #   always_on = true
-  #   application_stack {
-  #     docker {
-  #       registry_url = var.DOCKER_REGISTRY_SERVER_URL
-  #       image_name = var.IMAGE_NAME
-  #       image_tag = var.IMAGE_TAG
-  #       registry_username = var.DOCKER_REGISTRY_SERVER_USERNAME
-  #       registry_password = var.DOCKER_REGISTRY_SERVER_PASSWORD
-  #     }
-  #   }
-  # }
+  site_config {
+    always_on = true
+    # application_stack {
+    #   docker {
+    #     registry_url = var.DOCKER_REGISTRY_SERVER_URL
+    #     image_name = var.IMAGE_NAME
+    #     image_tag = var.IMAGE_TAG
+    #     registry_username = var.DOCKER_REGISTRY_SERVER_USERNAME
+    #     registry_password = var.DOCKER_REGISTRY_SERVER_PASSWORD
+    #   }
+    # }
+  }
 
   identity {
     type = "SystemAssigned"
@@ -65,20 +65,10 @@ resource "azurerm_linux_function_app" "linux_function_app" {
 
 data "azurerm_client_config" "current_client" {}
 
-# resource "azurerm_key_vault_access_policy" "principal" {
-#   key_vault_id = data.azurerm_key_vault.key_vault.id
-#   tenant_id    = data.azurerm_client_config.current_client.tenant_id
-#   object_id    = azurerm_linux_function_app.linux_function_app.identity[0].principal_id
-
-#   key_permissions = [
-#     "Get", "List", "Encrypt", "Decrypt"
-#   ]
-
-#   secret_permissions = [
-#     "Get",
-#   ]
-# }
-
+data "azurerm_container_registry" "example" {
+  name                = "containerRegistryAutomationDev"
+  resource_group_name = data.azurerm_storage_account.storage_account.resource_group_name
+}
 
 resource "azurerm_role_assignment" "example" {
   object_id    = azurerm_linux_function_app.linux_function_app.identity.principal_id
