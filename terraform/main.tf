@@ -31,7 +31,6 @@ resource "azurerm_service_plan" "service_plan" {
   sku_name            = "P1v2"
 }
 
-
 resource "azurerm_linux_function_app" "linux_function_app" {
   name                        = "func-try-deploy-acr"
   location                    = data.azurerm_storage_account.storage_account.location
@@ -79,3 +78,4 @@ resource "azurerm_role_assignment" "example" {
   scope                            = data.azurerm_container_registry.example.id
   skip_service_principal_aad_check = true
 }
+
