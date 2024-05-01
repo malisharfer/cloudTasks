@@ -40,10 +40,10 @@ resource "azurerm_linux_function_app" "linux_function_app" {
   storage_account_access_key  = data.azurerm_storage_account.storage_account.primary_access_key
   functions_extension_version = "~4"
 
-  app_settings = {
-    FUNCTIONS_WORKER_RUNTIME = "python"
-    WEBSITES_ENABLE_APP_SERVICE_STORAGE = false
-  }
+  # app_settings = {
+  #   FUNCTIONS_WORKER_RUNTIME = "python"
+  #   WEBSITES_ENABLE_APP_SERVICE_STORAGE = false
+  # }
 
   site_config {
     always_on = true
