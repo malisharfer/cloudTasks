@@ -71,8 +71,8 @@ data "azurerm_container_registry" "example" {
 }
 
 resource "azurerm_role_assignment" "example" {
-  object_id    = azurerm_linux_function_app.linux_function_app.identity.principal_id
-  # principal_id                     = azurerm_kubernetes_cluster.example.kubelet_identity[0].object_id
+  # object_id    = azurerm_linux_function_app.linux_function_app.identity.principal_id
+  principal_id                     = azurerm_linux_function_app.linux_function_app.identity.object_id
   role_definition_name             = "AcrPull"
   scope                            = data.azurerm_container_registry.example.id
   skip_service_principal_aad_check = true
