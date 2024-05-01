@@ -31,6 +31,7 @@ resource "azurerm_service_plan" "service_plan" {
   sku_name            = "P1v2"
 }
 
+
 resource "azurerm_linux_function_app" "linux_function_app" {
   name                        = "func-try-deploy-acr"
   location                    = data.azurerm_storage_account.storage_account.location
@@ -56,7 +57,7 @@ resource "azurerm_linux_function_app" "linux_function_app" {
     #     registry_password = var.DOCKER_REGISTRY_SERVER_PASSWORD
     #   }
     # }
-    
+
   }
 
   identity {
@@ -70,7 +71,6 @@ data "azurerm_container_registry" "example" {
   name                = "containerRegistryAutomationDev"
   resource_group_name = data.azurerm_storage_account.storage_account.resource_group_name
 }
-
 
 resource "azurerm_role_assignment" "example" {
   # object_id    = azurerm_linux_function_app.linux_function_app.identity.principal_id
