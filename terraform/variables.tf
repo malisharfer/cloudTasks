@@ -103,12 +103,13 @@ variable key_vault_secret_name {
 }
 
 
+
 variable IMAGE_NAME {
   type    = string
-  default = "mcr.microsoft.com/azure-functions/base"
+  default = "mcr.microsoft.com/azure-functions/dotnet"
 }
 
 variable IMAGE_TAG {
   type    = string
-  default = "4-nightly-slim"
+  default = "4-appservice-quickstart"
 }
