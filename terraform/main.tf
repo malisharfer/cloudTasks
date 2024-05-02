@@ -48,15 +48,16 @@ resource "azurerm_linux_function_app" "linux_function_app" {
 
   site_config {
     always_on = true
-    # application_stack {
-    #   docker {
-    #     registry_url = var.DOCKER_REGISTRY_SERVER_URL
-    #     image_name = var.IMAGE_NAME
-    #     image_tag = var.IMAGE_TAG
-    #     registry_username = var.DOCKER_REGISTRY_SERVER_USERNAME
-    #     registry_password = var.DOCKER_REGISTRY_SERVER_PASSWORD
-    #   }
-    # }
+    application_stack {
+      python_version = "3.10"
+      # docker {
+      #   registry_url = var.DOCKER_REGISTRY_SERVER_URL
+      #   image_name = var.IMAGE_NAME
+      #   image_tag = var.IMAGE_TAG
+      #   registry_username = var.DOCKER_REGISTRY_SERVER_USERNAME
+      #   registry_password = var.DOCKER_REGISTRY_SERVER_PASSWORD
+      # }
+    }
   }
 
   identity {
