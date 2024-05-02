@@ -44,17 +44,22 @@ resource "azurerm_linux_function_app" "linux_function_app" {
     FUNCTIONS_WORKER_RUNTIME = "python"
     https_only = true
     WEBSITES_ENABLE_APP_SERVICE_STORAGE = false
+    DOCKER_REGISTRY_SERVER_URL = var.DOCKER_REGISTRY_SERVER_URL
+    DOCKER_REGISTRY_SERVER_USERNAME = var.DOCKER_REGISTRY_SERVER_USERNAME
+    DOCKER_REGISTRY_SERVER_PASSWORD = var.DOCKER_REGISTRY_SERVER_PASSWORD
   }
 
   site_config {
     always_on = true
     container_registry_use_managed_identity = true
     application_stack {
-      python_version = "3.10"
+      # python_version = "3.10"
       docker {
-        registry_url = "https://containerregistryautomationdev.azurecr.io"
-        image_name = "services/try1/func_user_disable"
-        image_tag = "3.0.0"
+        registry_url = var.DOCKER_REGISTRY_SERVER_URL
+        image_name = var.IMAGE_NAME
+        image_tag = var.IMAGE_TAG
+        registry_username = var.DOCKER_REGISTRY_SERVER_USERNAME
+        registry_password = var.DOCKER_REGISTRY_SERVER_PASSWORD
       }
     }
   }
