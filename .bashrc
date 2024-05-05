@@ -1,1 +1,1 @@
-export NODE_EXTRA_CA_CERTS=/etc/ca-bundle.crt
+export NODE_EXTRA_CA_CERTS=/etc/ca-bundle.crt.
