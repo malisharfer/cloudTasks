@@ -41,7 +41,7 @@ resource "azurerm_linux_function_app" "linux_function_app" {
   functions_extension_version = "~4"
 
   app_settings = {
-    FUNCTIONS_WORKER_RUNTIME  "python"
+    FUNCTIONS_WORKER_RUNTIME = "python"
     https_only = true
     DOCKER_REGISTRY_SERVER_URL = var.DOCKER_REGISTRY_SERVER_URL
     DOCKER_REGISTRY_SERVER_USERNAME = var.DOCKER_REGISTRY_SERVER_USERNAME
