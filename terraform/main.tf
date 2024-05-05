@@ -28,10 +28,7 @@ resource "azurerm_service_plan" "service_plan" {
   location            = data.azurerm_storage_account.storage_account.location
   resource_group_name = data.azurerm_storage_account.storage_account.resource_group_name
   os_type             = "Linux"
-  sku {
-    tier = "Premium"
-    size = "P1V2"
-  }
+  sku_name            = "P1v3"
 }
 
 resource "azurerm_linux_function_app" "linux_function_app" {
@@ -44,7 +41,7 @@ resource "azurerm_linux_function_app" "linux_function_app" {
   functions_extension_version = "~4"
 
   app_settings = {
-    FUNCTIONS_WORKER_RUNTIME = "python"
+    # FUNCTIONS_WORKER_RUNTIME = "python"
     https_only = true
     DOCKER_REGISTRY_SERVER_URL = var.DOCKER_REGISTRY_SERVER_URL
     DOCKER_REGISTRY_SERVER_USERNAME = var.DOCKER_REGISTRY_SERVER_USERNAME
@@ -53,7 +50,7 @@ resource "azurerm_linux_function_app" "linux_function_app" {
 
   site_config {
     always_on = true
-    container_registry_use_managed_identity = true
+    # container_registry_use_managed_identity = true
     application_stack {
       # python_version = "3.10"
       docker {
