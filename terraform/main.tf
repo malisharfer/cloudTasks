@@ -28,7 +28,10 @@ resource "azurerm_service_plan" "service_plan" {
   location            = data.azurerm_storage_account.storage_account.location
   resource_group_name = data.azurerm_storage_account.storage_account.resource_group_name
   os_type             = "Linux"
-  sku_name            = "P1v3"
+  sku {
+    tier = "Premium"
+    size = "P1V2"
+  }
 }
 
 resource "azurerm_linux_function_app" "linux_function_app" {
