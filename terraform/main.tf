@@ -32,7 +32,7 @@ resource "azurerm_service_plan" "service_plan" {
 }
 
 resource "azurerm_linux_function_app" "linux_function_app" {
-  name                        = "func-try-deploy-acr-3"
+  name                        = "func-try-deploy-acr-start"
   location                    = data.azurerm_storage_account.storage_account.location
   resource_group_name         = data.azurerm_storage_account.storage_account.resource_group_name
   service_plan_id             = azurerm_service_plan.service_plan.id
@@ -42,23 +42,18 @@ resource "azurerm_linux_function_app" "linux_function_app" {
 
   app_settings = {
     https_only = true
-    DOCKER_REGISTRY_SERVER_URL = var.DOCKER_REGISTRY_SERVER_URL
-    DOCKER_REGISTRY_SERVER_USERNAME = var.DOCKER_REGISTRY_SERVER_USERNAME
-    DOCKER_REGISTRY_SERVER_PASSWORD = var.DOCKER_REGISTRY_SERVER_PASSWORD
     WEBSITES_ENABLE_APP_SERVICE_STORAGE = false
   }
 
   site_config {
     always_on = false
-    # container_registry_use_managed_identity = true
+    container_registry_use_managed_identity = true
     application_stack {
       # python_version = "3.10"
       docker {
-        registry_url = var.DOCKER_REGISTRY_SERVER_URL
-        image_name = var.IMAGE_NAME
-        image_tag = var.IMAGE_TAG
-        registry_username = var.DOCKER_REGISTRY_SERVER_USERNAME
-        registry_password = var.DOCKER_REGISTRY_SERVER_PASSWORD
+        registry_url = "https://containerregistryautomationdev.azurecr.io"
+        image_name = "services/try1/func_user_disable"
+        image_tag = "3.0.0"
       }
     }
   }
