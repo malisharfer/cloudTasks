@@ -2,12 +2,9 @@ name: '🌍 Terraform Automation'
 
 on:
   push:
-    branches: [ "terraform" ]
+    branches: ["main"]
 
 env:
-  TF_VAR_DOCKER_REGISTRY_SERVER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-  TF_VAR_DOCKER_REGISTRY_SERVER_USERNAME: ${{ github.actor }}
-  TF_VAR_DOCKER_REGISTRY_SERVER_URL: https://mcr.microsoft.com
   TF_VAR_subscription_id: ${{secrets.SUBSCRIPTION_ID}}
   ARM_SUBSCRIPTION_ID: ${{secrets.SUBSCRIPTION_ID}}
   ARM_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
@@ -32,7 +29,7 @@ jobs:
       - name: 🏗️ Terraform 
         id: init
         run: |
-          DIRECTORIES=( "chavi" )
+          DIRECTORIES=( "main-project" )
           for directory in ${DIRECTORIES[@]}; do
             cd ${directory} || exit 1
             terraform init -input=false
