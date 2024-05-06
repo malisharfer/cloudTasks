@@ -15,7 +15,7 @@ variable storage_account_name {
 
 variable key_vault_name {
   type    = string
-  default = "kv-automations-dev"
+  default = "kv-automations-dev2"
 }
 
 variable key_vault_sku_name {
