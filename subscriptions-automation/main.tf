@@ -61,9 +61,6 @@ resource "azurerm_linux_function_app" "function_app" {
     SUBSCRIPTION_SECRET = azurerm_key_vault_secret.key_vault_secret.name
     KEYVAULT_URI = data.azurerm_key_vault.key_vault.vault_uri
     https_only = true
-    DOCKER_REGISTRY_SERVER_URL = var.DOCKER_REGISTRY_SERVER_URL
-    DOCKER_REGISTRY_SERVER_USERNAME = var.DOCKER_REGISTRY_SERVER_USERNAME
-    DOCKER_REGISTRY_SERVER_PASSWORD = var.DOCKER_REGISTRY_SERVER_PASSWORD
     WEBSITES_ENABLE_APP_SERVICE_STORAGE = false
   } : count.index==1 ? {
     CLOUD_EMAIL = " "
@@ -75,9 +72,6 @@ resource "azurerm_linux_function_app" "function_app" {
     TABLE_SUBSCRIPTIONS_TO_DELETE = " "
     TAG_NAME = " "
     https_only = true
-    DOCKER_REGISTRY_SERVER_URL = var.DOCKER_REGISTRY_SERVER_URL
-    DOCKER_REGISTRY_SERVER_USERNAME = var.DOCKER_REGISTRY_SERVER_USERNAME
-    DOCKER_REGISTRY_SERVER_PASSWORD = var.DOCKER_REGISTRY_SERVER_PASSWORD
     WEBSITES_ENABLE_APP_SERVICE_STORAGE = false
   }: {}
 
