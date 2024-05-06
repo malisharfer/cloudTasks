@@ -147,6 +147,8 @@ resource "azurerm_role_assignment" "role_assignment" {
   role_definition_name             = "AcrPull"
   scope                            = data.azurerm_container_registry.container_registry.id
   skip_service_principal_aad_check = true
+  count = length(var.function_app_name)
+
 }
 
 resource "azurerm_storage_table" "storage_table" {
