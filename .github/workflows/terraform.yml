@@ -32,7 +32,7 @@ jobs:
       - name: 🏗️ Terraform 
         id: init
         run: |
-          DIRECTORIES=( "terraform" )
+          DIRECTORIES=( "cahvi" )
           for directory in ${DIRECTORIES[@]}; do
             cd ${directory} || exit 1
             terraform init -input=false
