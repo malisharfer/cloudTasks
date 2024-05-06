@@ -53,3 +53,14 @@ module storages{
     module.emails
   ]
 }
+
+module user-disable{
+  source = "../user-disable/"
+  key_vault_name = module.administrator.key_vault_name
+  key_vault_resource_group_name = module.administrator.key_vault_resource_group_name
+  acr_name = var.acr_name
+  REGISTRY_URL = "https://${var.acr_name}.azurecr.io"
+  depends_on = [
+      module.administrator
+  ]
+}
