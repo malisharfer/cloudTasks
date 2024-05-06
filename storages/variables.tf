@@ -18,6 +18,10 @@ variable REGISTRY_URL {
   type = string
 }
 
+variable acr_resource_group_name {
+  type = string
+}
+
 variable rg_name{
   type    = string
   default ="rg-storages-dev"
