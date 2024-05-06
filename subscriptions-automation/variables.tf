@@ -26,7 +26,7 @@ variable rg_location {
 
 variable storage_account_name {
   type    = string
-  default = "stsubscritionmanagmentdev"
+  default = "stsubscritiondev"
 }
 
 variable service_plan_name{
