@@ -19,7 +19,7 @@ variable rg_name {
   default = "rg-user-disable-dev"
 }
 
-variable rg_location {  
+variable rg_location {
   type    = string
   default = "West Europe"
 }

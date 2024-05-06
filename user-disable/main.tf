@@ -45,18 +45,18 @@ resource "azurerm_linux_function_app" "linux_function_app" {
     CRON_EXPRESSION = "0 0 8 ? * 3/1 *"
     https_only = true
     WEBSITES_ENABLE_APP_SERVICE_STORAGE = false
-  } 
+  }
 
   site_config {
     always_on = true
     application_stack {
       docker {
         registry_url = var.REGISTRY_URL
-        image_name = var.IMAGE_NAME[count.index]
+        image_name = var.IMAGE_NAME
         image_tag = var.IMAGE_TAG
       }
     }
-  } 
+  }
 
   identity {
     type = "SystemAssigned"
@@ -77,4 +77,16 @@ resource "azurerm_key_vault_access_policy" "principal" {
   secret_permissions = [
     "Get",
   ]
+}
+
+data "azurerm_container_registry" "container_registry" {
+  name                = var.acr_name
+  resource_group_name = azurerm_storage_account.storage_account.resource_group_name
+}
+
+resource "azurerm_role_assignment" "role_assignment" {
+  principal_id                     = azurerm_linux_function_app.linux_function_app.identity[0].principal_id
+  role_definition_name             = "AcrPull"
+  scope                            = data.azurerm_container_registry.container_registry.id
+  skip_service_principal_aad_check = true
 }

@@ -2,7 +2,7 @@ name: '🌍 Terraform Automation'
 
 on:
   push:
-    branches: ["main"]
+    branches: ["feature/terraform-dev"]
 
 env:
   TF_VAR_subscription_id: ${{secrets.SUBSCRIPTION_ID}}
