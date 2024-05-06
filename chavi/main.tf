@@ -22,7 +22,7 @@ data "azurerm_subscription" "primary" {
 }
 
 data "azurerm_user_assigned_identity" "example" {
-  name                = "example"
+  name                = "policy"
   resource_group_name = "DefaultResourceGroup-EUS"
 }
 
