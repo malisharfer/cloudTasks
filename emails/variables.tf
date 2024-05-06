@@ -36,12 +36,12 @@ variable key_vault_secret_name {
 
 variable service_plan_name{
   type    = string
-  default = "app-emails-dev"
+  default = "app-emails-dev111"
 }
 
 variable function_app_name {
   type    = string
-  default = "func-emails-dev"
+  default = "func-emails-dev111"
 }
 
 variable IMAGE_NAME {
