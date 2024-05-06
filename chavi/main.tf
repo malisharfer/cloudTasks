@@ -22,7 +22,6 @@ data "azurerm_subscription" "primary" {
 }
 
 data "azurerm_user_assigned_identity" "example" {
-  location            = "East US"
   name                = "example"
   resource_group_name = "DefaultResourceGroup-EUS"
 }
