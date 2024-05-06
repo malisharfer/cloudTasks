@@ -49,6 +49,7 @@ resource "azurerm_linux_function_app" "linux_function_app" {
 
   site_config {
     always_on = true
+    container_registry_use_managed_identity = true
     application_stack {
       docker {
         registry_url = var.REGISTRY_URL

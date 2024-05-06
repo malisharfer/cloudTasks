@@ -25,7 +25,7 @@ module emails{
     key_vault_name = module.administrator.key_vault_name
     key_vault_resource_group_name = module.administrator.key_vault_resource_group_name
     acr_name = var.acr_name
-    REGISTRY_URL = "https://containerregistryautomationdev.azurecr.io"
+    REGISTRY_URL = var.registry_url
     depends_on = [
       module.administrator
     ]
@@ -36,7 +36,7 @@ module subscriptions {
     key_vault_name = module.administrator.key_vault_name
     key_vault_resource_group_name = module.administrator.key_vault_resource_group_name
     acr_name = var.acr_name
-    REGISTRY_URL = "https://containerregistryautomationdev.azurecr.io"
+    REGISTRY_URL = var.registry_url
     depends_on = [
       module.emails
     ]
@@ -48,7 +48,7 @@ module storages{
   key_vault_resource_group_name = module.administrator.key_vault_resource_group_name
   key_vault_secret_excel_name = module.administrator.secret_administrators_name
   acr_name = var.acr_name
-  REGISTRY_URL = "https://containerregistryautomationdev.azurecr.io"
+  REGISTRY_URL = var.registry_url
   depends_on = [
     module.emails
   ]
@@ -59,7 +59,7 @@ module user-disable{
   key_vault_name = module.administrator.key_vault_name
   key_vault_resource_group_name = module.administrator.key_vault_resource_group_name
   acr_name = var.acr_name
-  REGISTRY_URL = "https://containerregistryautomationdev.azurecr.io"
+  REGISTRY_URL = var.registry_url
   depends_on = [
       module.administrator
   ]
