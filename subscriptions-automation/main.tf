@@ -123,7 +123,7 @@ data "azurerm_container_registry" "container_registry" {
 }
 
 resource "azurerm_role_assignment" "role_assignment" {
-  principal_id                     = azurerm_linux_function_app.linux_function_app[count.index].identity[0].principal_id
+  principal_id                     = azurerm_linux_function_app.function_app[count.index].identity[0].principal_id
   role_definition_name             = "AcrPull"
   scope                            = data.azurerm_container_registry.container_registry.id
   skip_service_principal_aad_check = true
