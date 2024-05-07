@@ -1,0 +1,2 @@
+extension = pdo_pgsql
+memory_limit = 256M

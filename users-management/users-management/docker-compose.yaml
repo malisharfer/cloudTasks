@@ -1,0 +1,29 @@
+version: '3.5'
+
+services:
+  laravel:
+    image: bitnami/laravel
+    working_dir: /app
+    container_name: laravel
+    ports:
+      - 8000:8000
+    volumes:
+      - ./src:/app
+      - ./.env:/app/.env
+      - ./php.ini.dev:/php.ini.dev 
+    command: bash -c "
+      cat /php.ini.dev >> /opt/bitnami/php/etc/php.ini &&
+      sleep infinity"
+    depends_on:
+      - db
+    
+  db:
+    container_name: postgres
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - 5432:5432

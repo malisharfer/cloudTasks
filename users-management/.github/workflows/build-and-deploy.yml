@@ -1,0 +1,94 @@
+name: 🚀 Build and deploy to Web-App
+
+on: push
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  APP_NAME: wa-users-management
+  RG_NAME: rg-users-managemet
+  WORKING_DIR: users-management
+
+jobs:
+  build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📁 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🔧 Docker QEMU Setup
+        uses: docker/setup-qemu-action@v3
+
+      - name: 🛠️ Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔑 Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📃 Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/${{ env.WORKING_DIR }}
+          flavor: |
+            latest=false
+          tags: |
+            type=raw,value=latest
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+
+      - name: 🐳 Docker Build & Push
+        uses: docker/build-push-action@v5
+        id: docker_build
+        with:
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          context: ./${{ env.WORKING_DIR }}
+          push: true
+          provenance: false
+          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          file: ./${{ env.WORKING_DIR }}/Dockerfile
+          
+  # deploy:
+  #   name: deployment
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: 📁 Checkout repository
+  #       uses: actions/checkout@v4
+
+  #     - name: 🔑 Login to Azure
+  #       uses: azure/login@v2
+  #       with:
+  #         creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+  #     - name: 💥 Get WebApp publish profile
+  #       id: publish_profile
+  #       uses: aliencube/publish-profile-actions@v1
+  #       env:
+  #         AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+  #       with:
+  #         resourceGroupName: ${{ env.RG_NAME }}
+  #         appName: ${{ env.APP_NAME }}
+  #         # reset: true
+
+  #     # - name: 🔑 Login to Azure
+  #     #   id : az-login
+  #     #   run : az login
+
+  #     - name: 🚀 Deploy to Azure Web App
+  #       uses: azure/webapps-deploy@v2
+  #       with:
+  #         app-name: ${{ env.APP_NAME }}
+  #         images: "ghcr.io/${{ github.repository }}/${{ env.WORKING_DIR }}:latest"
+  #         publish-profile: ${{ steps.publish_profile.outputs.profile }}
+      
