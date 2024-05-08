@@ -73,3 +73,7 @@ jobs:
       - name: 🏗️ Build and push Docker image to Azure Container Registry
         run: |
           az acr build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ matrix.directory }}:0.0.1 -r ${{ secrets.REGISTRY_LOGIN_SERVER }} ./${{ matrix.directory }}
+
+
+
+
