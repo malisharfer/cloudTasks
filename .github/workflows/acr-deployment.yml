@@ -5,7 +5,7 @@ on:
     branches: ["feature/acr-deployment"]
 
 env:
-  WORKING_DIR: users-management
+  WORKING_DIR: users_management
 
 permissions:
   contents: read
