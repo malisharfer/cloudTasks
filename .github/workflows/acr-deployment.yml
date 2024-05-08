@@ -31,9 +31,9 @@ jobs:
   build-and-deploy:
     runs-on: "ubuntu-latest"
     needs: setup
-    strategy:
-      matrix:
-        directory: "users-management"
+    # strategy:
+    #   matrix:
+    #     directory: "users-management"
 
     steps:
       - name: 📂 Checkout repository
@@ -55,7 +55,7 @@ jobs:
 
       - name: 🚚 Change Path Matrix Directory
         run: |
-          CUSTOM_MATRIX_DIRECTORY=$(echo "${{ matrix.directory }}" | sed 's/\//./g')
+          CUSTOM_MATRIX_DIRECTORY=$(echo "${{ env.WORKING_DIR }}" | sed 's/\//./g')
           echo "CUSTOM_MATRIX_DIRECTORY=$CUSTOM_MATRIX_DIRECTORY" >> "$GITHUB_ENV"
 
       # - name: 👷 Import Function App Version
@@ -65,7 +65,7 @@ jobs:
 
       - name: 🏗️ Build and push Docker image to Azure Container Registry
         run: |
-          az acr build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ matrix.directory }}:0.0.1 -r ${{ secrets.REGISTRY_LOGIN_SERVER }} ./${{ matrix.directory }}
+          az acr build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.WORKING_DIR }}:0.0.1 -r ${{ secrets.REGISTRY_LOGIN_SERVER }} ./$${{ env.WORKING_DIR }}
 
 
 
