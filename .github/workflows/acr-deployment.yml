@@ -33,7 +33,7 @@ jobs:
     needs: setup
     strategy:
       matrix:
-        directory: ${{ env.WORKING_DIR }}
+        directory: "users-management"
 
     steps:
       - name: 📂 Checkout repository
