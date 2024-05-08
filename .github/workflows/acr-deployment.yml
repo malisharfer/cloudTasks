@@ -33,7 +33,7 @@ jobs:
     needs: setup
     strategy:
       matrix:
-        directory: ${{ fromJson(needs.setup.outputs.MATRIX) }}
+        directory: ${{ env.WORKING_DIR }}
 
     steps:
       - name: 📂 Checkout repository
