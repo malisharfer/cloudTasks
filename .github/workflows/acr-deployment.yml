@@ -1,8 +1,8 @@
 name: 🚀 Build and deploy to acr
 
 on:
-  push 
-    # branches: ["feature/acr-deployment"]
+  push:
+    branches: ["feature/acr-deployment"]
 
 env:
   WORKING_DIR: users-management
