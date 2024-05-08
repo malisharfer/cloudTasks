@@ -67,6 +67,3 @@ jobs:
         run: |
           az acr build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.WORKING_DIR }}:0.0.1 -r ${{ secrets.REGISTRY_LOGIN_SERVER }} ./$${{ env.WORKING_DIR }}
 
-
-
-
