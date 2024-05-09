@@ -58,11 +58,6 @@ jobs:
           CUSTOM_MATRIX_DIRECTORY=$(echo "${{ env.WORKING_DIR }}" | sed 's/\//./g')
           echo "CUSTOM_MATRIX_DIRECTORY=$CUSTOM_MATRIX_DIRECTORY" >> "$GITHUB_ENV"
 
-      # - name: 👷 Import Function App Version
-      #   run: |
-      #     version=$(python -c "import ${{ env.CUSTOM_MATRIX_DIRECTORY }}.project; print(${{ env.CUSTOM_MATRIX_DIRECTORY }}.project.__version__)")
-      #     echo "TAG=$version" >> "$GITHUB_ENV"  
-
       - name: 🏗️ Build and push Docker image to Azure Container Registry
         run: |
           ls

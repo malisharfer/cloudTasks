@@ -10,8 +10,8 @@ ARG user=laravel
 
 COPY ./src /laravel
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-COPY --chmod=755 /entrypoint.sh entrypoint.sh
-COPY --chmod=755 /common common
+COPY /entrypoint.sh entrypoint.sh
+COPY /common common
 COPY --chown=${user}:${user} src/artisan artisan
 COPY .env.example .env
 COPY /php.ini "${PHP_INI_DIR}/php.ini"
