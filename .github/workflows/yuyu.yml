@@ -75,8 +75,9 @@ jobs:
       - name: 🐳 Docker Build & Push to ACR
         run: |
           ACR_IP=$(az acr show --name ${{ secrets.REGISTRY_LOGIN_SERVER }} --query 'properties.loginServerIp' -o tsv)
-          docker build -t $ACR_IP/${{ env.WORKING_DIR }}:${{ github.sha }} ./${{ env.WORKING_DIR }}
-          docker push $ACR_IP/${{ env.WORKING_DIR }}:${{ github.sha }}
+          docker build -t $ACR_IP/${{ env.WORKING_DIR }}:0.0.1 ./${{ env.WORKING_DIR }}
+          docker push $ACR_IP/${{ env.WORKING_DIR }}:0.0.1
+  
   # deploy:
   #   name: deployment
   #   needs: build
