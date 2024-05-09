@@ -49,12 +49,12 @@ jobs:
           push: false
           provenance: false
           labels: ${{ steps.meta.outputs.labels }}
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: "0.0.1"
           file: ./${{ env.WORKING_DIR }}/Dockerfile
 
       - name: 🚢 Push Docker image to Azure Container Registry
         run: |
           # docker tag ${{ steps.docker_build.outputs.digest }} ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.WORKING_DIR }}:${{ github.sha }}
-          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.WORKING_DIR }}:${{ github.sha }}
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.WORKING_DIR }}:0.0.1
 
 
