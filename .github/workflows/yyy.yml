@@ -1,6 +1,8 @@
 name: 🚀 Build and deploy to Web-App
 
-on: push
+on:
+  push:
+    branches: ["feature/acr-deployment"]
 
 permissions:
   contents: read
