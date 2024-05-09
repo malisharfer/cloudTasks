@@ -56,3 +56,5 @@ jobs:
         run: |
           # docker tag ${{ steps.docker_build.outputs.digest }} ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.WORKING_DIR }}:${{ github.sha }}
           docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.WORKING_DIR }}:${{ github.sha }}
+
+
