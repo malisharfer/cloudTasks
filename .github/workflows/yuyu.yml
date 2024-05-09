@@ -54,4 +54,4 @@ jobs:
 
       - name: 🚢 Push Docker image to Azure Container Registry
         run: |
-          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.WORKING_DIR }}:${{ steps.docker_build.outputs.tags }}
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.WORKING_DIR }}:${{ github.sha }}
