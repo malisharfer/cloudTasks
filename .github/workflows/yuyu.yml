@@ -78,6 +78,7 @@ jobs:
           docker build -t $ACR_IP/${{ env.WORKING_DIR }}:0.0.1 ./${{ env.WORKING_DIR }}
           docker push $ACR_IP/${{ env.WORKING_DIR }}:0.0.1
   
+  
   # deploy:
   #   name: deployment
   #   needs: build
