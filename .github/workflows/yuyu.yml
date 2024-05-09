@@ -15,7 +15,7 @@ env:
 
 jobs:
   build:
-    name: Docker Build
+    name: Docker Build and Push to ACR
     runs-on: ubuntu-latest
 
     steps:
@@ -28,24 +28,12 @@ jobs:
       - name: 🛠️ Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: 🔑 Login to GHCR
-        uses: docker/login-action@v3
+      - name: 🔑 Login to Azure Container Registry
+        uses: azure/docker-login@v1
         with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 📃 Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}/${{ env.WORKING_DIR }}
-          flavor: |
-            latest=false
-          tags: |
-            type=raw,value=latest
-            type=semver,pattern=v{{version}}
-            type=semver,pattern=v{{major}}.{{minor}}
+          login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
       - name: 🐳 Docker Build & Push
         uses: docker/build-push-action@v5
@@ -54,62 +42,13 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           context: ./${{ env.WORKING_DIR }}
-          push: true
+          push: false
           provenance: false
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ steps.meta.outputs.tags }}
           file: ./${{ env.WORKING_DIR }}/Dockerfile
 
-      - name: 🔑 Login to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: 🗝️ Login to Container Registry
-        uses: azure/docker-login@v1
-        with:
-          login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
-          username: ${{ secrets.AZ_USERNAME }}
-          password: ${{ secrets.AZ_PASSWORD }}   
-
-      - name: 🐳 Docker Build & Push to ACR
+      - name: 🚢 Push Docker image to Azure Container Registry
         run: |
-          ACR_IP=$(az acr show --name ${{ secrets.REGISTRY_LOGIN_SERVER }} --query 'properties.loginServerIp' -o tsv)
-          docker build -t $ACR_IP/${{ env.WORKING_DIR }}:0.0.1 ./${{ env.WORKING_DIR }}
-          docker push $ACR_IP/${{ env.WORKING_DIR }}:0.0.1
-  
-  
-  # deploy:
-  #   name: deployment
-  #   needs: build
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: 📁 Checkout repository
-  #       uses: actions/checkout@v4
-
-  #     - name: 🔑 Login to Azure
-  #       uses: azure/login@v2
-  #       with:
-  #         creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-  #     - name: 💥 Get WebApp publish profile
-  #       id: publish_profile
-  #       uses: aliencube/publish-profile-actions@v1
-  #       env:
-  #         AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
-  #       with:
-  #         resourceGroupName: ${{ env.RG_NAME }}
-  #         appName: ${{ env.APP_NAME }}
-  #         # reset: true
-
-  #     # - name: 🔑 Login to Azure
-  #     #   id : az-login
-  #     #   run : az login
-
-  #     - name: 🚀 Deploy to Azure Web App
-  #       uses: azure/webapps-deploy@v2
-  #       with:
-  #         app-name: ${{ env.APP_NAME }}
-  #         images: "ghcr.io/${{ github.repository }}/${{ env.WORKING_DIR }}:latest"
-  #         publish-profile: ${{ steps.publish_profile.outputs.profile }}
-      
+          docker tag ${{ steps.docker_build.outputs.image }} ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.WORKING_DIR }}:${{ github.sha }}
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.WORKING_DIR }}:${{ github.sha }}
