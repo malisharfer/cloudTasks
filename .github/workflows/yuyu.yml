@@ -59,7 +59,24 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ steps.meta.outputs.tags }}
           file: ./${{ env.WORKING_DIR }}/Dockerfile
-          
+
+      - name: 🔑 Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: 🗝️ Login to Container Registry
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+          username: ${{ secrets.AZ_USERNAME }}
+          password: ${{ secrets.AZ_PASSWORD }}   
+
+      - name: 🐳 Docker Build & Push to ACR
+        run: |
+          docker build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}.azurecr.io/${{ env.WORKING_DIR }}:${{ github.sha }} ./${{ env.WORKING_DIR }}
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}.azurecr.io/${{ env.WORKING_DIR }}:${{ github.sha }}    
+
   # deploy:
   #   name: deployment
   #   needs: build
