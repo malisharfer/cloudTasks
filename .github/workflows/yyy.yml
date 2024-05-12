@@ -78,7 +78,7 @@ permissions:
 env:
   APP_NAME: wa-users-management
   RG_NAME: rg-users-managemet
-  WORKING_DIR: users-management
+  WORKING_DIR: users_management
 
 jobs:
   build:
