@@ -1,65 +1,65 @@
-name: 🚀 Build and deploy to Web-App
+# name: 🚀 Build and deploy to Web-App
 
-on:
-  push:
-    branches: ["feature/acr-deployment"]
+# on:
+#   push:
+#     branches: ["feature/acr-deployment"]
 
-permissions:
-  contents: read
-  packages: write
+# permissions:
+#   contents: read
+#   packages: write
 
-env:
-  APP_NAME: wa-users-management
-  RG_NAME: rg-users-managemet
-  WORKING_DIR: users_management
+# env:
+#   APP_NAME: wa-users-management
+#   RG_NAME: rg-users-managemet
+#   WORKING_DIR: users_management
 
-jobs:
-  build:
-    name: Docker Build and Push to ACR
-    runs-on: ubuntu-latest
+# jobs:
+#   build:
+#     name: Docker Build and Push to ACR
+#     runs-on: ubuntu-latest
 
-    steps:
-      - name: 📁 Checkout repository
-        uses: actions/checkout@v4
+#     steps:
+#       - name: 📁 Checkout repository
+#         uses: actions/checkout@v4
 
-      - name: 🔧 Docker QEMU Setup
-        uses: docker/setup-qemu-action@v3
+#       - name: 🔧 Docker QEMU Setup
+#         uses: docker/setup-qemu-action@v3
 
-      - name: 🛠️ Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+#       - name: 🛠️ Set up Docker Buildx
+#         uses: docker/setup-buildx-action@v3
 
-      - name: 🗝️ Login to Container Registry
-        uses: azure/docker-login@v1
-        with:
-          login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
-          username: ${{ secrets.AZ_USERNAME }}
-          password: ${{ secrets.AZ_PASSWORD }}
+#       - name: 🗝️ Login to Container Registry
+#         uses: azure/docker-login@v1
+#         with:
+#           login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+#           username: ${{ secrets.AZ_USERNAME }}
+#           password: ${{ secrets.AZ_PASSWORD }}
           
-      - name: 📃 Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          flavor: |
-            latest=false
-          tags: |
-            type=raw,value=latest
-            type=semver,pattern=v{{version}}
-            type=semver,pattern=v{{major}}.{{minor}}
+#       - name: 📃 Docker metadata
+#         id: meta
+#         uses: docker/metadata-action@v5
+#         with:
+#           flavor: |
+#             latest=false
+#           tags: |
+#             type=raw,value=latest
+#             type=semver,pattern=v{{version}}
+#             type=semver,pattern=v{{major}}.{{minor}}
 
-      - name: 🐳 Docker Build & Push
-        uses: docker/build-push-action@v5
-        id: docker_build
-        with:
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          context: ./${{ env.WORKING_DIR }}
-          push: false
-          provenance: false
-          labels: ${{ steps.meta.outputs.labels }}
-          tags: ${{ steps.meta.outputs.tags }}
-          file: ./${{ env.WORKING_DIR }}/Dockerfile
+#       - name: 🐳 Docker Build & Push
+#         uses: docker/build-push-action@v5
+#         id: docker_build
+#         with:
+#           cache-from: type=gha
+#           cache-to: type=gha,mode=max
+#           context: ./${{ env.WORKING_DIR }}
+#           push: false
+#           provenance: false
+#           labels: ${{ steps.meta.outputs.labels }}
+#           tags: ${{ steps.meta.outputs.tags }}
+#           file: ./${{ env.WORKING_DIR }}/Dockerfile
 
-      - name: 🚢 Push Docker image to Azure Container Registry
-        run: |
-          echo ${{ github.sha }}
-          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.WORKING_DIR }}:${{ github.sha }}
+#       - name: 🚢 Push Docker image to Azure Container Registry
+#         run: |
+#           echo ${{ github.sha }}
+#           docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.WORKING_DIR }}:${{ github.sha }}
