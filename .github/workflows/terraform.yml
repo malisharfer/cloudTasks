@@ -1,8 +1,11 @@
 name: '🌍 Terraform Automation'
 
 on:
-  push:
-    branches: ["feature/terraform-dev"]
+  workflow_dispatch:
+    inputs:
+      folderName:
+        description: "folder name"
+        required: true
 
 env:
   TF_VAR_subscription_id: ${{secrets.SUBSCRIPTION_ID}}
@@ -25,11 +28,11 @@ jobs:
       - name: 🔑 Login to Azure
         id : az-login
         run : az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET --tenant $ARM_TENANT_ID  
- 
+  
       - name: 🏗️ Terraform 
         id: init
         run: |
-          DIRECTORIES=( "main-project" )
+          DIRECTORIES= (  ${{ github.event.inputs.folderName }} )
           for directory in ${DIRECTORIES[@]}; do
             cd ${directory} || exit 1
             terraform init -input=false

@@ -1,6 +1,6 @@
 variable rg_name{
   type    = string
-  default ="rg-administratorsdev"
+  default ="rg-adadadada"
 }
 
 variable rg_location {
