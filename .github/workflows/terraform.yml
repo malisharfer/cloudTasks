@@ -31,12 +31,14 @@ jobs:
       - name: 🏗️ Terraform 
         id: init
         run: |
-          DIRECTORIES = services/main-project
+          DIRECTORIES= ${{ github.event.inputs.folderName }}
           cd ${DIRECTORIES} || exit 1
           terraform init -input=false
-          # terraform plan -out=tfplan -input=false
-          # terraform apply -input=false -auto-approve tfplan
-          cd ..  
+          terraform plan -out=tfplan -input=false
+          terraform apply -input=false -auto-approve tfplan
+          cd .. 
+          
+           
       # - name: 🏗️ Terraform 
       #   id: init
       #   run: |
