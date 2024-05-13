@@ -31,7 +31,7 @@ jobs:
       - name: 🏗️ Terraform 
         id: init
         run: |
-          DIRECTORIES= "services/main-project"
+          DIRECTORIES = services/main-project
           cd ${DIRECTORIES} || exit 1
           terraform init -input=false
           # terraform plan -out=tfplan -input=false
