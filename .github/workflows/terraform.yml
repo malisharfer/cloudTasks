@@ -31,9 +31,9 @@ jobs:
       - name: 🏗️ Terraform 
         id: init
         run: |
-          DIRECTORIES= ${{ github.event.inputs.folderName }}
-          echo "DIRECTORIES: ${DIRECTORIES}"
-          cd ${DIRECTORIES}
+          # DIRECTORIES= ${{ github.event.inputs.folderName }}
+          # echo "DIRECTORIES: ${DIRECTORIES}"
+          cd services/main-project
           # cd ${DIRECTORIES} || exit 1
           # terraform init -input=false
           # terraform plan -out=tfplan -input=false
