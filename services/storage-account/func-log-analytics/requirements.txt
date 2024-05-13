@@ -1,7 +1,0 @@
-azure-functions
-pytest==7.4.2
-black==23.11.0
-azure.monitor.query
-azure.identity==1.14.1
-python-dotenv==1.0.0
-pytest-cov
