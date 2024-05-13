@@ -33,11 +33,12 @@ jobs:
         run: |
           DIRECTORIES= ${{ github.event.inputs.folderName }}
           echo "DIRECTORIES: ${DIRECTORIES}"
-          cd ${DIRECTORIES} || exit 1
-          terraform init -input=false
-          terraform plan -out=tfplan -input=false
-          terraform apply -input=false -auto-approve tfplan
-          cd ..  
+          cd ${DIRECTORIES}
+          # cd ${DIRECTORIES} || exit 1
+          # terraform init -input=false
+          # terraform plan -out=tfplan -input=false
+          # terraform apply -input=false -auto-approve tfplan
+          # cd ..  
       # - name: 🏗️ Terraform 
       #   id: init
       #   run: |
