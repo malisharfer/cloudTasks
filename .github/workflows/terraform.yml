@@ -19,8 +19,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.branchName }}
 
       - name: 🧩 HashiCorp - Setup Terraform
         uses: hashicorp/setup-terraform@v2.0.0
@@ -28,15 +26,25 @@ jobs:
       - name: 🔑 Login to Azure
         id : az-login
         run : az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET --tenant $ARM_TENANT_ID  
-  
+      
+
       - name: 🏗️ Terraform 
         id: init
         run: |
-          DIRECTORIES= (  ${{ github.event.inputs.folderName }} )
-          for directory in ${DIRECTORIES[@]}; do
-            cd ${directory} || exit 1
-            terraform init -input=false
-            terraform plan -out=tfplan -input=false
-            terraform apply -input=false -auto-approve tfplan
-            cd ..  
-          done  
+          DIRECTORIES= ${{ github.event.inputs.folderName }}
+          cd ${DIRECTORIES} || exit 1
+          terraform init -input=false
+          terraform plan -out=tfplan -input=false
+          terraform apply -input=false -auto-approve tfplan
+          cd ..  
+      # - name: 🏗️ Terraform 
+      #   id: init
+      #   run: |
+      #     DIRECTORIES= (  ${{ github.event.inputs.folderName }} )
+      #     for directory in ${DIRECTORIES[@]}; do
+      #       cd ${directory} || exit 1
+      #       terraform init -input=false
+      #       terraform plan -out=tfplan -input=false
+      #       terraform apply -input=false -auto-approve tfplan
+      #       cd ..  
+      #     done  
