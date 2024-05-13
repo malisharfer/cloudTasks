@@ -1,11 +1,8 @@
 name: '🌍 Terraform Automation'
 
 on:
-  workflow_dispatch:
-    inputs:
-      folderName:
-        description: "folder name"
-        required: true
+  push:
+    branches: ["feature/terraform-dev"]
 
 env:
   TF_VAR_subscription_id: ${{secrets.SUBSCRIPTION_ID}}
@@ -32,7 +29,7 @@ jobs:
       - name: 🏗️ Terraform 
         id: init
         run: |
-          DIRECTORIES= (  ${{ github.event.inputs.folderName }} )
+          DIRECTORIES=( "main-project" )
           for directory in ${DIRECTORIES[@]}; do
             cd ${directory} || exit 1
             terraform init -input=false
