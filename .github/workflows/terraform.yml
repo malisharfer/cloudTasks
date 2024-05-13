@@ -1,11 +1,11 @@
 name: '🌍 Terraform Automation'
 
 on:
-  workflow_dispatch:
-    inputs:
-      folderName:
-        description: "folder name"
-        required: true
+  workflow_dispatch
+    # inputs:
+    #   folderName:
+    #     description: "folder name"
+    #     required: true
 
 env:
   TF_VAR_subscription_id: ${{secrets.SUBSCRIPTION_ID}}
@@ -27,7 +27,6 @@ jobs:
         id: az-login
         run: az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET --tenant $ARM_TENANT_ID  
       
-
       - name: 🏗️ Terraform 
         id: init
         run: |
