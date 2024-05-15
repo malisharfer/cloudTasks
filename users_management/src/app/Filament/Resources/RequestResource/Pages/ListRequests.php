@@ -2,13 +2,12 @@
 
 namespace App\Filament\Resources\RequestResource\Pages;
 
+use App\Exports\ExportRequests;
 use App\Filament\Resources\RequestResource;
-use App\Filament\Resources\UserResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ListRecords;
 use Filament\Actions\Action;
-use App\Enums\Users\Role;
-
+use Filament\Resources\Pages\ListRecords;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ListRequests extends ListRecords
 {
@@ -20,13 +19,15 @@ class ListRequests extends ListRecords
             Actions\CreateAction::make(),
             Action::make('switchView')
                 ->label(__('change view'))
-                ->url(fn () =>request()->input('viewType', 'Table') === 'Table' ?  url()->current() . '?viewType=Card': url()->current() . '?viewType=Table')
-                ->visible(auth()->user()->role === Role::Admin),
-            Action::make(__('EXPORT'))
-                ->label(__('Download'))
-                ->url(fn () => route('requests.export'))
-                ->visible(auth()->user()->role === Role::Admin)
-                ->icon('heroicon-o-arrow-down-tray')
+                ->url(fn () => request()->input('viewType', 'Table') === 'Table' ? url()->current().'?viewType=Card' : url()->current().'?viewType=Table')
+                ->visible(auth()->user()->role === 'Admin'),
+            Action::make(('export'))
+                ->label(__('download'))
+                ->action(function () {
+                    return Excel::download(new ExportRequests, 'Requests.xlsx');
+                })
+                ->visible(auth()->user()->role === 'Admin')
+                ->icon('bi-download'),
         ];
     }
 }

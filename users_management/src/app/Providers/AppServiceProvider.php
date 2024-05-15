@@ -2,13 +2,13 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use BezhanSalleh\FilamentLanguageSwitch\LanguageSwitch;
-use Illuminate\Database\Eloquent\Model;
-use Filament\Http\Responses\Auth\Contracts\LogoutResponse as LogoutResponseContract;
 use App\Http\Responses\LogoutResponse;
-use Illuminate\Support\Facades\URL;
-
+use Filament\Http\Responses\Auth\Contracts\LogoutResponse as LogoutResponseContract;
+use Filament\Support\Facades\FilamentView;
+use Filament\View\PanelsRenderHook;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,13 +27,9 @@ class AppServiceProvider extends ServiceProvider
     {
         Model::unguard();
 
-        LanguageSwitch::configureUsing(function (LanguageSwitch $switch) {
-            $switch
-                ->locales(['en','he']);
-        });
-
-        if(env('APP_ENV') !== 'local') {
-            URL::forceScheme('https');
-        }
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::USER_MENU_BEFORE,
+            fn (): string => Blade::render('@livewire(\'set-locale\')'),
+        );
     }
 }

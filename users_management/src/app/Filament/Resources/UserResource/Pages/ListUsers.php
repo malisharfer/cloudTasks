@@ -2,14 +2,12 @@
 
 namespace App\Filament\Resources\UserResource\Pages;
 
+use App\Exports\ExportUser;
 use App\Filament\Resources\UserResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ListRecords;
 use Filament\Actions\Action;
-use App\Models\User;
-use App\Services\GetUsers;
-use App\Enums\Users\Role;
-
+use Filament\Resources\Pages\ListRecords;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ListUsers extends ListRecords
 {
@@ -17,8 +15,8 @@ class ListUsers extends ListRecords
 
     public function mount(): void
     {
-        $user = auth()->user();
-        abort_unless($user->role === Role::Admin , 401);
+        $user = UserResource::getUserFromAzure();
+        abort_unless($user->role === 'Admin', 401);
     }
 
     public function getHeaderActions(): array
@@ -27,7 +25,13 @@ class ListUsers extends ListRecords
             // Actions\CreateAction::make(),
             Action::make('switchView')
                 ->label(__('change view'))
-                ->url(fn () =>request()->input('viewType', 'Table') === 'Table' ?  url()->current() . '?viewType=Card': url()->current() . '?viewType=Table')
+                ->url(fn () => request()->input('viewType', 'Table') === 'Table' ? url()->current().'?viewType=Card' : url()->current().'?viewType=Table'),
+            Action::make(('export'))
+                ->label(__('download'))
+                ->action(function () {
+                    return Excel::download(new ExportUser, 'Users.xlsx');
+                })
+                ->icon('bi-download'),
         ];
     }
 }

@@ -3,9 +3,9 @@
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Route;
+use Laravel\Socialite\Facades\Socialite;
+use Tests\TestCase;
 
 class AuthTest extends TestCase
 {
@@ -14,7 +14,7 @@ class AuthTest extends TestCase
     public function test_custom_login_redirects_to_azure_auth()
     {
         Socialite::shouldReceive('driver->redirect')->once();
-        $response = $this->get('/login');
+        $response = $this->get('/admin/login');
         $response->assertStatus(200);
     }
 
@@ -29,5 +29,5 @@ class AuthTest extends TestCase
         });
         $response = $this->get('/auth/callback');
         $response->assertStatus(200)->assertSee('auth callback');
-    }   
+    }
 }

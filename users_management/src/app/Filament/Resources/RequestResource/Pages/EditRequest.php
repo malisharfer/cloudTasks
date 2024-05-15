@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\RequestResource\Pages;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Filament\Resources\RequestResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;

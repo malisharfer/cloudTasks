@@ -1,11 +1,9 @@
 <?php
- 
+
 namespace App\Http\Responses;
- 
+
 use Filament\Http\Responses\Auth\Contracts\LogoutResponse as Responsable;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Route;
-use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
 class LogoutResponse implements Responsable
@@ -14,6 +12,7 @@ class LogoutResponse implements Responsable
     {
         Auth::guard()->logout();
         $request->session()->flush();
-        return redirect('/');
+
+        return redirect('/admin');
     }
 }

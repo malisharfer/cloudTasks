@@ -14,9 +14,9 @@ return [
     */
 
     'default' => env('MAIL_MAILER', 'microsoft-graph'),
-    
+
     'email_suffix' => env('MAIL_SUFFIX'),
-    
+
     /*
     |--------------------------------------------------------------------------
     | Mailer Configurations

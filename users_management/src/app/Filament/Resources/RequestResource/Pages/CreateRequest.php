@@ -3,11 +3,8 @@
 namespace App\Filament\Resources\RequestResource\Pages;
 
 use App\Filament\Resources\RequestResource;
-use Filament\Actions;
+use App\Filament\Resources\UserResource;
 use Filament\Resources\Pages\CreateRecord;
-use App\Models\User;
-use App\Services\GetUsers;
-
 
 class CreateRequest extends CreateRecord
 {
@@ -15,9 +12,10 @@ class CreateRequest extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $username = auth()->user()->name;
+        $username = UserResource::getUserFromAzure()->name;
         $data['submit_username'] = $username;
         $data['status'] = 'new';
+
         return $data;
     }
 

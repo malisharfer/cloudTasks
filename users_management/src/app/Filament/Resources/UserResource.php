@@ -3,72 +3,75 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\UserResource\Pages;
-use App\Filament\Resources\UserResource\RelationManagers;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables\Columns\Layout\Split;
-use Filament\Tables\Columns\Layout\Grid;
-use Filament\Tables\Columns\Layout\Stack;
-use Filament\Tables\Columns\Layout\Panel;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
 use Filament\Tables;
+use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Validation\Rule;
-use Livewire\Component;
-use Filament\Tables\Actions\Action;
-use Illuminate\Http\Request;
-use App\Services\GetUsers;
-use App\Enums\Users\Role;
-use App\Enums\Options;
 
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-users';
 
     public static function shouldRegisterNavigation(): bool
     {
-        $user = auth()->user();
-        return $user->role === Role::Admin;
+        $user = self::getUserFromAzure();
+
+        return $user->role === 'Admin';
+    }
+
+    public static function getUserFromAzure()
+    {
+        return auth()->user();
     }
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                TextInput::make('name')
+                Forms\Components\TextInput::make('name')
                     ->label(__('name'))
                     ->required(),
-                TextInput::make('email')
+                Forms\Components\TextInput::make('phone')
+                    ->label(__('phone'))
+                    ->tel()
+                    ->maxLength(10)
+                    ->required(),
+                Forms\Components\Select::make('role')
+                    ->options([
+                        'Admin' => __('Admin'),
+                        'User' => __('User'),
+                    ])
+                    ->label(__('role'))
+                    ->required(),
+                Forms\Components\TextInput::make('email')
                     ->label(__('email'))
                     ->email()
                     ->unique(ignoreRecord: true)
                     ->required(),
-                Select::make('role')
-                    ->options(Options::getOptions(Role::cases()))
-                    ->label(__('role'))
+                Forms\Components\TextInput::make('password')
+                    ->label(__('password'))
+                    ->password()
                     ->required(),
-                    ]);
+            ]);
     }
 
     public static function table(Table $table): Table
     {
         $viewType = request()->input('viewType', 'Table');
 
-        if ($viewType === 'Card'){
+        if ($viewType === 'Card') {
             $table = $table->contentGrid(['md' => 2, 'xl' => 3])->columns(
                 array_merge(self::commonColumns(), [Split::make([])])
             );
-        }
-        else{
+        } else {
             $table = $table->striped()->columns(self::commonColumns());
         }
+
         return $table
             ->filters([
             ])
@@ -77,7 +80,7 @@ class UserResource extends Resource
             ])
             ->bulkActions([
                 // Tables\Actions\BulkActionGroup::make([
-                    // Tables\Actions\DeleteBulkAction::make(),
+                // Tables\Actions\DeleteBulkAction::make(),
                 // ]),
             ]);
     }
@@ -85,9 +88,23 @@ class UserResource extends Resource
     public static function commonColumns(): array
     {
         return [
-            TextColumn::make('name')->label(__('Name'))->sortable()->searchable(),
-            TextColumn::make('role')->label(__('Role'))->sortable()->searchable(),
-            TextColumn::make('email')->label(__('Email'))->sortable()->searchable()->copyable()->copyMessage(__('Email address copied'))->copyMessageDuration(1500),
+            Tables\Columns\TextColumn::make('name')
+                ->label(__('name'))
+                ->searchable()
+                ->sortable(),
+            Tables\Columns\TextColumn::make('phone')
+                ->label(__('phone'))
+                ->searchable(),
+            Tables\Columns\TextColumn::make('role')
+                ->label(__('role'))
+                ->searchable()
+                ->sortable(),
+            Tables\Columns\TextColumn::make('email')
+                ->label(__('email'))
+                ->copyable()
+                ->copyMessage('Email address copied')
+                ->copyMessageDuration(1500)
+                ->searchable(),
         ];
     }
 
@@ -113,6 +130,6 @@ class UserResource extends Resource
 
     public static function getPluralModelLabel(): string
     {
-        return __('users');         
+        return __('users');
     }
 }

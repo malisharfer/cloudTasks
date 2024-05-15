@@ -2,7 +2,7 @@
 
 namespace App\Enums\Requests;
 
-enum ServiceType: string 
+enum ServiceType: string
 {
     case Regular = 'regular';
     case Reserve = 'reserve';

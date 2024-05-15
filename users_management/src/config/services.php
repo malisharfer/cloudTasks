@@ -31,13 +31,10 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-    'azure' => [    
+    'azure' => [
         'client_id' => env('AZURE_CLIENT_ID'),
         'client_secret' => env('AZURE_CLIENT_SECRET'),
         'redirect' => env('AZURE_REDIRECT_URI'),
         'tenant' => env('AZURE_TENANT_ID'),
-        'graph_url' => env('GRAPH_URL'),
-        'group_id_clients' => env('AZURE_GROUP_ID_CLIENTS'),
-        'group_id_admins' => env('AZURE_GROUP_ID_ADMINS'),
-      ],
+    ],
 ];

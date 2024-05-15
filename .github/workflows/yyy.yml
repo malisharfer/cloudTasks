@@ -9,8 +9,6 @@ permissions:
   packages: write
 
 env:
-  APP_NAME: wa-users-management
-  RG_NAME: rg-users-managemet
   WORKING_DIR: users_management
 
 jobs:
@@ -56,4 +54,5 @@ jobs:
           provenance: false
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ steps.meta.outputs.tags }}
-          file: ./${{ env.WORKING_DIR }}/Dockerfile
+          file: ./${{ env.WORKING_DIR }}/Dockerfile.
+          

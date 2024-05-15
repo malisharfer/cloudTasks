@@ -2,10 +2,10 @@
 
 namespace Database\Factories;
 
-use Illuminate\Database\Eloquent\Factories\Factory;
-use App\Enums\Requests\Status;
-use App\Enums\Requests\ServiceType;
 use App\Enums\Requests\AuthenticationType;
+use App\Enums\Requests\ServiceType;
+use App\Enums\Requests\Status;
+use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Request>
@@ -24,7 +24,7 @@ class RequestFactory extends Factory
             'identity' => $this->get_identity(),
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
-            'phone' => '05' . fake()->randomNumber(8, true),
+            'phone' => '05'.fake()->randomNumber(8, true),
             'email' => fake()->email(),
             'unit' => fake()->word(5),
             'sub' => fake()->word(5),
@@ -38,9 +38,10 @@ class RequestFactory extends Factory
 
     private function get_username()
     {
-        $requester_name = explode(" ", fake()->name());
+        $requester_name = explode(' ', fake()->name());
         $requester_end_ID = fake()->randomNumber(6, true);
-        return substr($requester_name[0], 0, 1) . substr($requester_name[1], 0, 1) . $requester_end_ID;
+
+        return substr($requester_name[0], 0, 1).substr($requester_name[1], 0, 1).$requester_end_ID;
     }
 
     private function get_identity()
@@ -48,9 +49,10 @@ class RequestFactory extends Factory
         $start_id = (string) fake()->unique()->randomNumber(8, true);
         $sum = 0;
         for ($i = 0; $i < 8; $i++) {
-            $digit = (int)$start_id[$i];
+            $digit = (int) $start_id[$i];
             $sum += ($i % 2 === 0) ? $digit : array_sum(str_split($digit * 2));
         }
-        return $start_id . ((10 - ($sum % 10))  % 10);
+
+        return $start_id.((10 - ($sum % 10)) % 10);
     }
 }

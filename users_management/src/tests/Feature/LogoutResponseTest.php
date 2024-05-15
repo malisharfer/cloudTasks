@@ -4,13 +4,13 @@ namespace Tests\Feature;
 
 namespace Tests\Unit\Http\Middleware;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use App\Http\Responses\LogoutResponse;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Mockery;
+use Tests\TestCase;
 
 class LogoutResponseTest extends TestCase
 {

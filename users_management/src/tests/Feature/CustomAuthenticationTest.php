@@ -4,13 +4,13 @@ namespace Tests\Feature;
 
 namespace Tests\Unit\Http\Middleware;
 
-use Tests\TestCase;
 use App\Http\Middleware\CustomAuthentication;
-use Illuminate\Http\Request;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Contracts\Auth\Factory as AuthFactory;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Contracts\Auth\Factory as AuthFactory;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Mockery;
+use Tests\TestCase;
 
 class CustomAuthenticationTest extends TestCase
 {
@@ -22,16 +22,18 @@ class CustomAuthenticationTest extends TestCase
         $this->expectExceptionMessage('Unauthenticated.');
 
         $guard = Mockery::mock(Guard::class);
-        $guard->shouldReceive('check')->andReturn(false); 
+        $guard->shouldReceive('check')->andReturn(false);
 
         $auth = Mockery::mock(AuthFactory::class);
         $auth->shouldReceive('guard')->andReturn($guard);
-        
+
         $middleware = new CustomAuthentication($auth);
         $request = Request::create('/test');
-        
-        $next = function ($request) { return 'Next middleware called'; };
-        
+
+        $next = function ($request) {
+            return 'Next middleware called';
+        };
+
         $middleware->handle($request, $next);
-    } 
+    }
 }

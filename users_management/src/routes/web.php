@@ -1,12 +1,9 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Filament\Resources\RequestResource\Pages\ExportRequests;
-use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\CustomLoginController;
-
+use Illuminate\Support\Facades\Route;
+use Laravel\Socialite\Facades\Socialite;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,10 +16,22 @@ use App\Http\Controllers\CustomLoginController;
 |
 */
 
-Route::get('requests/export', ExportRequests::class)->name('requests.export');
+Route::get('/', function () {
+    return view('welcome');
+});
 
-Route::get('/login', function () {
+Route::get('/admin/login', function () {
     return Socialite::driver('azure')->redirect();
 })->name('customLogin');
 
-Route::get('/auth/callback',[CustomLoginController::class, 'UserFromLogin'] );
+Route::get('/auth/callback', function () {
+    $user = Socialite::driver('azure')->stateless()->user();
+    $user = User::updateOrCreate([
+        'name' => $user->name,
+        'email' => $user->email,
+        'role' => 'Admin',
+    ], );
+    Auth::login($user);
+
+    return redirect('/admin');
+});
