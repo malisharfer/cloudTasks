@@ -1,11 +1,11 @@
 name: '🌍 Terraform Automation'
 
 on:
-  workflow_dispatch
-    # inputs:
-    #   folderName:
-    #     description: "folder name"
-    #     required: true
+  workflow_dispatch:
+    inputs:
+      folderName:
+        description: "folder name"
+        required: true
 
 env:
   TF_VAR_subscription_id: ${{secrets.SUBSCRIPTION_ID}}
