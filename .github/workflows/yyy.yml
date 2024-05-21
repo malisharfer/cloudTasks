@@ -9,7 +9,7 @@ permissions:
   packages: write
 
 env:
-  WORKING_DIR: users_management
+  WORKING_DIR: users_management_event
 
 jobs:
   build:
