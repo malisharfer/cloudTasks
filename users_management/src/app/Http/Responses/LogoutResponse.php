@@ -13,6 +13,6 @@ class LogoutResponse implements Responsable
         Auth::guard()->logout();
         $request->session()->flush();
 
-        return redirect('/');
+        return redirect('/login');
     }
 }
