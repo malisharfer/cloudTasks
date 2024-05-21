@@ -27,9 +27,7 @@ class Request extends Model
 
     public function fullname(): Attribute
     {
-        return Attribute::make(
-            get: fn () => $this->last_name.' '.$this->first_name,
-        );
+        return Attribute::get(fn () => $this->last_name.', '.$this->first_name);
     }
 
     public function updateStatus(Status $status)
@@ -62,7 +60,6 @@ class Request extends Model
     ];
 
     protected $attributes = [
-        'validity' => 365,
         'status' => Status::New,
     ];
 
@@ -76,7 +73,7 @@ class Request extends Model
         'sub',
         'authentication_type',
         'service_type',
-        'validity',
+        'expiration_date',
         'description',
     ];
 }

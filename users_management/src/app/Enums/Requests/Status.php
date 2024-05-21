@@ -23,8 +23,8 @@ enum Status: string implements HasColor, HasIcon
     public function getIcon(): string
     {
         return match ($this) {
-            self::New => 'fluentui-status-16',
-            self::Approved => 'fluentui-approvals-app-16-o',
+            self::New => 'heroicon-o-plus-circle',
+            self::Approved => 'heroicon-o-check-circle',
             self::Denied => 'heroicon-o-x-circle',
         };
     }

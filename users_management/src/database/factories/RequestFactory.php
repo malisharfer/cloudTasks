@@ -30,7 +30,7 @@ class RequestFactory extends Factory
             'sub' => fake()->word(5),
             'authentication_type' => fake()->randomElement(AuthenticationType::cases()),
             'service_type' => fake()->randomElement(ServiceType::cases()),
-            'validity' => fake()->randomNumber(5, false),
+            'expiration_date' => now()->addDay(fake()->randomDigitNotNull())->format('Y-m-d'),
             'status' => Status::New,
             'description' => fake()->sentence(5),
         ];

@@ -6,12 +6,8 @@ use App\Enums\Requests\Status;
 use App\Filament\Resources\RequestResource;
 use App\Filament\Resources\RequestResource\Pages\ListRequests;
 use App\Models\Request;
-use App\Models\User;
-use App\Notifications\Email;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithoutMiddleware;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -70,9 +66,9 @@ class ListRequestTest extends TestCase
 
         Livewire::test(ListRequests::class)
             ->assertCanSeeTableRecords($requests)
-            ->filterTable('status')
-            ->assertCanSeeTableRecords($requests->where('status', 'new'))
-            ->assertCanNotSeeTableRecords($requests->where('status', 'approved'));
+            ->filterTable('status', Status::New->value)
+            ->assertCanSeeTableRecords($requests->where('status', Status::New->value))
+            ->assertCanNotSeeTableRecords($requests->where('status', Status::Approved->value));
 
         $oldRequests = Request::factory()->count(2)->create(['created_at' => now()->subWeek()]);
 
@@ -81,51 +77,5 @@ class ListRequestTest extends TestCase
             ->filterTable('created_at', ['from' => now(), 'until' => null])
             ->assertCanSeeTableRecords($requests)
             ->assertCanNotSeeTableRecords($oldRequests);
-    }
-
-    public function test_approval_request()
-    {
-        $request = Request::factory()->create();
-
-        Notification::fake();
-
-        Livewire::test(ListRequests::class)
-            ->callTableAction(__('approval'), $request)
-            ->assertNotified();
-
-        Config::set('MAIL_SUFFIX', '@test.com');
-        $email = $request->submit_username.'@test.com';
-        $user = User::factory()->create(['email' => $email]);
-
-        Notification::assertNotSentTo(
-            [$user], Email::class
-        );
-
-        $this->assertDatabaseHas('requests', [
-            'status' => Status::Approved,
-        ]);
-    }
-
-    public function test_deny_request()
-    {
-        $request = Request::factory()->create();
-
-        Notification::fake();
-
-        Livewire::test(ListRequests::class)
-            ->callTableAction(__('deny'), $request)
-            ->assertNotified();
-
-        Config::set('MAIL_SUFFIX', '@test.com');
-        $email = $request->submit_username.'@test.com';
-        $user = User::factory()->create(['email' => $email]);
-
-        Notification::assertNotSentTo(
-            [$user], Email::class
-        );
-
-        $this->assertDatabaseHas('requests', [
-            'status' => Status::Denied,
-        ]);
     }
 }

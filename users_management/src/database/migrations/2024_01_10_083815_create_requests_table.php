@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('sub');
             $table->string('authentication_type');
             $table->string('service_type');
-            $table->integer('validity');
+            $table->date('expiration_date');
             $table->string('status');
             $table->string('description');
             $table->timestamps();

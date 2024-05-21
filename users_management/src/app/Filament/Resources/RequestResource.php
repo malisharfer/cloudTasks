@@ -10,6 +10,7 @@ use App\Filament\Filters\DateRangeFilter;
 use App\Filament\Resources\RequestResource\Pages;
 use App\Models\Request;
 use App\Rules\Identity;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -88,12 +89,10 @@ class RequestResource extends Resource
                     ->label(__('service type'))
                     ->options(Options::getOptions(ServiceType::cases()))
                     ->required(),
-                TextInput::make('validity')
-                    ->label(__('validity required'))
-                    ->required()
-                    ->numeric()
-                    ->default(365)
-                    ->maxLength(5),
+                DatePicker::make('expiration_date')
+                    ->label(__('expiration date'))
+                    ->minDate(now())
+                    ->hint(__('Default for service type regular: 1 year, for the rest: 6 months')),
                 Textarea::make('description')
                     ->label(__('description'))
                     ->required()
@@ -129,17 +128,19 @@ class RequestResource extends Resource
                 ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
-                    Tables\Actions\Action::make(__('approval'))
+                    Tables\Actions\Action::make('approval')
+                        ->label(__('approval'))
                         ->action(fn (Request $record) => self::updateStatusAction($record, Status::Approved))
-                        ->icon('fluentui-approvals-app-16-o')
+                        ->icon('heroicon-o-check-circle')
                         ->visible(UserResource::getUserFromAzure()->role === 'Admin')
-                        ->disabled(fn (Request $record) => $record->status === Status::Approved)
+                        ->disabled(fn (Request $record) => $record->status === Status::Approved || $record->status === Status::Denied)
                         ->color('success'),
-                    Tables\Actions\Action::make(__('deny'))
+                    Tables\Actions\Action::make('deny')
+                        ->label(__('deny'))
                         ->action(fn (Request $record) => self::updateStatusAction($record, Status::Denied))
                         ->icon('heroicon-o-x-circle')
                         ->visible(UserResource::getUserFromAzure()->role === 'Admin')
-                        ->disabled(fn (Request $record) => $record->status === Status::Denied)
+                        ->disabled(fn (Request $record) => $record->status === Status::Approved || $record->status === Status::Denied)
                         ->color('danger'),
                     Tables\Actions\DeleteAction::make(),
                 ])->tooltip(__('Actions')),

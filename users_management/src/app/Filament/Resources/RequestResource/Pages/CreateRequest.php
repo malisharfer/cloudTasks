@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\RequestResource\Pages;
 
+use App\Enums\Requests\ServiceType;
 use App\Filament\Resources\RequestResource;
 use App\Filament\Resources\UserResource;
 use Filament\Resources\Pages\CreateRecord;
@@ -15,6 +16,10 @@ class CreateRequest extends CreateRecord
         $username = UserResource::getUserFromAzure()->name;
         $data['submit_username'] = $username;
         $data['status'] = 'new';
+        if (! $data['expiration_date']) {
+            $data['expiration_date'] = $data['service_type'] === ServiceType::Regular->value ?
+                now()->addYear() : now()->addMonth(6);
+        }
 
         return $data;
     }

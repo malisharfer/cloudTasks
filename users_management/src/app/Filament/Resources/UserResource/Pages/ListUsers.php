@@ -31,7 +31,7 @@ class ListUsers extends ListRecords
                 ->action(function () {
                     return Excel::download(new ExportUser, 'Users.xlsx');
                 })
-                ->icon('bi-download'),
+                ->icon('heroicon-o-arrow-down-tray'),
         ];
     }
 }

@@ -46,7 +46,7 @@ class EditRequestTest extends TestCase
                 'sub' => $newData->sub,
                 'authentication_type' => $newData->authentication_type,
                 'service_type' => $newData->service_type,
-                'validity' => $newData->validity,
+                'expiration_date' => $newData->expiration_date,
                 'description' => $newData->description,
             ])
             ->call('save')

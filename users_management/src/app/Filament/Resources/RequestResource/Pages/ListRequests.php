@@ -27,7 +27,7 @@ class ListRequests extends ListRecords
                     return Excel::download(new ExportRequests, 'Requests.xlsx');
                 })
                 ->visible(auth()->user()->role === 'Admin')
-                ->icon('bi-download'),
+                ->icon('heroicon-o-arrow-down-tray'),
         ];
     }
 }
