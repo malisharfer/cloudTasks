@@ -31,5 +31,10 @@ class AppServiceProvider extends ServiceProvider
             PanelsRenderHook::USER_MENU_BEFORE,
             fn (): string => Blade::render('@livewire(\'set-locale\')'),
         );
+
+        if(env('APP_ENV') !== 'local') {
+            URL::forceScheme('https');
+        }
+
     }
 }
