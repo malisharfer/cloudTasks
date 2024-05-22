@@ -15,9 +15,6 @@ use Laravel\Socialite\Facades\Socialite;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
 
 Route::get('/login', function () {
     return Socialite::driver('azure')->redirect();
