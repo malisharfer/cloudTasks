@@ -9,7 +9,7 @@ permissions:
   packages: write
 
 env:
-  WORKING_DIR: users_management_event
+  WORKING_DIR: users_management_for_pi
 
 jobs:
   build:
@@ -55,5 +55,4 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ steps.meta.outputs.tags }}
           file: ./${{ env.WORKING_DIR }}/Dockerfile
-          
           
