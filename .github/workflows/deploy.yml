@@ -1,7 +1,9 @@
 name: ⚙️ Build and deploy to ACR 
 
 on:
-  workflow_dispatch
+  push:
+    branches:
+      - feature/image-scanning
 
 permissions:
   contents: read
