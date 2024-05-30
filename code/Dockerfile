@@ -11,14 +11,13 @@
 # COPY . .
 # CMD [ "python", "app.py" ]
 
-
-
-
 FROM python:3.11-alpine
 WORKDIR /python-docker
 COPY requirements.txt requirements.txt
-RUN pip install .
 RUN pip install -r requirements.txt
 EXPOSE 8080 
 COPY . .
-CMD [ "python", "app.py" ]
+CMD [ "python" , "app.py" ]
+
+
+
