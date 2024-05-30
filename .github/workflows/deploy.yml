@@ -1,13 +1,16 @@
 name: 🚀 Build and deploy to Web-App
 
-on: push
+on:
+  push:
+    branches:
+      - feature/image-scanning
 
 permissions:
   contents: read
   packages: write
 
 env:
-  WORKING_DIR: app
+  WORKING_DIR: code
 
 jobs:
   build:
