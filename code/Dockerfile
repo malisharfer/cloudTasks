@@ -12,10 +12,10 @@
 # COPY . .
 # CMD [ "python", "app.py"]
 
-# FROM python:latest
-# # WORKDIR /python-docker
-# # RUN pip install -r requirements.txt
-# # RUN az login
-# # EXPOSE 8080 
-# # COPY . .
-# # CMD [ "python" , "app.py" ]
+FROM python:latest
+WORKDIR /python-docker
+RUN pip install -r requirements.txt
+RUN az login
+EXPOSE 8080 
+COPY . .
+CMD [ "python" , "app.py" ]
