@@ -10,7 +10,7 @@ permissions:
   packages: write
 
 env:
-  WORKING_DIR: code
+  WORKING_DIR: image_scanning
 
 jobs:
   build:
@@ -39,7 +39,7 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-          
+
       - name: 📃 Docker metadata
         id: meta
         uses: docker/metadata-action@v5
