@@ -51,7 +51,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images:  ghcr.io/${{ github.repository }}/${{ env.WORKING_DIR }
+          images:  ghcr.io/${{ github.repository }}/${{ env.WORKING_DIR }}
           flavor: |
             latest=false
           tags: |
