@@ -3,5 +3,5 @@ waitress
 azure-cli
 azure-identity
 azure-mgmt-resourcegraph
-azure-identity
 azure-storage-queue
+python-dotenv
