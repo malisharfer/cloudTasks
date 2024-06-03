@@ -42,10 +42,10 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🔑 Login to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      # - name: 🔑 Login to Azure
+      #   uses: azure/login@v1
+      #   with:
+      #     creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: 📃 Docker metadata
         id: meta
@@ -70,6 +70,5 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           file: ./${{ env.WORKING_DIR }}/Dockerfile
           secrets: |
-            "AZURE_TENANT_ID=${{ secrets.TRY_SECRET }}" ,
-            "AZURE_CLIENT_ID=${{ secrets.TRY_SECRET }}" ,
-            "AZURE_CLIENT_SECRET=${{ secrets.TRY_SECRET }}"
+            "AZURE_TENANT_ID=${{ secrets.TRY_SECRET }}" 
+
