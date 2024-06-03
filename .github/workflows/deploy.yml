@@ -28,19 +28,19 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       
-      - name: 🗝️ Login to Container Registry
-        uses: azure/docker-login@v1
-        with:
-          login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
-          username: ${{ secrets.AZ_USERNAME }}
-          password: ${{ secrets.AZ_PASSWORD }}
-
-      # - name: 🔑 Login to GHCR
-      #   uses: docker/login-action@v3
+      # - name: 🗝️ Login to Container Registry
+      #   uses: azure/docker-login@v1
       #   with:
-      #     registry: ghcr.io
-      #     username: ${{ github.repository_owner }}
-      #     password: ${{ secrets.GITHUB_TOKEN }}
+      #     login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+      #     username: ${{ secrets.AZ_USERNAME }}
+      #     password: ${{ secrets.AZ_PASSWORD }}
+
+      - name: 🔑 Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 📃 Docker metadata
         id: meta
@@ -53,7 +53,6 @@ jobs:
             type=raw,value=latest
             type=semver,pattern=v{{version}}
             type=semver,pattern=v{{major}}.{{minor}}
-
       - name: 🐳 Docker Build & Push
         uses: docker/build-push-action@v5
         id: docker_build
@@ -68,4 +67,3 @@ jobs:
             "AZURE_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}"
             "AZURE_CLIENT_SECRET=${{ secrets.AZURE_CLIENT_SECRET }}"
             "AZURE_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}"  
-
