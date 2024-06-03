@@ -68,5 +68,3 @@ jobs:
             "AZURE_TENANT_ID=${{ secrets.TRY_SECRET }}" 
             "AZURE_CLIENT_ID=${{ secrets.TRY_SECRET }}" ,
             "AZURE_CLIENT_SECRET=${{ secrets.TRY_SECRET }}"
-
-
