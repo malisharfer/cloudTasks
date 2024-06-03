@@ -69,4 +69,9 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ steps.meta.outputs.tags }}
           file: ./${{ env.WORKING_DIR }}/Dockerfile
+          secrets: |
+            "AZURE_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" 
+            "AZURE_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}"
+            "AZURE_CLIENT_SECRET"=${{ secrets.AZURE_CLIENT_SECRET }}"
+
           
