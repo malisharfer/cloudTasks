@@ -1,7 +1,7 @@
 from flask import Flask ,request
 from waitress import serve
-app = Flask(__name__)
 from project.image_scanning import run_resource_graph_query
+app = Flask(__name__)
 
 @app.route("/image_push_acr", methods=["POST"])
 def add_new_user():
