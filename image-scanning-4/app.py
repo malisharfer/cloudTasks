@@ -9,11 +9,9 @@ app = Flask(__name__)
 def send_to_image_scanning():
     response = request.get_json()
     # run_resource_graph_query(response["rg_name"], response["digest"], response["date"])
-    send_to_queue(response)
+    send_to_queue("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy")
     return response
 
 
 if __name__ == "__main__":
     serve(app, host="0.0.0.0", port=8080)
-
-
