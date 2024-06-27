@@ -50,6 +50,8 @@ def send_to_queue(json_message):
            message_encode_policy=TextBase64EncodePolicy(),
         )
         # json_message["dateOfPush"] = date
+
+        
         queue_client.send_message(json.dumps(json_message))
     except Exception as ex:
         raise Exception(ex)
