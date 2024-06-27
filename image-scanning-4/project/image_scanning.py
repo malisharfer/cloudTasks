@@ -42,14 +42,14 @@ def set_resource_graph_query(resource_group_name, image_digest):
     return query
 
 
-def send_to_queue(connection_string, queue_name, json_message, date):
+def send_to_queue(json_message):
     try:
         queue_client = QueueClient.from_connection_string(
-            connection_string,
-            queue_name,
-            message_encode_policy=TextBase64EncodePolicy(),
+           config.config_variables.connection_string,
+           config.config_variables.queue_name,
+           message_encode_policy=TextBase64EncodePolicy(),
         )
-        json_message["dateOfPush"] = date
+        # json_message["dateOfPush"] = date
         queue_client.send_message(json.dumps(json_message))
     except Exception as ex:
         raise Exception(ex)
