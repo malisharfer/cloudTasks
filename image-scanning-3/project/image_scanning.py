@@ -49,16 +49,7 @@ def send_to_queue(connection_string, queue_name, json_message, date):
             queue_name,
             message_encode_policy=TextBase64EncodePolicy(),
         )
-        # json_message["dateOfPush"] = date
+        json_message["dateOfPush"] = date
         queue_client.send_message(json.dumps(json_message))
     except Exception as ex:
         raise Exception(ex)
-
-
-def try_get_on_pod():
-    send_to_queue(
-        config.config_variables.connection_string,
-        config.config_variables.queue_name,
-        "1234567879/98745784547/984567/89457/7894566456456458797897898778978///*",
-        "01/02/2023",
-    )
