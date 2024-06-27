@@ -9,7 +9,7 @@ app = Flask(__name__)
 def send_to_image_scanning():
     response = request.get_json()
     # run_resource_graph_query(response["rg_name"], response["digest"], response["date"])
-    send_to_queue("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy")
+    send_to_queue("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy")
     return response
 
 
