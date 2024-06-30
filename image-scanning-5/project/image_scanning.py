@@ -51,7 +51,6 @@ def send_to_queue(json_message):
         )
         # json_message["dateOfPush"] = date
 
-        
-        queue_client.send_message(json.dumps(json_message))
+        queue_client.send_message({"aaa":"bbb"})
     except Exception as ex:
         raise Exception(ex)
