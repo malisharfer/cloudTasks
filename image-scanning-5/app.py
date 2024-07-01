@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 @app.route("/image_push_acr")
 def send_to_image_scanning11111():
-    send_to_queue()
+    # send_to_queue()
     return "jjjjjj",200
     # response = request.get_json()
     # run_resource_graph_query(response["rg_name"], response["digest"], response["date"])

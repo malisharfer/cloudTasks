@@ -10,7 +10,7 @@ permissions:
   packages: write
 
 env:
-  WORKING_DIR: image-scanning-deploy
+  WORKING_DIR: image-scanning-5
 
 jobs:
   build:
