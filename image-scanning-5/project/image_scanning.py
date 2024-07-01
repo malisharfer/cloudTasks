@@ -42,7 +42,7 @@ def set_resource_graph_query(resource_group_name, image_digest):
     return query
 
 
-def send_to_queue(connection_string, queue_name, json_message, date):
+def send_to_queue():
     try:
         queue_client = QueueClient.from_connection_string(
             config.config_variables.connection_string,
