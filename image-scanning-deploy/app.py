@@ -7,9 +7,9 @@ app = Flask(__name__)
 
 @app.route("/image_push_acr", methods=["POST"])
 def send_to_image_scanning():
-    data = request.json 
-    print("Received webhook data:", data)
-    send_to_queue(data)
+    # data = request.json 
+    # print("Received webhook data:", data)
+    # send_to_queue(data)
     return jsonify({'message': 'Webhook received successfully'}), 200
     # response = request.get_json()
     # # run_resource_graph_query(response["rg_name"], response["digest"], response["date"])
