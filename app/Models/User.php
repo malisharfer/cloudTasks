@@ -38,14 +38,17 @@ class User extends Authenticatable implements HasName
 
     public function displayName(): Attribute
     {
-        return Attribute::get(fn () => $this->last_name.', '.$this->first_name);
+        return Attribute::get(fn() => $this->last_name . ', ' . $this->first_name);
     }
 
     public function getFilamentName(): string
     {
         return $this->displayName;
     }
-
+    public function viewAny(User $user): bool
+    {
+        return $user->hasRole('manager');
+    }
     public function canAccessPanel(Panel $panel): bool
     {
         return true;
