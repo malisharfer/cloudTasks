@@ -28,11 +28,11 @@ class CreateTeam extends CreateRecord
         $this->departments = Department::where('commander_id', $this->data['commander_id'])->get();
         if ($this->teams->isNotEmpty() || $this->departments->isNotEmpty()) {
             Notification::make()
-                ->title('Save team')
+                ->title(__('Save team'))
                 ->persistent()
-                ->body('The commander you selected is already registered as a commander. His selection will leave the '.($this->teams->isNotEmpty() ? 'team' : 'department').' without a commander. Are you sure?')
+                ->body(__('The commander you selected is already registered as a commander. His selection will leave his soldiers without a commander. Are you sure?'))
                 ->actions([
-                    Action::make('view '.($this->teams->isNotEmpty() ? 'team' : 'department'))
+                    Action::make(__('View ').($this->teams->isNotEmpty() ? __('Team') : __('Department')))
                         ->button()
                         ->url(
                             fn () => $this->teams->isNotEmpty() ?
@@ -40,10 +40,10 @@ class CreateTeam extends CreateRecord
                             route('filament.app.resources.departments.index', ['commander_id' => $this->data['commander_id']])
 
                         ),
-                    Action::make('confirm')
+                    Action::make(__('Confirm'))
                         ->button()
                         ->emit('confirmCreate'),
-                    Action::make('cancel')
+                    Action::make(__('Cancel'))
                         ->button()
                         ->close(),
                 ])

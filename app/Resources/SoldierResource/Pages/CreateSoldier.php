@@ -52,17 +52,21 @@ class CreateSoldier extends CreateRecord
     {
         return [
             Step::make('Personal Information')
+                ->label(__('Personal Information'))
                 ->schema([SoldierResource::personalDetails()]),
             Step::make('Soldier details')
+                ->label(__('Soldier details'))
                 ->schema([
                     Section::make()->schema(SoldierResource::soldierDetails())->columns(),
                 ]),
             Step::make('Reserve days')
+                ->label(__('Reserve dates'))
                 ->visible(fn (Get $get) => $get('is_reservist'))
                 ->schema([
                     Section::make()->schema(SoldierResource::reserveDays())->columns(),
                 ]),
             Step::make('Additional settings')
+                ->label(__('Additional settings'))
                 ->schema([
                     Section::make()->schema(SoldierResource::constraints())->columns(),
                 ]),

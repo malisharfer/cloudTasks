@@ -20,6 +20,16 @@ class MyConstraintResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
+    public static function getModelLabel(): string
+    {
+        return __('My Constraint');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('My Constraints');
+    }
+
     public static function canCreate(): bool
     {
         return false;

@@ -35,7 +35,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.REGISTRY_LOGIN_SERVER }}/newspaceMali
+          images: ${{ secrets.REGISTRY_LOGIN_SERVER }}/newspaceMali2
           flavor: |
             latest=false
           tags: |

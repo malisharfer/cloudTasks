@@ -8,7 +8,7 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Select;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Get;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -41,11 +41,12 @@ class Constraint extends Model
             Placeholder::make('')
                 ->content(content: fn (Constraint $constraint) => $constraint->soldier_name)
                 ->inlineLabel(),
-            Select::make('constraint_type')
+            ToggleButtons::make('constraint_type')
                 ->required()
-                ->label('Constraint Name')
+                ->label(__('Constraint Name'))
                 ->reactive()
                 ->live()
+                ->inline()
                 ->options(fn (Get $get) => self::availableOptions($get))
                 ->afterStateUpdated(fn (callable $set, $state, Get $get) => self::updateDates($set, $state, $get)),
             Hidden::make('start_date')->required(),

@@ -2,7 +2,10 @@
 
 namespace App\Filters;
 
-use Filament\Forms;
+use Filament\Forms\Components\Fieldset;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Get;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\Indicator;
@@ -15,55 +18,55 @@ class NumberFilter extends Filter
         parent::setup();
 
         $this->form([
-            Forms\Components\Fieldset::make($this->getlabel())
+            Fieldset::make(__($this->getlabel()))
                 ->schema([
-                    Forms\Components\Select::make('range_condition')
+                    Select::make('range_condition')
                         ->hiddenLabel()
-                        ->placeholder('Select condition')
+                        ->placeholder(__('Select condition'))
                         ->live()
                         ->options([
-                            'equal' => 'equal',
-                            'not_equal' => 'not_equal',
-                            'between' => 'between',
-                            'greater_than' => 'greater_than',
-                            'greater_than_equal' => 'greater_than_equal',
-                            'less_than' => 'less_than',
-                            'less_than_equal' => 'less_than_equal',
+                            'equal' => __('Equal'),
+                            'not_equal' => __('Not equal'),
+                            'between' => __('Between'),
+                            'greater_than' => __('Greater than'),
+                            'greater_than_equal' => __('Greater than equal'),
+                            'less_than' => __('Less than'),
+                            'less_than_equal' => __('Less than equal'),
                         ]),
-                    Forms\Components\TextInput::make('range_equal')
+                    TextInput::make('range_equal')
                         ->hiddenLabel()
                         ->numeric()
                         ->visible(fn (Get $get): bool => $get('range_condition') === 'equal'),
-                    Forms\Components\TextInput::make('range_not_equal')
+                    TextInput::make('range_not_equal')
                         ->hiddenLabel()
                         ->numeric()
                         ->visible(fn (Get $get): bool => $get('range_condition') === 'not_equal'),
-                    Forms\Components\Grid::make([
+                    Grid::make([
                         'default' => 1,
                         'sm' => 2,
                     ])
                         ->schema([
-                            Forms\Components\TextInput::make('range_between_from')
+                            TextInput::make('range_between_from')
                                 ->hiddenLabel()
                                 ->numeric(),
-                            Forms\Components\TextInput::make('range_between_to')
+                            TextInput::make('range_between_to')
                                 ->hiddenLabel()
                                 ->numeric(),
                         ])
                         ->visible(fn (Get $get): bool => $get('range_condition') === 'between'),
-                    Forms\Components\TextInput::make('range_greater_than')
+                    TextInput::make('range_greater_than')
                         ->hiddenLabel()
                         ->numeric()
                         ->visible(fn (Get $get): bool => $get('range_condition') === 'greater_than'),
-                    Forms\Components\TextInput::make('range_greater_than_equal')
+                    TextInput::make('range_greater_than_equal')
                         ->hiddenLabel()
                         ->numeric()
                         ->visible(fn (Get $get): bool => $get('range_condition') === 'greater_than_equal'),
-                    Forms\Components\TextInput::make('range_less_than')
+                    TextInput::make('range_less_than')
                         ->hiddenLabel()
                         ->numeric()
                         ->visible(fn (Get $get): bool => $get('range_condition') === 'less_than'),
-                    Forms\Components\TextInput::make('range_less_than_equal')
+                    TextInput::make('range_less_than_equal')
                         ->hiddenLabel()
                         ->numeric()
                         ->visible(fn (Get $get): bool => $get('range_condition') === 'less_than_equal'),

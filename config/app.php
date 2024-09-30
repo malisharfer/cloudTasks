@@ -1,3 +1,6 @@
 <?php
 
-return [];
+return [
+    'locale' => 'he',
+    'fallback_locale' => 'he',
+];

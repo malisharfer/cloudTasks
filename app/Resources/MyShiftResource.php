@@ -20,6 +20,16 @@ class MyShiftResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
 
+    public static function getModelLabel(): string
+    {
+        return __('My Shift');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('My Shifts');
+    }
+
     public static function table(Table $table): Table
     {
         return $table->paginated(false);

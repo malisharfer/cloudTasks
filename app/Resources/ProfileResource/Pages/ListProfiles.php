@@ -20,4 +20,14 @@ class ListProfiles extends ListRecords
             Actions\CreateAction::make(),
         ];
     }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('My profile');
+    }
+
+    public function getTitle(): string
+    {
+        return __('My profile');
+    }
 }

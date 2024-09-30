@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Section;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -42,11 +43,14 @@ class Shift extends Model
     public static function getSchema(): array
     {
         return [
-            Placeholder::make('')
-                ->content(content: fn (Shift $shift) => $shift->task_name)
-                ->inlineLabel(),
-            DateTimePicker::make('start_date')->required(),
-            DateTimePicker::make('end_date')->required(),
+            Section::make([
+                Placeholder::make('')
+                    ->content(content: fn (Shift $shift) => $shift->task_name)
+                    ->inlineLabel(),
+                DateTimePicker::make('start_date')->required(),
+                DateTimePicker::make('end_date')->required(),
+            ]),
+
         ];
     }
 }

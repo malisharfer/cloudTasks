@@ -16,6 +16,7 @@ COPY --chown=${user}:${user} /artisan artisan
 COPY .env.example .env
 COPY /php.ini "${PHP_INI_DIR}/php.ini"
 
+
 RUN apt-get update \
   && apt-get satisfy -y --no-install-recommends \
     "curl (>=7.88)" \

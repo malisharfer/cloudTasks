@@ -27,11 +27,11 @@ class CreateDepartment extends CreateRecord
         $this->departments = Department::where('commander_id', $this->data['commander_id'])->get();
         if ($this->teams->isNotEmpty() || $this->departments->isNotEmpty()) {
             Notification::make()
-                ->title('Save department')
+                ->title(__('Save department'))
                 ->persistent()
-                ->body('The commander you selected is already registered as a commander. His selection will leave the '.($this->teams->isNotEmpty() ? 'team' : 'department').' without a commander. Are you sure?')
+                ->body(__('The commander you selected is already registered as a commander. His selection will leave his soldiers without a commander. Are you sure?'))
                 ->actions([
-                    Action::make('view '.($this->teams->isNotEmpty() ? 'team' : 'department'))
+                    Action::make($this->teams->isNotEmpty() ? __('View team') : __('View department'))
                         ->button()
                         ->url(
                             fn () => $this->teams->isNotEmpty() ?
@@ -40,9 +40,10 @@ class CreateDepartment extends CreateRecord
 
                         ),
                     Action::make('confirm')
+                        ->label(__('Confirm'))
                         ->button()
                         ->emit('confirmCreate'),
-                    Action::make('cancel')
+                    Action::make(__('Cancel'))
                         ->button()
                         ->close(),
                 ])

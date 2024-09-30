@@ -14,14 +14,14 @@ class Login extends BaseAuth
         return $form
             ->schema([
                 TextInput::make('first_name')
-                    ->label('First name')
+                    ->label(__('First name'))
                     ->required()
                     ->autofocus(),
-                TextInput::make('last_name')
-                    ->label('Last name')
+                TextInput::make(('last_name'))
+                    ->label(__('Last name'))
                     ->required(),
                 TextInput::make('password')
-                    ->label('Personal number')
+                    ->label(__('Personal number'))
                     ->password()
                     ->revealable(filament()->arePasswordsRevealable())
                     ->length(7)

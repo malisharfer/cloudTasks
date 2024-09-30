@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use App\Filament\Auth\Login;
+use App\Filament\Widgets\CalendarWidget;
+use App\Http\Middleware\SetLocale;
+use App\Resources\ProfileResource\Pages\ListProfiles;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -42,6 +45,8 @@ class FilamentServiceProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                SetLocale::class,
+
             ])
             ->navigationGroups([])
             ->passwordReset()
@@ -56,11 +61,11 @@ class FilamentServiceProvider extends PanelProvider
                     ->config([]),
             ])
             ->pages([
-                \App\Resources\ProfileResource\Pages\ListProfiles::class,
+                ListProfiles::class,
             ])
             ->viteTheme('resources/css/app.css')
             ->widgets([
-                \App\Filament\Widgets\CalendarWidget::class,
+                CalendarWidget::class,
             ]);
     }
 

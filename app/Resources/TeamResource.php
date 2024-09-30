@@ -7,13 +7,17 @@ use App\Models\Soldier;
 use App\Models\Team;
 use App\Models\User;
 use App\Resources\TeamResource\Pages;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\DeleteAction;
+use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,39 +29,56 @@ class TeamResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
+    public static function getModelLabel(): string
+    {
+        return __('Team');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('Teams');
+    }
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                TextInput::make('name')
-                    ->required(),
-                Select::make('commander_id')
-                    ->relationship('commander')
-                    ->options(
-                        fn () => Cache::remember('users', 30 * 60, function () {
-                            return User::all();
-                        })->mapWithKeys(function ($user) {
-                            return [$user->userable_id => $user->displayName];
-                        })
-                    )
-                    ->searchable()
-                    ->required(),
-                Select::make('department_id')
-                    ->relationship('department')
-                    ->options(Department::all()->pluck('name', 'id'))
-                    ->searchable()
-                    ->default(request()->input('department_id'))
-                    ->required(),
-                Select::make('members')
-                    ->options(
-                        fn () => Cache::remember('users', 30 * 60, function () {
-                            return User::all();
-                        })->mapWithKeys(function ($user) {
-                            return [$user->userable_id => $user->displayName];
-                        })
-                    )
-                    ->multiple()
-                    ->searchable(),
+                Section::make([
+                    TextInput::make('name')
+                        ->label(__('Name'))
+                        ->required(),
+                    Select::make('commander_id')
+                        ->label(__('Commander'))
+                        ->relationship('commander')
+                        ->options(
+                            fn () => Cache::remember('users', 30 * 60, function () {
+                                return User::all();
+                            })->mapWithKeys(function ($user) {
+                                return [$user->userable_id => $user->displayName];
+                            })
+                        )
+                        ->searchable()
+                        ->required(),
+                    Select::make('department_id')
+                        ->label(__('Department'))
+                        ->relationship('department')
+                        ->options(Department::all()->pluck('name', 'id'))
+                        ->searchable()
+                        ->default(request()->input('department_id'))
+                        ->required(),
+                    Select::make('members')
+                        ->label(__('Members'))
+                        ->options(
+                            fn () => Cache::remember('users', 30 * 60, function () {
+                                return User::all();
+                            })->mapWithKeys(function ($user) {
+                                return [$user->userable_id => $user->displayName];
+                            })
+                        )
+                        ->multiple()
+                        ->searchable(),
+                ])->columns(2),
+
             ]);
     }
 
@@ -66,16 +87,19 @@ class TeamResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->label(__('Name'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('commander.user')
+                    ->label(__('Commander'))
                     ->formatStateUsing(function ($state) {
                         return $state->last_name.', '.$state->first_name;
                     })
-                    ->label('Commander')
+                    ->label(__('Commander'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('department.name')
+                    ->label(__('Department'))
                     ->url(fn (Team $record): string => route('filament.app.resources.departments.index', ['department_id' => $record->department_id]))
                     ->searchable()
                     ->sortable(),
@@ -89,16 +113,16 @@ class TeamResource extends Resource
                 }
             })
             ->filters([
-                //
             ])
             ->actions([
                 ActionGroup::make([
                     Action::make('members')
-                        ->label('Add member')
+                        ->label(__('Add member'))
                         ->color('primary')
                         ->icon('heroicon-o-user-plus')
                         ->form([
                             Select::make('members')
+                                ->label(__('Members'))
                                 ->options(
                                     fn (Team $record) => Cache::remember('users', 30 * 60, function () {
                                         return User::all();
@@ -120,15 +144,19 @@ class TeamResource extends Resource
                                 ->update(['team_id' => $record->id]));
                         }),
                     Action::make('View members')
+                        ->label(__('View members'))
                         ->color('success')
                         ->icon('heroicon-o-user-group')
                         ->badge(fn ($record) => Soldier::where('team_id', $record->id)->count())
                         ->url(fn (Team $record): string => route('filament.app.resources.soldiers.index', ['team_id' => $record->id])),
-                    Tables\Actions\EditAction::make(),
-                    Tables\Actions\DeleteAction::make(),
+                    EditAction::make(),
+                    DeleteAction::make(),
                 ]),
             ])
             ->bulkActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
             ]);
     }
 

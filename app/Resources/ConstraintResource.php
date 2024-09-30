@@ -20,6 +20,16 @@ class ConstraintResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
+    public static function getModelLabel(): string
+    {
+        return __('My Soldiers Constraint');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('My Soldiers Constraints');
+    }
+
     public static function canAccess(): bool
     {
         return current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])) ? true : false;

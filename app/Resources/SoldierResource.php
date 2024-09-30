@@ -32,6 +32,7 @@ use Filament\Tables\Actions\ReplicateAction;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\BooleanColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -60,32 +61,32 @@ class SoldierResource extends Resource
 
             ->columns([
                 TextColumn::make('user.first_name')
-                    ->label('Name')
+                    ->label(__('Full name'))
                     ->formatStateUsing(function ($record) {
                         return $record->user->last_name.' '.$record->user->first_name;
                     })
                     ->searchable(['user->first_name', 'user->last_name'])
                     ->sortable(),
                 BadgeColumn::make('gender')
-                    ->formatStateUsing(fn ($state) => $state ? 'Male' : 'Female')
+                    ->label(__('Gender'))
+                    ->formatStateUsing(fn ($state) => $state ? __('Male') : __('Female'))
                     ->badge()
-                    ->color(fn ($state) => $state ? 'primary' : 'info')
+                    ->color(fn ($state) => $state ? 'info' : 'primary')
                     ->sortable(),
-                BooleanColumn::make('is_reservist'),
-                TextColumn::make('reserve_dates')->listWithLineBreaks()->limitList(1)->expandableLimitedList()->placeholder('---')->toggleable(),
-                TextColumn::make('next_reserve_dates')->listWithLineBreaks()->limitList(1)->expandableLimitedList()->placeholder('---')->toggleable(),
-                TextColumn::make('enlist_date')->sortable()->date()->toggleable(),
-                TextColumn::make('course')->toggleable(isToggledHiddenByDefault: true),
-                BooleanColumn::make('has_exemption')->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('max_shift')->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('max_night')->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('max_weekend')->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('capacity')->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('capacity_hold')->numeric()->toggleable(),
-                BooleanColumn::make('is_trainee')->toggleable(isToggledHiddenByDefault: true),
-                BooleanColumn::make('is_mabat')->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('qualifications')
-                    ->placeholder('no qualifications')->toggleable(),
+                BooleanColumn::make('is_reservist')->label(__('Reservist')),
+                TextColumn::make('reserve_dates')->label(__('Reserve dates'))->date()->listWithLineBreaks()->limitList(1)->expandableLimitedList()->placeholder('---')->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('next_reserve_dates')->label(__('Next reserve dates'))->date()->listWithLineBreaks()->limitList(1)->expandableLimitedList()->placeholder('---')->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('enlist_date')->label(__('Enlist date'))->sortable()->date()->toggleable(),
+                TextColumn::make('course')->label(__('Course'))->toggleable(isToggledHiddenByDefault: true),
+                BooleanColumn::make('has_exemption')->label(__('Has exemption'))->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('max_shift')->label(__('Max shift'))->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('max_night')->label(__('Max night'))->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('max_weekend')->label(__('Max weekend'))->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('capacity')->label(__('Capacity'))->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('capacity_hold')->label(__('Capacity hold'))->numeric()->toggleable(),
+                BooleanColumn::make('is_trainee')->label(__('Is trainee'))->toggleable(isToggledHiddenByDefault: true),
+                BooleanColumn::make('is_mabat')->label(__('Is mabat'))->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('qualifications')->label(__('Qualifications'))->placeholder(__('No qualifications'))->toggleable(),
             ])
             ->modifyQueryUsing(function (Builder $query) {
                 if (request()->input('team_id')) {
@@ -95,22 +96,24 @@ class SoldierResource extends Resource
             ->toggleColumnsTriggerAction(
                 fn (Action $action) => $action
                     ->button()
-                    ->label('Toggle'),
+                    ->label(__('Columns')),
             )
             ->filters([
-                NumberFilter::make('course'),
-                NumberFilter::make('max_shift'),
-                NumberFilter::make('max_night'),
-                NumberFilter::make('max_weekend'),
-                NumberFilter::make('capacity'),
-                NumberFilter::make('capacity_hold'),
+                NumberFilter::make('course')->label(__('Course')),
+                NumberFilter::make('max_shift')->label(__('Max shift')),
+                NumberFilter::make('max_night')->label(__('Max night')),
+                NumberFilter::make('max_weekend')->label(__('Max weekend')),
+                NumberFilter::make('capacity')->label(__('Capacity')),
+                NumberFilter::make('capacity_hold')->label(__('Capacity hold')),
                 SelectFilter::make('gender')
+                    ->label(__('Gender'))
                     ->options([
-                        true => 'Male',
-                        false => 'Female',
+                        true => __('Male'),
+                        false => __('Female'),
                     ])
                     ->default(null),
                 SelectFilter::make('qualifications')
+                    ->label(__('Qualifications'))
                     ->multiple()
                     ->searchable()
                     ->options(Task::all()->pluck('name', 'name'))
@@ -119,23 +122,28 @@ class SoldierResource extends Resource
                     })
                     ->default(null),
                 Filter::make('reservist')
+                    ->label(__('Reservist'))
                     ->query(fn (Builder $query): Builder => $query->where('is_reservist', 1))
                     ->toggle(),
                 Filter::make('is_mabat')
+                    ->label(__('Is mabat'))
                     ->query(fn (Builder $query): Builder => $query->where('is_mabat', true))
                     ->toggle(),
                 Filter::make('has_exemption')
+                    ->label(__('Has exemption'))
                     ->query(fn (Builder $query): Builder => $query->where('has_exemption', true))
                     ->toggle(),
                 Filter::make('is_trainee')
+                    ->label(__('Is trainee'))
                     ->query(fn (Builder $query): Builder => $query->where('is_trainee', true))
                     ->toggle(),
                 Filter::make('enlist_date')
                     ->form([
                         Fieldset::make('Enlist date')
+                            ->label(__('Enlist date'))
                             ->schema([
-                                DatePicker::make('recruitment_from'),
-                                DatePicker::make('recruitment_until'),
+                                DatePicker::make('recruitment_from')->label(__('From')),
+                                DatePicker::make('recruitment_until')->label(__('Until')),
                             ]),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -150,29 +158,30 @@ class SoldierResource extends Resource
                             );
                     }),
 
-            ], layout: \Filament\Tables\Enums\FiltersLayout::Modal)
+            ], layout: FiltersLayout::Modal)
             ->filtersFormColumns(4)
             ->deferFilters()
             ->filtersTriggerAction(
                 fn (Action $action) => $action
                     ->button()
-                    ->label('Filter')
+                    ->label(__('Filter'))
             )
             ->actions([
                 ActionGroup::make([
                     EditAction::make(),
                     DeleteAction::make(),
                     Action::make('update reserve days')
+                        ->label(__('Update reserve days'))
                         ->icon('heroicon-o-pencil')
                         ->color('primary')
                         ->form(function ($record) {
                             return [
                                 Flatpickr::make('next_reserve_dates')
+                                    ->label(__('Next reserve dates'))
                                     ->multiple()
                                     ->default($record->next_reserve_dates)
                                     ->minDate(now()->addMonth()->startOfMonth())
-                                    ->maxDate(now()->addMonth()->endOfMonth())
-                                    ->required(),
+                                    ->maxDate(now()->addMonth()->endOfMonth()),
                             ];
                         })
                         ->action(function (Soldier $record, array $data): void {
@@ -223,10 +232,13 @@ class SoldierResource extends Resource
             ->relationship('user')
             ->schema([
                 TextInput::make('first_name')
+                    ->label(__('First name'))
                     ->required(),
                 TextInput::make('last_name')
+                    ->label(__('Last name'))
                     ->required(),
                 TextInput::make('password')
+                    ->label(__('Personal number'))
                     ->password()
                     ->revealable()
                     ->length(7)
@@ -239,27 +251,30 @@ class SoldierResource extends Resource
         return [
             ToggleButtons::make('gender')
                 ->options([
-                    1 => 'Male',
-                    0 => 'Female',
+                    1 => __('Male'),
+                    0 => __('Female'),
                 ])
+                ->default(1)
+                ->label(__('Gender'))
                 ->grouped()
                 ->required(),
             DatePicker::make('enlist_date')
+                ->label(__('Enlist date'))
                 ->seconds(false),
             TextInput::make('course')
+                ->label(__('Course'))
                 ->numeric()
                 ->minValue(0),
             Select::make('capacity')
-                ->placeholder('select an option')
+                ->label(__('Capacity'))
+                ->placeholder(__('Select an option'))
                 ->options(fn (): array => collect(range(0, 12))->mapWithKeys(fn ($number) => [(string) ($number / 4) => (string) ($number / 4)])->toArray())
                 ->required(),
-            Hidden::make('capacity_hold')
-                ->default(0),
+            Hidden::make('capacity_hold')->default(0),
             Section::make([
-                Toggle::make('is_reservist')
-                    ->live(),
-                Toggle::make('is_permanent'),
-                Toggle::make('has_exemption'),
+                Toggle::make('is_reservist')->label(__('Reservist'))->live(),
+                Toggle::make('is_permanent')->label(__('Is permanent')),
+                Toggle::make('has_exemption')->label(__('Exemption')),
             ])->columns(3),
         ];
     }
@@ -268,6 +283,7 @@ class SoldierResource extends Resource
     {
         return [
             Flatpickr::make('reserve_dates')
+                ->label(__('Reserve dates'))
                 ->multiple()
                 ->minDate(today())
                 ->maxDate(today()->endOfMonth())
@@ -279,23 +295,36 @@ class SoldierResource extends Resource
     {
         return [
             Section::make([
-                TextInput::make('max_shift')->numeric()->minValue(0),
-                TextInput::make('max_night')->numeric()->minValue(0)->maxValue(31),
-                TextInput::make('max_weekend')->default('')->numeric()->minValue(0)->maxValue(5),
+                TextInput::make('max_shift')->label(__('Max shift'))->numeric()->minValue(0)->required()->default(0),
+                TextInput::make('max_night')->label(__('Max night'))->numeric()->minValue(0)->maxValue(31)->required()->default(0),
+                TextInput::make('max_weekend')->label(__('Max weekend'))->default('')->numeric()->minValue(0)->maxValue(5)->required()->default(0),
             ])
                 ->columns(3),
             Split::make([
                 Section::make([
-                    Toggle::make('is_trainee'),
-                    Toggle::make('is_mabat'),
+                    Toggle::make('is_trainee')
+                        ->label(__('Is trainee')),
+                    Toggle::make('is_mabat')
+                        ->label(__('Is mabat')),
                 ])
                     ->columns(2),
                 Select::make('qualifications')
+                    ->label(__('Qualifications'))
                     ->multiple()
-                    ->placeholder('select an option')
+                    ->placeholder(__('Select an option'))
                     ->options(Task::all()->pluck('name', 'name')), ])->columns(2)
                 ->columnSpan('full'),
         ];
 
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('Soldier');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('Soldiers');
     }
 }

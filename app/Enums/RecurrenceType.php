@@ -10,8 +10,14 @@ enum RecurrenceType: string
     case CUSTOM = 'Custom';
     case ONETIME = 'OneTime';
 
-    public function getLabel(): ?string
+    public function getLabel(): string
     {
-        return $this->name;
+        return match ($this) {
+            self::DAILY => __('Daily'),
+            self::WEEKLY => __('Weekly'),
+            self::MONTHLY => __('Monthly'),
+            self::CUSTOM => __('Custom'),
+            self::ONETIME => __('OneTime'),
+        };
     }
 }
