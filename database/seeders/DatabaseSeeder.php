@@ -2,34 +2,34 @@
 
 namespace Database\Seeders;
 
-use App\Models\Department;
 use App\Models\Soldier;
-use App\Models\Task;
+use App\Models\Team;
 use App\Models\User;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use App\Models\Department;
+use App\Models\Task;
 use App\Enums\RecurrenceType;
 use App\Services\ReccurenceEvents;
-use Illuminate\Database\Seeder;
-
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
-    {       
+    {
         $user = User::factory()->create([
-        'first_name' => "name",
-        'last_name' => "family",
-        'password' => Hash::make(1234567),
-        'userable_id' => Soldier::factory()->create()->id,
-        'userable_type' => "App\Models\Soldier",
-    ]);
+            'first_name' => "name",
+            'last_name' => "family",
+            'password' => Hash::make(1234567),
+            'userable_id' => Soldier::factory()->create()->id,
+            'userable_type' => "App\Models\Soldier",
+        ]);
+
         $this->call([
             PermissionSeeder::class,
         ]);
         $user->assignRole('manager');
-        Department::factory()->create([
-            'name' => 'a1',
-        ]);
+
         Task::factory()->create([
-            'name' => 'planning',
+            'name' => 'תכנון',
             'start_hour' => '08:30:00',
             'duration' => 5,
             'parallel_weight' => 0,
@@ -37,7 +37,7 @@ class DatabaseSeeder extends Seeder
             'recurrence' => collect(['type' => RecurrenceType::WEEKLY, 'days_in_week' => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday']]),
         ]);
         Task::factory()->create([
-            'name' => 'Weekend planning',
+            'name' => 'תכנון סוף שבוע',
             'type' => 'planning',
             'start_hour' => '08:30:00',
             'duration' => 5,
@@ -46,7 +46,7 @@ class DatabaseSeeder extends Seeder
             'recurrence' => collect(['type' => RecurrenceType::WEEKLY, 'days_in_week' => ['Friday', 'Saturday']]),
         ]);
         Task::factory()->create([
-            'name' => 'flying',
+            'name' => 'הטסה',
             'start_hour' => '09:00:00',
             'duration' => 6,
             'parallel_weight' => 0,
@@ -54,7 +54,7 @@ class DatabaseSeeder extends Seeder
             'recurrence' => collect(['type' => RecurrenceType::WEEKLY, 'days_in_week' => ['Sunday', 'Wednesday']]),
         ]);
         Task::factory()->create([
-            'name' => 'night flight',
+            'name' => 'הטסת לילה',
             'start_hour' => '00:00:00',
             'duration' => 12,
             'parallel_weight' => 0.5,
@@ -62,7 +62,7 @@ class DatabaseSeeder extends Seeder
             'recurrence' => collect(['type' => RecurrenceType::WEEKLY, 'days_in_week' => ['Monday', 'Thursday']]),
         ]);
         Task::factory()->create([
-            'name' => 'control',
+            'name' => 'בקרה',
             'start_hour' => '10:00:00',
             'duration' => 6,
             'parallel_weight' => 0,
@@ -152,5 +152,6 @@ class DatabaseSeeder extends Seeder
         ]);
         $reccurenceEvents = new ReccurenceEvents;
         $reccurenceEvents->recurrenceTask();
+
     }
 }

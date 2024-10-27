@@ -165,7 +165,7 @@ class Constraint extends Model
     {
         $translatedConstraint = __($this->constraint_type);
 
-        return $translatedConstraint.' - '.$this->soldier_name;
+        return $translatedConstraint.' '.$this->soldier_name;
     }
 
     public function getConstraintColorAttribute()
