@@ -16,9 +16,9 @@ return new class extends Migration
             $table->dateTime('enlist_date')->nullable();
             $table->integer('course');
             $table->boolean('has_exemption');
-            $table->integer('max_shift')->nullable();
-            $table->integer('max_night')->nullable();
-            $table->integer('max_weekend')->nullable();
+            $table->integer('max_shifts')->nullable();
+            $table->integer('max_nights')->nullable();
+            $table->integer('max_weekends')->nullable();
             $table->integer('capacity');
             $table->integer('capacity_hold');
             $table->boolean('is_trainee');

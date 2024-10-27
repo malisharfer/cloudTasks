@@ -23,4 +23,10 @@ class EditSoldier extends EditRecord
     {
         return $this->getResource()::getUrl('index');
     }
+
+    protected function afterSave(): void
+    {
+        $user = $this->record->user;
+        $user->getRoleNames()->isEmpty() ? $user->assignRole('soldier') : null;
+    }
 }

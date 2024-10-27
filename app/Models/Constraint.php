@@ -54,23 +54,19 @@ class Constraint extends Model
             Grid::make()
                 ->visible(fn ($get) => in_array($get('constraint_type'), ['Medical', 'Vacation', 'School', 'Not task', 'Low priority not task']))
                 ->schema([
-                    DateTimePicker::make('start_date')->required(),
-                    DateTimePicker::make('end_date')->required(),
+                    DateTimePicker::make('start_date')->label(__('Start date'))->required(),
+                    DateTimePicker::make('end_date')->label(__('End date'))->required(),
                 ]),
         ];
-    }
-
-    private static function updateDates(callable $set, $state, Get $get): void
-    {
-        $dateRange = self::getDateForConstraint($state, $get);
-        $set('start_date', $dateRange['start_date']);
-        $set('end_date', $dateRange['end_date']);
     }
 
     private static function availableOptions($get): array
     {
         $start_date = Carbon::parse($get('start_date'));
-        $options = array_combine(array_map(fn ($enum) => $enum->value, ConstraintType::cases()), array_map(fn ($enum) => $enum->value, ConstraintType::cases()));
+        $options = array_combine(
+            array_map(fn ($enum) => $enum->value, ConstraintType::cases()),
+            array_map(fn ($enum) => $enum->getLabel(), ConstraintType::cases())
+        );
 
         if ($start_date->isFriday() || $start_date->isSaturday()) {
             unset($options[ConstraintType::NOT_THURSDAY_EVENING->value]);
@@ -83,7 +79,8 @@ class Constraint extends Model
         $usedCounts = self::getUsedCountsForCurrentMonth($get('start_date'), $get('end_date'));
         $limits = ConstraintType::getLimit();
 
-        return array_filter($options, fn ($option) => ($limits[$option] ?? 0) === 0 || ($usedCounts[$option] ?? 0) < ($limits[$option] ?? 0));
+        return array_filter($options, fn ($option) => ($limits[array_search($option, array_map(fn ($enum) => $enum->getLabel(), ConstraintType::cases()))] ?? 0) === 0
+            || ($usedCounts[array_search($option, array_map(fn ($enum) => $enum->getLabel(), ConstraintType::cases()))] ?? 0) < ($limits[array_search($option, array_map(fn ($enum) => $enum->getLabel(), ConstraintType::cases()))] ?? 0));
     }
 
     private static function getUsedCountsForCurrentMonth($startDate, $endDate): array
@@ -105,25 +102,39 @@ class Constraint extends Model
         return $usedCounts;
     }
 
-    private static function getDateForConstraint($constraintType, $get)
+    public static function updateDates(callable $set, $state, Get $get)
     {
+        $constraintType = $get('constraint_type');
         $startDate = Carbon::parse($get('start_date'));
         $endDate = Carbon::parse($get('end_date'));
 
-        return match ($constraintType) {
-            'Not evening', 'Not Thursday evening' => [
-                'start_date' => $startDate->setTimeFromTimeString('18:00:00'),
-                'end_date' => $endDate->setTimeFromTimeString('23:59:00'),
-            ],
-            'Not weekend', 'Low priority not weekend' => [
-                'start_date' => $startDate->startOfWeek(Carbon::THURSDAY),
-                'end_date' => $endDate->next(modifier: Carbon::SUNDAY)->startOfDay(),
-            ],
-            'Medical', 'Vacation', 'School', 'Not task', 'Low priority not task' => [
-                'start_date' => $get('start_date'),
-                'end_date' => $get('end_date'),
-            ],
-        };
+        switch ($constraintType) {
+            case 'Medical':
+            case 'Vacation':
+            case 'School':
+            case 'Not task':
+            case 'Low priority not task':
+                $set('start_date', $startDate->setTime(0, 0, 0)->toDateTimeString());
+                $set('end_date', $endDate->setTime(23, 59, 0)->toDateTimeString());
+                break;
+
+            case 'Not evening':
+            case 'Not Thursday evening':
+                $set('start_date', $startDate->setTime(18, 0, 0)->toDateTimeString());
+                $set('end_date', $endDate->setTime(23, 59, 0)->toDateTimeString());
+                break;
+
+            case 'Not weekend':
+            case 'Low priority not weekend':
+                $set('start_date', $startDate->startOfWeek(Carbon::THURSDAY)->toDateTimeString());
+                $set('end_date', $endDate->next(Carbon::SUNDAY)->startOfDay()->toDateTimeString());
+                break;
+
+            default:
+                $set('start_date', $startDate->setTime(18, 0, 0)->toDateTimeString());
+                $set('end_date', $endDate->setTime(23, 59, 0)->toDateTimeString());
+                break;
+        }
     }
 
     protected static function booted()
@@ -152,11 +163,18 @@ class Constraint extends Model
 
     public function getConstraintNameAttribute()
     {
-        return $this->constraint_type.' - '.$this->soldier_name;
+        $translatedConstraint = __($this->constraint_type);
+
+        return $translatedConstraint.' - '.$this->soldier_name;
     }
 
     public function getConstraintColorAttribute()
     {
         return ConstraintType::from($this->constraint_type)->getColor();
+    }
+
+    public static function getTitle(): string|Htmlable
+    {
+        return __('Constraint');
     }
 }

@@ -70,6 +70,9 @@ class TaskResource extends Resource
                     TextColumn::make('parallel_weight')
                         ->description(__('Parallel weight'), position: 'above')
                         ->size(TextColumnSize::Large),
+                    TextColumn::make('department_name')
+                        ->description(__('Department'), position: 'above')
+                        ->size(TextColumnSize::Large),
                     ColorColumn::make('color')
                         ->copyable()
                         ->copyMessage('Color code copied'),
@@ -86,9 +89,15 @@ class TaskResource extends Resource
                             ->description(__('Alert'), position: 'above')
                             ->size(TextColumnSize::Large)
                             ->formatStateUsing(fn ($state) => $state ? __('Yes') : __('No')),
-                        TextColumn::make('department_name')
-                            ->description(__('Department'), position: 'above')
-                            ->size(TextColumnSize::Large),
+                        TextColumn::make('is_weekend')
+                            ->description(__('Is weekend'), position: 'above')
+                            ->size(TextColumnSize::Large)
+                            ->formatStateUsing(fn ($state) => $state ? __('Yes') : __('No')),
+                        TextColumn::make('is_night')
+                            ->description(__('Is night'), position: 'above')
+                            ->size(TextColumnSize::Large)
+                            ->formatStateUsing(fn ($state) => $state ? __('Yes') : __('No')),
+
                     ])
                         ->space(2)
                         ->extraAttributes(['style' => 'display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: center;']),
@@ -155,34 +164,60 @@ class TaskResource extends Resource
     public static function getTaskDetails(): array
     {
         return [
-            TextInput::make('name')
-                ->label(__('Name'))
-                ->required(),
-            TimePicker::make('start_hour')
-                ->label(__('Start hour'))
-                ->seconds(false)
-                ->required(),
-            TimePicker::make('duration')
-                ->seconds(false)
-                ->label(__('Duration'))
-                ->required(),
-            Select::make('parallel_weight')
-                ->label(__('Parallel weight'))
-                ->options(fn (): array => collect(range(0, 12))->mapWithKeys(fn ($number) => [(string) ($number / 4) => (string) ($number / 4)])->toArray())
-                ->required(),
-            TextInput::make('type')
-                ->label(__('Type'))
-                ->required(),
-            ColorPicker::make('color')
-                ->label(__('Color'))
-                ->required(),
-            Toggle::make('is_alert')
-                ->label(__('Is alert')),
-            Select::make('department_name')
-                ->label(__('Department'))
-                ->options(Department::all()->mapWithKeys(function ($department) {
-                    return [$department->name => $department->name];
-                })),
+            Section::make('')
+                ->schema([
+                    TextInput::make('name')
+                        ->label(__('Name'))
+                        ->required(),
+                    Select::make('department_name')
+                        ->label(__('Department'))
+                        ->options(Department::all()->mapWithKeys(function ($department) {
+                            return [$department->name => $department->name];
+                        })),
+                ])
+                ->columns(2),
+            Section::make('')
+                ->schema([
+                    TextInput::make('type')
+                        ->label(__('Type'))
+                        ->required(),
+                    Select::make('parallel_weight')
+                        ->label(__('Parallel weight'))
+                        ->options(fn (): array => collect(range(0, 12))->mapWithKeys(fn ($number) => [(string) ($number / 4) => (string) ($number / 4)])->toArray())
+                        ->required(),
+                    ColorPicker::make('color')
+                        ->label(__('Color'))
+                        ->required(),
+                ])
+                ->columns(3),
+
+        ];
+    }
+
+    public static function additionalDetails(): array
+    {
+        return [
+            Section::make('')
+                ->schema([
+                    TimePicker::make('start_hour')
+                        ->label(__('Start hour'))
+                        ->seconds(false)
+                        ->required(),
+                    TextInput::make('duration')
+                        ->label(__('Duration'))
+                        ->required(),
+                ])
+                ->columns(2),
+            Section::make('')
+                ->schema([
+                    Toggle::make('is_alert')
+                        ->label(__('Is alert')),
+                    Toggle::make('is_weekend')
+                        ->label(__('Is weekend')),
+                    Toggle::make('is_night')
+                        ->label(__('Is night')),
+                ])
+                ->columns(3),
         ];
     }
 
@@ -193,20 +228,19 @@ class TaskResource extends Resource
                 ->label(__('Type'))
                 ->options(collect(RecurrenceType::cases())->mapWithKeys(fn ($type) => [$type->value => $type->getLabel()]))->live()
                 ->required()
-                ->inline()
-                ->grouped(),
+                ->inline(),
             Select::make('recurrence.days_in_week')
                 ->label(__('Days in week'))
                 ->multiple()
                 ->options(
                     [
-                        '1' => __('Sunday'),
-                        '2' => __('Monday'),
-                        '3' => __('Tuesday'),
-                        '4' => __('Wednesday'),
-                        '5' => __('Thursday'),
-                        '6' => __('Friday'),
-                        '7' => __('Saturday'),
+                        'Sunday' => __('Sunday'),
+                        'Monday' => __('Monday'),
+                        'Tuesday' => __('Tuesday'),
+                        'Wednesday' => __('Wednesday'),
+                        'Thursday' => __('Thursday'),
+                        'Friday' => __('Friday'),
+                        'Saturday' => __('Saturday'),
                     ]
                 )
                 ->visible(fn (Get $get): bool => $get('recurrence.type') === 'Weekly')

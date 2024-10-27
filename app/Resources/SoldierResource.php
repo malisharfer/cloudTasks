@@ -67,21 +67,21 @@ class SoldierResource extends Resource
                     })
                     ->searchable(['user->first_name', 'user->last_name'])
                     ->sortable(),
+                BooleanColumn::make('is_reservist')->label(__('Reservist')),
                 BadgeColumn::make('gender')
                     ->label(__('Gender'))
                     ->formatStateUsing(fn ($state) => $state ? __('Male') : __('Female'))
                     ->badge()
                     ->color(fn ($state) => $state ? 'info' : 'primary')
                     ->sortable(),
-                BooleanColumn::make('is_reservist')->label(__('Reservist')),
                 TextColumn::make('reserve_dates')->label(__('Reserve dates'))->date()->listWithLineBreaks()->limitList(1)->expandableLimitedList()->placeholder('---')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('next_reserve_dates')->label(__('Next reserve dates'))->date()->listWithLineBreaks()->limitList(1)->expandableLimitedList()->placeholder('---')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('enlist_date')->label(__('Enlist date'))->sortable()->date()->toggleable(),
                 TextColumn::make('course')->label(__('Course'))->toggleable(isToggledHiddenByDefault: true),
-                BooleanColumn::make('has_exemption')->label(__('Has exemption'))->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('max_shift')->label(__('Max shift'))->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('max_night')->label(__('Max night'))->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('max_weekend')->label(__('Max weekend'))->toggleable(isToggledHiddenByDefault: true),
+                BooleanColumn::make('has_exemption')->label(__('Exemption'))->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('max_shifts')->label(__('Max shifts'))->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('max_nights')->label(__('Max nights'))->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('max_weekends')->label(__('Max weekends'))->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('capacity')->label(__('Capacity'))->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('capacity_hold')->label(__('Capacity hold'))->numeric()->toggleable(),
                 BooleanColumn::make('is_trainee')->label(__('Is trainee'))->toggleable(isToggledHiddenByDefault: true),
@@ -100,9 +100,9 @@ class SoldierResource extends Resource
             )
             ->filters([
                 NumberFilter::make('course')->label(__('Course')),
-                NumberFilter::make('max_shift')->label(__('Max shift')),
-                NumberFilter::make('max_night')->label(__('Max night')),
-                NumberFilter::make('max_weekend')->label(__('Max weekend')),
+                NumberFilter::make('max_shifts')->label(__('Max shifts')),
+                NumberFilter::make('max_nights')->label(__('Max nights')),
+                NumberFilter::make('max_weekends')->label(__('Max weekends')),
                 NumberFilter::make('capacity')->label(__('Capacity')),
                 NumberFilter::make('capacity_hold')->label(__('Capacity hold')),
                 SelectFilter::make('gender')
@@ -116,7 +116,7 @@ class SoldierResource extends Resource
                     ->label(__('Qualifications'))
                     ->multiple()
                     ->searchable()
-                    ->options(Task::all()->pluck('name', 'name'))
+                    ->options(Task::all()->pluck('name', 'type'))
                     ->query(function (Builder $query, array $data) {
                         return collect($data['values'])->map(fn ($qualification) => $query->whereJsonContains('qualifications', $qualification));
                     })
@@ -130,7 +130,7 @@ class SoldierResource extends Resource
                     ->query(fn (Builder $query): Builder => $query->where('is_mabat', true))
                     ->toggle(),
                 Filter::make('has_exemption')
-                    ->label(__('Has exemption'))
+                    ->label(__('Exemption'))
                     ->query(fn (Builder $query): Builder => $query->where('has_exemption', true))
                     ->toggle(),
                 Filter::make('is_trainee')
@@ -295,9 +295,9 @@ class SoldierResource extends Resource
     {
         return [
             Section::make([
-                TextInput::make('max_shift')->label(__('Max shift'))->numeric()->minValue(0)->required()->default(0),
-                TextInput::make('max_night')->label(__('Max night'))->numeric()->minValue(0)->maxValue(31)->required()->default(0),
-                TextInput::make('max_weekend')->label(__('Max weekend'))->default('')->numeric()->minValue(0)->maxValue(5)->required()->default(0),
+                TextInput::make('max_shifts')->label(__('Max shifts'))->numeric()->minValue(0)->required()->default(0),
+                TextInput::make('max_nights')->label(__('Max nights'))->numeric()->minValue(0)->maxValue(31)->required()->default(0),
+                TextInput::make('max_weekends')->label(__('Max weekends'))->default('')->numeric()->minValue(0)->maxValue(5)->required()->default(0),
             ])
                 ->columns(3),
             Split::make([
@@ -311,7 +311,7 @@ class SoldierResource extends Resource
                 Select::make('qualifications')
                     ->label(__('Qualifications'))
                     ->multiple()
-                    ->placeholder(__('Select an option'))
+                    ->placeholder(__('Select qualifications'))
                     ->options(Task::all()->pluck('name', 'name')), ])->columns(2)
                 ->columnSpan('full'),
         ];

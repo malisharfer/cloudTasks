@@ -4,7 +4,9 @@ use App\Enums\ConstraintType;
 use App\Models\Constraint;
 use Carbon\Carbon;
 use Database\Seeders\PermissionSeeder;
+use Filament\Forms\Get;
 use Illuminate\Support\Facades\DB;
+use Mockery as mock;
 
 beforeEach(function () {
     $this
@@ -24,7 +26,7 @@ it('should return the correct available options based on start date and used cou
     $result = $availableOptionsMethod->invoke(null, $get);
 
     expect($result)->toBeArray();
-    expect($result)->toContain('Medical', 'Vacation', 'School', 'Not task', 'Low priority not task', 'Not evening');
+    expect($result)->toContain(__('Medical'), __('Vacation'), __('School'), __('Not task'), __('Low priority not task'), __('Not evening'));
 });
 
 it('should return the correct used counts for current month', function () {
@@ -56,44 +58,56 @@ it('should return the correct used counts for current month', function () {
     }, $usedCounts);
 });
 
-it('should return the correct dates for "Not evening" and "Not Thursday evening" constraints', function () {
-    $get = function ($key) {
-        return $key == 'start_date' ? '2023-04-01 00:00:00' : '2023-04-01 23:59:00';
+it('should update dates for "Medical", "Vacation", "School", "Not task", and "Low priority not task" constraints', function () {
+    $set = function ($key, $value) use (&$dates) {
+        $dates[$key] = $value;
     };
 
-    $class = new ReflectionClass(Constraint::class);
-    $getDateForConstraint = $class->getMethod('getDateForConstraint');
-    $getDateForConstraint->setAccessible(true);
+    $getMock = mock::mock(Get::class);
+    $getMock->shouldReceive('__invoke')->with('constraint_type')->andReturn('Medical');
+    $getMock->shouldReceive('__invoke')->with('start_date')->andReturn('2023-04-01 00:00:00');
+    $getMock->shouldReceive('__invoke')->with('end_date')->andReturn('2023-04-01 23:59:00');
 
-    $result = $getDateForConstraint->invoke(null, 'Not evening', $get);
-    expect($result['start_date']->toDateTimeString())->toBe('2023-04-01 18:00:00');
-    expect($result['end_date']->toDateTimeString())->toBe('2023-04-01 23:59:00');
+    $dates = [];
+
+    Constraint::updateDates($set, null, $getMock);
+
+    expect($dates['start_date'])->toBe('2023-04-01 00:00:00');
+    expect($dates['end_date'])->toBe('2023-04-01 23:59:00');
 });
 
-it('should return the correct dates for "Not weekend" and "Low priority not weekend" constraints', function () {
-    $get = function ($key) {
-        return $key == 'start_date' ? '2024-09-05 00:00:00' : '2024-09-05 00:00:00';
+it('should update dates for "Not evening" and "Not Thursday evening" constraints', function () {
+    $set = function ($key, $value) use (&$dates) {
+        $dates[$key] = $value;
     };
 
-    $class = new ReflectionClass(Constraint::class);
-    $getDateForConstraint = $class->getMethod('getDateForConstraint');
-    $getDateForConstraint->setAccessible(true);
+    $getMock = mock::mock(Get::class);
+    $getMock->shouldReceive('__invoke')->with('constraint_type')->andReturn('Not evening');
+    $getMock->shouldReceive('__invoke')->with('start_date')->andReturn('2023-04-01 00:00:00');
+    $getMock->shouldReceive('__invoke')->with('end_date')->andReturn('2023-04-01 23:59:00');
 
-    $result = $getDateForConstraint->invoke(null, 'Not weekend', $get);
-    expect($result['start_date']->toDateTimeString())->toBe('2024-09-05 00:00:00');
-    expect($result['end_date']->toDateTimeString())->toBe('2024-09-08 00:00:00');
+    $dates = [];
+
+    Constraint::updateDates($set, null, $getMock);
+
+    expect($dates['start_date'])->toBe('2023-04-01 18:00:00');
+    expect($dates['end_date'])->toBe('2023-04-01 23:59:00');
 });
 
-it('should return the correct dates for "Medical", "Vacation", "School", "Not task", and "Low priority not task" constraints', function () {
-    $get = function ($key) {
-        return $key == 'start_date' ? '2023-04-01 00:00:00' : '2023-04-01 23:59:59';
+it('should update dates for "Not weekend" and "Low priority not weekend" constraints', function () {
+    $set = function ($key, $value) use (&$dates) {
+        $dates[$key] = $value;
     };
 
-    $class = new ReflectionClass(Constraint::class);
-    $getDateForConstraint = $class->getMethod('getDateForConstraint');
-    $getDateForConstraint->setAccessible(true);
+    $getMock = mock::mock(Get::class);
+    $getMock->shouldReceive('__invoke')->with('constraint_type')->andReturn('Not weekend');
+    $getMock->shouldReceive('__invoke')->with('start_date')->andReturn('2023-04-01 00:00:00');
+    $getMock->shouldReceive('__invoke')->with('end_date')->andReturn('2023-04-01 23:59:00');
 
-    $result = $getDateForConstraint->invoke(null, 'Medical', $get);
-    expect($result['start_date'])->toBe('2023-04-01 00:00:00');
-    expect($result['end_date'])->toBe('2023-04-01 23:59:59');
+    $dates = [];
+
+    Constraint::updateDates($set, null, $getMock);
+
+    expect($dates['start_date'])->toBe('2023-03-30 00:00:00');
+    expect($dates['end_date'])->toBe('2023-04-02 00:00:00');
 });

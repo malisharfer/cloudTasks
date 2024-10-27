@@ -14,6 +14,7 @@ use Illuminate\Support\Collection;
 use Saade\FilamentFullCalendar\Actions\CreateAction;
 use Saade\FilamentFullCalendar\Actions\DeleteAction;
 use Saade\FilamentFullCalendar\Actions\EditAction;
+use Saade\FilamentFullCalendar\Actions\viewAction;
 use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
 
@@ -61,32 +62,38 @@ class CalendarWidget extends FullCalendarWidget
         $tableName = strtolower(class_basename($this->model)).'s';
 
         return ($this->type === 'my_soldiers') ? match ($role) {
-            'manager' => fn (Builder $query) => $query->where('soldier_id', '!=', $current_user_id),
+            'manager' => fn (Builder $query) => $query
+                ->where('soldier_id', '!=', $current_user_id)
+                ->orWhereNull('soldier_id'),
             'department-commander' => fn (Builder $query) => $query
-                ->join('soldiers', function ($join) {
-                    $join->on('soldiers.id', '=', 'soldier_id')
-                        ->orWhereNull('soldier_id');
+                ->leftJoin('soldiers', 'soldier_id', '=', 'soldiers.id')
+                ->leftJoin('teams', 'soldiers.team_id', '=', 'teams.id')
+                ->where(function ($q) use ($current_user_id) {
+                    $q->where('teams.department_id', '=', value: Department::where('commander_id', $current_user_id)->value('id'))
+                        ->orWhere(function ($q) {
+                            $q->whereNull('soldiers.team_id')
+                                ->whereNull('soldier_id');
+                        });
                 })
-                ->join('teams', 'soldiers.team_id', '=', 'teams.id')
-                ->where('teams.department_id', '=', Department::where('commander_id', $current_user_id)->value('id'))
                 ->where(function ($q) use ($current_user_id) {
                     $q->where('soldier_id', '!=', $current_user_id)
                         ->orWhereNull('soldier_id');
                 })
-                ->groupBy("{$tableName}.id")
-                ->distinct("{$tableName}.id"),
+                ->select("{$tableName}.*"),
             'team-commander' => fn (Builder $query) => $query
-                ->join('soldiers', function ($join) {
-                    $join->on('soldiers.id', '=', 'soldier_id')
-                        ->orWhereNull('soldier_id');
+                ->leftJoin('soldiers', 'soldiers.id', '=', 'soldier_id')
+                ->where(function ($q) use ($current_user_id) {
+                    $q->where('soldiers.team_id', '=', Team::where('commander_id', $current_user_id)->value('id'))
+                        ->orWhere(function ($q) {
+                            $q->whereNull('soldiers.team_id')
+                                ->whereNull('soldier_id');
+                        });
                 })
-                ->where('soldiers.team_id', '=', Team::where('commander_id', $current_user_id)->value('id'))
                 ->where(function ($q) use ($current_user_id) {
                     $q->where('soldier_id', '!=', $current_user_id)
                         ->orWhereNull('soldier_id');
                 })
-                ->groupBy("{$tableName}.id")
-                ->distinct("{$tableName}.id"),
+                ->select("{$tableName}.*"),
         } : fn (Builder $query) => $query->where('soldier_id', $current_user_id);
     }
 
@@ -108,16 +115,22 @@ class CalendarWidget extends FullCalendarWidget
                                     'end_date' => $arguments['end'] ?? null,
                                 ]);
                             }
-                        ),
+                        )->label(label: $this->model::getTitle().' '.__('New'))->modalHeading(__('Create').' '.$this->model::getTitle()),
                 ];
             }
         } elseif ($this->model !== Shift::class) {
             FilamentFullCalendarPlugin::get()->editable(false);
             FilamentFullCalendarPlugin::get()->selectable(false);
-
         }
 
         return [];
+    }
+
+    public function getConfig(): array
+    {
+        return array_merge(parent::getConfig(), [
+            'locale' => app()->getLocale(),
+        ]);
     }
 
     protected function modalActions(): array
@@ -138,6 +151,7 @@ class CalendarWidget extends FullCalendarWidget
                         $action->makeExtraModalAction('save', arguments: ['save' => true])->color('primary'),
                         $action->makeExtraModalAction('cancel', arguments: ['cancel' => true])->color('primary'),
                     ])
+                    ->modalHeading(__('Edit').' '.$this->model::getTitle())
                     ->action(function (array $data, array $arguments, Model $record): void {
                         if ($arguments['cancel'] ?? false) {
                             $this->refreshRecords();
@@ -154,5 +168,10 @@ class CalendarWidget extends FullCalendarWidget
 
             return [];
         }
+    }
+
+    protected function viewAction(): Action
+    {
+        return ViewAction::make()->modalHeading(__('View').$this->model::getTitle());
     }
 }

@@ -17,10 +17,10 @@ class AppServiceProvider extends ServiceProvider
     }
 
     public function boot(): void
-    {
+    {        
         if (config('app.env') !== 'local') {
-            URL::forceScheme('https');
-        }
+        URL::forceScheme('https');
+    }
         FilamentView::registerRenderHook(
             PanelsRenderHook::USER_MENU_BEFORE,
             fn (): string => Blade::render('@livewire(\'set-locale\')'),

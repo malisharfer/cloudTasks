@@ -19,8 +19,10 @@ class CreateTask extends CreateRecord
     protected function afterCreate(): void
     {
         $task = Task::latest()->first();
-        $reccurenceEvents = new ReccurenceEvents;
-        $reccurenceEvents->oneTimeTask($task);
+        if ($task->recurrence['type'] == 'OneTime') {
+            $reccurenceEvents = new ReccurenceEvents;
+            $reccurenceEvents->oneTimeTask($task);
+        }
     }
 
     public static function getSteps(): array
@@ -30,6 +32,11 @@ class CreateTask extends CreateRecord
                 ->label(__('Details'))
                 ->schema([
                     Section::make()->schema(TaskResource::getTaskDetails())->columns(),
+                ]),
+            Step::make('Additional_details')
+                ->label(__('Additional settings'))
+                ->schema([
+                    Section::make()->schema(TaskResource::additionalDetails())->columns(),
                 ]),
             Step::make('Recurrence')
                 ->label(__('Recurrence'))

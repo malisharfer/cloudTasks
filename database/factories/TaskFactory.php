@@ -16,6 +16,8 @@ class TaskFactory extends Factory
             'type' => fake()->name(),
             'color' => fake()->hexColor(),
             'is_alert' => fake()->boolean(),
+            'is_weekend' => fake()->boolean(),
+            'is_night' => fake()->boolean(),
             'department_name' => fake()->text(),
             'recurrence' => json_encode([]),
         ];

@@ -2,7 +2,9 @@
 
 namespace App\Enums;
 
-enum ConstraintType: string
+use Filament\Support\Contracts\HasLabel;
+
+enum ConstraintType: string implements HasLabel
 {
     case NOT_WEEKEND = 'Not weekend';
     case LOW_PRIORITY_NOT_WEEKEND = 'Low priority not weekend';
@@ -13,6 +15,21 @@ enum ConstraintType: string
     case VACATION = 'Vacation';
     case MEDICAL = 'Medical';
     case SCHOOL = 'School';
+
+    public function getLabel(): string
+    {
+        return match ($this) {
+            self::NOT_WEEKEND => __('Not weekend'),
+            self::LOW_PRIORITY_NOT_WEEKEND => __('Low priority not weekend'),
+            self::NOT_TASK => __('Not task'),
+            self::LOW_PRIORITY_NOT_TASK => __('Low priority not task'),
+            self::NOT_EVENING => __('Not evening'),
+            self::NOT_THURSDAY_EVENING => __('Not Thursday evening'),
+            self::VACATION => __('Vacation'),
+            self::MEDICAL => __('Medical'),
+            self::SCHOOL => __('School'),
+        };
+    }
 
     public static function getPriority(): array
     {
@@ -47,15 +64,15 @@ enum ConstraintType: string
     public function getColor(): string|array|null
     {
         return match ($this) {
-            self::NOT_EVENING => '#FFCBCB',
-            self::NOT_THURSDAY_EVENING => '#FF9AFF',
-            self::NOT_WEEKEND => '#D7D7D7',
-            self::LOW_PRIORITY_NOT_WEEKEND => '#B0CEFF',
-            self::VACATION => '#B0F8FF',
-            self::MEDICAL => '#B0FFDD',
-            self::SCHOOL => '#BBFFB0',
-            self::NOT_TASK => '#E0FFB0',
-            self::LOW_PRIORITY_NOT_TASK => '#FFD6B0',
+            self::NOT_EVENING => '#ffd4e5',
+            self::NOT_THURSDAY_EVENING => '#ffdfba',
+            self::NOT_WEEKEND => '#ffffba',
+            self::LOW_PRIORITY_NOT_WEEKEND => '#adb2fb',
+            self::VACATION => '#bae1ff',
+            self::MEDICAL => '#f2d7fb',
+            self::SCHOOL => '#f9a7a7',
+            self::NOT_TASK => '#96ead7',
+            self::LOW_PRIORITY_NOT_TASK => '#baffc9',
         };
     }
 }

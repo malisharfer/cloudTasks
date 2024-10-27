@@ -7,6 +7,7 @@ use App\Models\Soldier;
 use App\Models\Task;
 use App\Models\Team;
 use App\Models\User;
+use Carbon\Carbon;
 use Database\Seeders\PermissionSeeder;
 
 use function Pest\Livewire\livewire;
@@ -118,14 +119,14 @@ it('should list events by the user events', function () {
         'model' => Shift::class,
         'keys' => collect([
             'id',
-            'parallel_weight',
+            'task_name',
             'start_date',
             'end_date',
             'task_color',
         ]),
         'type' => 'my',
     ])
-        ->call('fetchEvents', ['start' => '2024-09-01 00:00:00', 'end' => '2024-10-12 00:00:00', 'timezone' => 'Asia\/Jerusalem']);
+        ->call('fetchEvents', ['start' => Carbon::yesterday(), 'end' => Carbon::now()->addDays(2), 'timezone' => 'Asia\/Jerusalem']);
 
     expect($calendar->effects['returns'][0])->toHaveCount(count: 5);
 });
@@ -149,14 +150,14 @@ it('should list events by the commanders soldiers events', function () {
         'model' => Shift::class,
         'keys' => collect([
             'id',
-            'parallel_weight',
+            'task_name',
             'start_date',
             'end_date',
             'task_color',
         ]),
         'type' => 'my_soldiers',
     ])
-        ->call('fetchEvents', ['start' => '2024-09-01 00:00:00', 'end' => '2024-10-12 00:00:00', 'timezone' => 'Asia\/Jerusalem']);
+        ->call('fetchEvents', ['start' => Carbon::yesterday(), 'end' => Carbon::now()->addDays(2), 'timezone' => 'Asia\/Jerusalem']);
 
     expect($calendar->effects['returns'][0])->toHaveCount(count: 2);
 });

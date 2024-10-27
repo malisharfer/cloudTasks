@@ -6,9 +6,11 @@ use App\Filament\Auth\Login;
 use App\Filament\Widgets\CalendarWidget;
 use App\Http\Middleware\SetLocale;
 use App\Resources\ProfileResource\Pages\ListProfiles;
+use Filament\Facades\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -63,6 +65,8 @@ class FilamentServiceProvider extends PanelProvider
             ->pages([
                 ListProfiles::class,
             ])
+            ->sidebarWidth('17rem')
+            ->maxContentWidth('full')
             ->viteTheme('resources/css/app.css')
             ->widgets([
                 CalendarWidget::class,
@@ -74,5 +78,17 @@ class FilamentServiceProvider extends PanelProvider
         parent::register();
     }
 
-    public function boot() {}
+    public function boot()
+    {
+        Filament::serving(function () {
+            Filament::registerNavigationGroups([
+                NavigationGroup::make()
+                    ->label(fn (): string => __('Constraints'))
+                    ->icon('heroicon-o-calendar-days'),
+                NavigationGroup::make()
+                    ->label(fn (): string => __('Shifts'))
+                    ->icon('heroicon-o-calendar'),
+            ]);
+        });
+    }
 }

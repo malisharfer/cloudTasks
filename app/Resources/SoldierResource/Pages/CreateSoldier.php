@@ -27,9 +27,9 @@ class CreateSoldier extends CreateRecord
         if ($userName = $userName->get($this->data['user']['first_name']) == $this->data['user']['last_name']) {
             Notification::make()
                 ->warning()
-                ->title('This name already exists in the system!')
-                ->body('Add an identifier to the name so that it is not the same as another name.
-                For example: '.$this->data['user']['first_name'].' '.$this->data['user']['last_name'].'2')
+                ->title(__('This name already exists in the system!'))
+                ->body(__('Add an identifier to the name so that it is not the same as another name. For example: ')
+                .$this->data['user']['first_name'].' '.$this->data['user']['last_name'].'2')
                 ->persistent()
                 ->send();
 

@@ -19,12 +19,16 @@ class Task extends Model
         'type',
         'color',
         'is_alert',
+        'is_weekend',
+        'is_night',
         'department_name',
         'recurrence',
     ];
 
     protected $casts = [
         'is_alert' => 'boolean',
+        'is_weekend' => 'boolean',
+        'is_night' => 'boolean',
         'parallel_weight' => Integer::class,
         'recurrence' => 'array',
         'duration' => Integer::class,

@@ -30,16 +30,33 @@ it('should create shifts for daily recurrence', function () {
 it('should create shifts for weekly recurrence', function () {
     $task = Task::factory()->create([
         'name' => 'Weekly Task',
-        'recurrence' => ['type' => 'Daily'],
+        'recurrence' => ['type' => 'days_in_week', 'days_in_week' => ['Sunday', 'Tuesday']],
         'start_hour' => '10:00:00',
         'duration' => 2,
     ]);
+    $expectedShiftDates = collect([
+        $this->now->startOfMonth()->next('Sunday')->format('Y-m-d'),
+        $this->now->startOfMonth()->next('Tuesday')->format('Y-m-d'),
+    ]);
+
     $this->recurrenceEvents->recurrenceTask();
+    $this->assertDatabaseCount('shifts', 2);
     $this->assertDatabaseHas('shifts', [
         'task_id' => $task->id,
-        'start_date' => Carbon::parse($this->now->startOfMonth()->format('Y-m-d').' '.$task['start_hour']),
-        'end_date' => Carbon::parse($this->now->startOfMonth()->format('Y-m-d').' '.$task['start_hour'])->addHours($task['duration']),
+        'start_date' => Carbon::parse($expectedShiftDates[0].' '.$task['start_hour']),
+        'end_date' => Carbon::parse($expectedShiftDates[0].' '.$task['start_hour'])->addHours($task['duration']),
     ]);
+    $this->assertDatabaseHas('shifts', [
+        'task_id' => $task->id,
+        'start_date' => Carbon::parse($expectedShiftDates[1].' '.$task['start_hour']),
+        'end_date' => Carbon::parse($expectedShiftDates[1].' '.$task['start_hour'])->addHours($task['duration']),
+    ]);
+    // $this->recurrenceEvents->recurrenceTask();
+    // $this->assertDatabaseHas('shifts', [
+    //     'task_id' => $task->id,
+    //     'start_date' => Carbon::parse($this->now->startOfMonth()->format('Y-m-d').' '.$task['start_hour']),
+    //     'end_date' => Carbon::parse($this->now->startOfMonth()->format('Y-m-d').' '.$task['start_hour'])->addHours($task['duration']),
+    // ]);
 });
 
 it('should create shifts for monthly recurrence', function () {

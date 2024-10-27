@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('type');
             $table->string('color');
             $table->boolean('is_alert');
+            $table->boolean('is_weekend');
+            $table->boolean('is_night');
             $table->string('department_name')->nullable();
             $table->json('recurrence');
             $table->timestamps();

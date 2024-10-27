@@ -10,6 +10,7 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\ActionGroup;
@@ -48,7 +49,6 @@ class DepartmentResource extends Resource
                         ->required(),
                     Select::make('commander_id')
                         ->label(__('Commander'))
-
                         ->relationship('commander', 'id')
                         ->options(
                             fn () => Cache::remember('users', 30 * 60, function () {
@@ -87,9 +87,6 @@ class DepartmentResource extends Resource
                     return $query->where('id', request()->input('department_id'));
                 }
             })
-            ->filters([
-                //
-            ])
             ->actions([
                 ActionGroup::make([
                     Action::make('teams')
@@ -114,11 +111,61 @@ class DepartmentResource extends Resource
             ]);
     }
 
+    public static function checkCommander($teams, $departments, $data)
+    {
+        Notification::make()
+            ->title(__('Save department'))
+            ->persistent()
+            ->body(__('The commander you selected is already registered as a commander. His selection will leave his :type without a commander. Are you sure?', ['type' => $teams->isNotEmpty() ? 'soldiers' : 'teams']))
+            ->actions([
+                \Filament\Notifications\Actions\Action::make($teams->isNotEmpty() ? __('View team') : __('View department'))
+                    ->button()
+                    ->url(
+                        fn () => $teams->isNotEmpty() ?
+                        route('filament.app.resources.teams.index', ['commander_id' => $data['commander_id']]) :
+                        route('filament.app.resources.departments.index', ['commander_id' => $data['commander_id']])
+                    ),
+                \Filament\Notifications\Actions\Action::make('confirm')
+                    ->label(__('Confirm'))
+                    ->button()
+                    ->dispatch('confirmCreate', data: ['teams' => $teams, 'departments' => $departments]),
+                \Filament\Notifications\Actions\Action::make(__('Cancel'))
+                    ->button()
+                    ->close(),
+            ])
+            ->send();
+    }
+
+    public static function confirm(array $teams, array $departments, $commander_id): void
+    {
+        if (collect($teams)->isNotEmpty()) {
+            self::unAssignTeamCommander($commander_id);
+        }
+        if (collect($departments)->isNotEmpty()) {
+            self::unAssignDepartmentCommander($commander_id);
+        }
+    }
+
+    protected static function unAssignTeamCommander($commander_id): void
+    {
+        Team::where('commander_id', $commander_id)
+            ->update(['commander_id' => null]);
+        $user = User::where('userable_id', $commander_id)->first();
+        $user->removeRole('team-commander');
+    }
+
+    protected static function unAssignDepartmentCommander($commander_id): void
+    {
+        Department::where('commander_id', $commander_id)
+            ->update(['commander_id' => null]);
+    }
+
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListDepartments::route('/'),
             'create' => Pages\CreateDepartment::route('/create'),
+            'edit' => Pages\EditDepartment::route('/{record}/edit'),
         ];
     }
 }

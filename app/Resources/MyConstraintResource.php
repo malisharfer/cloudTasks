@@ -2,7 +2,6 @@
 
 namespace App\Resources;
 
-use App\Filament\Clusters\Constraints;
 use App\Models\Constraint;
 use App\Resources\MyConstraintResource\Pages;
 use Filament\Resources\Resource;
@@ -10,15 +9,18 @@ use Filament\Tables\Table;
 
 class MyConstraintResource extends Resource
 {
-    protected static ?string $cluster = Constraints::class;
-
     protected static ?string $model = Constraint::class;
 
     protected static ?string $label = 'My Constraint';
 
     protected static ?string $slug = 'my-constraint';
 
-    protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
+    protected static ?int $navigationSort = 1;
+
+    public static function getNavigationGroup(): string
+    {
+        return __('Constraints');
+    }
 
     public static function getModelLabel(): string
     {

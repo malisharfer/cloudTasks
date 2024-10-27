@@ -50,13 +50,13 @@ class ProfileResource extends Resource
                         Section::make([
                             Select::make('qualifications')
                                 ->label(__('Qualifications'))
-                                ->placeholder(__('Select an option'))
+                                ->placeholder(__('Select qualifications'))
                                 ->options(Task::all()->pluck('name', 'name')),
                             DatePicker::make('enlist_date')->label(__('Enlist date'))->seconds(false),
                         ])->columns(2),
                         Section::make([
                             Toggle::make('is_permanent')->Label(__('Is permanent')),
-                            Toggle::make('has_exemption')->label(__('Has exemption')),
+                            Toggle::make('has_exemption')->label(__('Exemption')),
                             Toggle::make('is_trainee')->label(__('Is trainee')),
                             Toggle::make('is_mabat')->label(__('Is mabat')),
                         ])->columns(4),
@@ -85,12 +85,12 @@ class ProfileResource extends Resource
                             })->weight(weight: FontWeight::SemiBold)->description(__('Full name'), position: 'above')->size(TextColumnSize::Large),
                         TextColumn::make('enlist_date')->weight(weight: FontWeight::SemiBold)->description(__('Enlist date'), position: 'above')->size(TextColumnSize::Large)->date(),
                         TextColumn::make('course')->weight(weight: FontWeight::SemiBold)->description(__('Course'), position: 'above')->size(TextColumnSize::Large),
-                        TextColumn::make('max_shift')->weight(weight: FontWeight::SemiBold)->description(__('Max shift'), position: 'above')->size(TextColumnSize::Large),
+                        TextColumn::make('max_shifts')->weight(weight: FontWeight::SemiBold)->description(__('Max shifts'), position: 'above')->size(TextColumnSize::Large),
                     ]),
                     Stack::make([
 
-                        TextColumn::make('max_night')->weight(weight: FontWeight::SemiBold)->description(__('Max night'), position: 'above')->size(TextColumnSize::Large),
-                        TextColumn::make('max_weekend')->weight(weight: FontWeight::SemiBold)->description(__('Max weekend'), position: 'above')->size(TextColumnSize::Large),
+                        TextColumn::make('max_nights')->weight(weight: FontWeight::SemiBold)->description(__('Max nights'), position: 'above')->size(TextColumnSize::Large),
+                        TextColumn::make('max_weekends')->weight(weight: FontWeight::SemiBold)->description(__('Max weekends'), position: 'above')->size(TextColumnSize::Large),
                         TextColumn::make('capacity')->weight(weight: FontWeight::SemiBold)->description(__('Capacity'), position: 'above')->size(TextColumnSize::Large),
                         TextColumn::make('capacity_hold')->weight(weight: FontWeight::SemiBold)->description(__('Capacity hold'), position: 'above')->size(TextColumnSize::Large),
                         TextColumn::make('qualifications')->weight(weight: FontWeight::SemiBold)->description(__('Qualifications'), position: 'above')->size(TextColumnSize::Large),

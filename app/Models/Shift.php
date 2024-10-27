@@ -53,4 +53,9 @@ class Shift extends Model
 
         ];
     }
+
+    public static function getTitle(): string|Htmlable
+    {
+        return __('Shift');
+    }
 }
