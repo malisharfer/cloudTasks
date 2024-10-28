@@ -8,6 +8,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Task;
 use App\Enums\RecurrenceType;
+use App\Models\Department;
 use App\Services\ReccurenceEvents;
 class DatabaseSeeder extends Seeder
 {
@@ -26,8 +27,12 @@ class DatabaseSeeder extends Seeder
         ]);
         $user->assignRole('manager');
 
+        Department::factory()->create([
+            'name' => 'a1',
+        ]);
         Task::factory()->create([
             'name' => 'תכנון',
+            'type' => 'תכנון',
             'start_hour' => '08:30:00',
             'duration' => 5,
             'parallel_weight' => 0,
@@ -36,7 +41,7 @@ class DatabaseSeeder extends Seeder
         ]);
         Task::factory()->create([
             'name' => 'תכנון סוף שבוע',
-            'type' => 'planning',
+            'type' => 'תכנון',
             'start_hour' => '08:30:00',
             'duration' => 5,
             'parallel_weight' => 1,
@@ -45,6 +50,7 @@ class DatabaseSeeder extends Seeder
         ]);
         Task::factory()->create([
             'name' => 'הטסה',
+            'type' => 'הטסה',
             'start_hour' => '09:00:00',
             'duration' => 6,
             'parallel_weight' => 0,
@@ -53,6 +59,7 @@ class DatabaseSeeder extends Seeder
         ]);
         Task::factory()->create([
             'name' => 'הטסת לילה',
+            'type' => 'הטסה',
             'start_hour' => '00:00:00',
             'duration' => 12,
             'parallel_weight' => 0.5,
@@ -61,6 +68,7 @@ class DatabaseSeeder extends Seeder
         ]);
         Task::factory()->create([
             'name' => 'בקרה',
+            'type' => 'בקרה',
             'start_hour' => '10:00:00',
             'duration' => 6,
             'parallel_weight' => 0,
@@ -69,7 +77,7 @@ class DatabaseSeeder extends Seeder
         ]);
         User::factory()->create([
             'userable_id' => Soldier::factory()->create([
-                'qualifications' => ['planning', 'control'],
+                'qualifications' => ['תכנון', 'בקרה'],
                 'capacity' => 0,
                 'max_nights' => 0,
                 'max_weekends' => 0,
@@ -78,7 +86,7 @@ class DatabaseSeeder extends Seeder
         ]);
         User::factory()->create([
             'userable_id' => Soldier::factory()->create([
-                'qualifications' => ['planning', 'flight'],
+                'qualifications' => ['תכנון', 'הטסה'],
                 'capacity' => 2,
                 'max_nights' => 1,
                 'max_weekends' => 2,
@@ -87,7 +95,7 @@ class DatabaseSeeder extends Seeder
         ]);
         User::factory()->create([
             'userable_id' => Soldier::factory()->create([
-                'qualifications' => ['planning', 'flight'],
+                'qualifications' => ['תכנון', 'הטסה'],
                 'capacity' => 2,
                 'max_nights' => 1,
                 'max_weekends' => 2,
@@ -96,7 +104,7 @@ class DatabaseSeeder extends Seeder
         ]);
         User::factory()->create([
             'userable_id' => Soldier::factory()->create([
-                'qualifications' => ['planning', 'flight'],
+                'qualifications' => ['תכנון', 'הטסה'],
                 'capacity' => 3,
                 'max_nights' => 1,
                 'max_weekends' => 2,
@@ -105,7 +113,7 @@ class DatabaseSeeder extends Seeder
         ]);
         User::factory()->create([
             'userable_id' => Soldier::factory()->create([
-                'qualifications' => ['planning', 'flight'],
+                'qualifications' => ['תכנון', 'הטסה'],
                 'capacity' => 3,
                 'max_nights' => 2,
                 'max_weekends' => 2,
@@ -114,7 +122,7 @@ class DatabaseSeeder extends Seeder
         ]);
         User::factory()->create([
             'userable_id' => Soldier::factory()->create([
-                'qualifications' => ['planning', 'flight'],
+                'qualifications' => ['תכנון', 'הטסה'],
                 'capacity' => 0,
                 'max_nights' => 0,
                 'max_weekends' => 0,
@@ -123,7 +131,7 @@ class DatabaseSeeder extends Seeder
         ]);
         User::factory()->create([
             'userable_id' => Soldier::factory()->create([
-                'qualifications' => ['planning', 'flight'],
+                'qualifications' => ['תכנון', 'הטסה'],
                 'capacity' => 3,
                 'max_nights' => 0,
                 'max_weekends' => 3,
@@ -132,7 +140,7 @@ class DatabaseSeeder extends Seeder
         ]);
         User::factory()->create([
             'userable_id' => Soldier::factory()->create([
-                'qualifications' => ['planning', 'flight'],
+                'qualifications' => ['תכנון', 'הטסה'],
                 'capacity' => 3,
                 'max_nights' => 0,
                 'max_weekends' => 3,
@@ -141,7 +149,7 @@ class DatabaseSeeder extends Seeder
         ]);
         User::factory()->create([
             'userable_id' => Soldier::factory()->create([
-                'qualifications' => ['planning', 'flight'],
+                'qualifications' => ['תכנון', 'הטסה'],
                 'capacity' => 1,
                 'max_nights' => 1,
                 'max_weekends' => 1,

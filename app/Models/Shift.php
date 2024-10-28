@@ -36,7 +36,7 @@ class Shift extends Model
     {
         $user_name = User::where('userable_id', $this->soldier_id)->get(['first_name', 'last_name']);
 
-        return $this->task?->name.' '.$user_name->first()?->first_name.' '.$user_name->first()?->last_name;
+        return $this->task?->name . ' ' . $user_name->first()?->first_name . ' ' . $user_name->first()?->last_name;
     }
 
     public function getTaskColorAttribute()
@@ -49,7 +49,7 @@ class Shift extends Model
         return [
             Section::make([
                 Placeholder::make('')
-                    ->content(content: fn (Shift $shift) => $shift->task_name)
+                    ->content(content: fn(Shift $shift) => $shift->task_name)
                     ->inlineLabel(),
                 Grid::make()
                     ->schema([
@@ -60,7 +60,7 @@ class Shift extends Model
                             ->live()
                             ->inline()
                             ->options(
-                                fn (?Shift $shift) => self::getOptions($shift->task->department_name)
+                                fn(?Shift $shift) => self::getOptions($shift->task->department_name)
                             ),
                         Select::make('soldier_id')
                             ->label('Soldier assignment')
@@ -71,14 +71,15 @@ class Shift extends Model
                                     return $manual_assignment->getSoldiers();
                                 }
                             )
+                            ->default(null)
                             ->placeholder('Select soldier')
                             ->visible(
-                                fn (Get $get): bool => $get('soldier_type') != null
+                                fn(Get $get): bool => $get('soldier_type') != null
                             ),
                     ])
                     ->visible(
-                        fn (?Shift $record, Get $get): bool => $record !== null
-                        && ! $record->soldier_id
+                        fn(?Shift $record, Get $get): bool => $record !== null
+                        && !$record->soldier_id
                         && \Str::contains($_SERVER['HTTP_REFERER'], 'my-soldiers-shifts')
                         && current(array: array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']))
                     )
@@ -105,11 +106,11 @@ class Shift extends Model
     {
         $options = [
             'reserves' => __('Reserves'),
-            'department' => '"'.$department_name.'" '.__('Department'),
+            'department' => '"' . $department_name . '" ' . __('Department'),
             'all' => __('All'),
         ];
         if (current(array: array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])) != 'manager') {
-            return collect($options)->put('my_soldiers' , __('My Soldiers'))->toArray();
+            return collect($options)->put('my_soldiers', __('My Soldiers'))->toArray();
         }
         return $options;
     }
