@@ -53,7 +53,7 @@ class Shift extends Model
                     ->inlineLabel(),
                 Grid::make()
                     ->schema([
-                        ToggleButtons::make('shift_type')
+                        ToggleButtons::make('soldier_type')
                             ->required()
                             ->label(__('Soldier'))
                             ->reactive()
@@ -66,14 +66,14 @@ class Shift extends Model
                             ->label('Soldier assignment')
                             ->options(
                                 function (?Shift $shift, Get $get) {
-                                    $manual_assignment = new \App\Services\ManualAssignment($shift, $get('shift_type'));
+                                    $manual_assignment = new \App\Services\ManualAssignment($shift, $get('soldier_type'));
 
                                     return $manual_assignment->getSoldiers();
                                 }
                             )
                             ->placeholder('Select soldier')
                             ->visible(
-                                fn (Get $get): bool => $get('shift_type') != null
+                                fn (Get $get): bool => $get('soldier_type') != null
                             ),
                     ])
                     ->visible(
@@ -109,9 +109,8 @@ class Shift extends Model
             'all' => __('All'),
         ];
         if (current(array: array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])) != 'manager') {
-            return collect($options)->splice(1, 0, ['my_soldiers' => __('My Soldiers')])->toArray();
+            return collect($options)->put('my_soldiers' , __('My Soldiers'))->toArray();
         }
-
         return $options;
     }
 

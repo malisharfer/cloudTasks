@@ -174,8 +174,8 @@ class CalendarWidget extends FullCalendarWidget
         }
     }
 
-    protected function viewAction(): Action
-    {
-        return ViewAction::make()->modalHeading(__('View').$this->model::getTitle());
-    }
+    // protected function viewAction(): Action
+    // {
+    //     return ViewAction::make()->modalHeading(__('View').$this->model::getTitle());
+    // }
 }
