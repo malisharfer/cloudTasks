@@ -12,7 +12,6 @@ use App\Models\User;
 use App\Resources\SoldierResource\Pages;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Fieldset;
-use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Split;
@@ -116,7 +115,7 @@ class SoldierResource extends Resource
                     ->label(__('Qualifications'))
                     ->multiple()
                     ->searchable()
-                    ->options(Task::all()->pluck('name', 'type'))
+                    ->options(Task::all()->pluck('name', 'name'))
                     ->query(function (Builder $query, array $data) {
                         return collect($data['values'])->map(fn ($qualification) => $query->whereJsonContains('qualifications', $qualification));
                     })
@@ -265,12 +264,11 @@ class SoldierResource extends Resource
                 ->label(__('Course'))
                 ->numeric()
                 ->minValue(0),
-            Select::make('capacity')
+            TextInput::make('capacity')
+                ->numeric()
+                ->step(0.25)
                 ->label(__('Capacity'))
-                ->placeholder(__('Select an option'))
-                ->options(fn (): array => collect(range(0, 12))->mapWithKeys(fn ($number) => [(string) ($number / 4) => (string) ($number / 4)])->toArray())
                 ->required(),
-            Hidden::make('capacity_hold')->default(0),
             Section::make([
                 Toggle::make('is_reservist')->label(__('Reservist'))->live(),
                 Toggle::make('is_permanent')->label(__('Is permanent')),
@@ -312,7 +310,8 @@ class SoldierResource extends Resource
                     ->label(__('Qualifications'))
                     ->multiple()
                     ->placeholder(__('Select qualifications'))
-                    ->options(Task::all()->pluck('name', 'name')), ])->columns(2)
+                    ->options(Task::all()->pluck('name', 'name')),
+            ])->columns(2)
                 ->columnSpan('full'),
         ];
 

@@ -11,6 +11,7 @@ use Filament\Forms\Form;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 use Saade\FilamentFullCalendar\Actions\CreateAction;
 use Saade\FilamentFullCalendar\Actions\DeleteAction;
 use Saade\FilamentFullCalendar\Actions\EditAction;
@@ -148,8 +149,8 @@ class CalendarWidget extends FullCalendarWidget
                     ->modalSubmitAction(false)
                     ->closeModalByClickingAway(false)
                     ->extraModalFooterActions(fn (Action $action): array => [
-                        $action->makeExtraModalAction('save', arguments: ['save' => true])->color('primary'),
-                        $action->makeExtraModalAction('cancel', arguments: ['cancel' => true])->color('primary'),
+                        $action->makeExtraModalAction(__('Save'), arguments: ['save' => true])->color('primary'),
+                        $action->makeExtraModalAction(__('Cancel'), arguments: ['cancel' => true])->color('primary'),
                     ])
                     ->modalHeading(__('Edit').' '.$this->model::getTitle())
                     ->action(function (array $data, array $arguments, Model $record): void {
@@ -157,7 +158,10 @@ class CalendarWidget extends FullCalendarWidget
                             $this->refreshRecords();
                         }
                         if ($arguments['save'] ?? false) {
-                            $this->model::where('id', operator: $record['id'])->update([...$data]);
+                            $columns = Schema::getColumnListing(strtolower(class_basename($this->model)).'s');
+                            $filteredData = array_intersect_key($data, array_flip($columns));
+                            $this->model::where('id', operator: $record['id'])->update([...$filteredData]);
+                            method_exists($this->model, 'afterSave') && $this->model::afterSave($data, $record);
                         }
                     }),
                 DeleteAction::make(),

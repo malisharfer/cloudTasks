@@ -16,11 +16,11 @@ return new class extends Migration
             $table->dateTime('enlist_date')->nullable();
             $table->integer('course');
             $table->boolean('has_exemption');
-            $table->integer('max_shifts')->nullable();
-            $table->integer('max_nights')->nullable();
-            $table->integer('max_weekends')->nullable();
+            $table->integer('max_shifts')->default(0)->nullable();
+            $table->integer('max_nights')->default(0)->nullable();
+            $table->integer('max_weekends')->default(0)->nullable();
             $table->integer('capacity');
-            $table->integer('capacity_hold');
+            $table->integer('capacity_hold')->default(0);
             $table->boolean('is_trainee');
             $table->boolean('is_mabat');
             $table->json('qualifications');
