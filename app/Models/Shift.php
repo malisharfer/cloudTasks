@@ -12,12 +12,14 @@ use Filament\Forms\Get;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 class Shift extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'parallel_weight',
         'start_date',
         'end_date',
     ];
@@ -51,6 +53,8 @@ class Shift extends Model
                 Placeholder::make('')
                     ->content(content: fn(Shift $shift) => $shift->task_name)
                     ->inlineLabel(),
+                Toggle::make('is_weekend'),
+                TextInput::make('parallel_weight'),
                 Grid::make()
                     ->schema([
                         ToggleButtons::make('soldier_type')

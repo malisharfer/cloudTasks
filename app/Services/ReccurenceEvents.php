@@ -113,6 +113,7 @@ class ReccurenceEvents
     {
         collect($dates)->map(function ($date) {
             $shift = new Shift;
+            $shift->parallel_weight = $this->task['parallel_weight'];
             $shift->start_date = $date;
             $shift->end_date = $this->calculateEndDateTime($date);
             $shift->task_id = $this->task['id'];

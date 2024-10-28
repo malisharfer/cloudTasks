@@ -12,6 +12,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('soldier_id')->nullable();
             $table->foreignId('task_id')->nullable();
+            $table->boolean('is_weekend')->nullable();
+            $table->boolean('parallel_weight')->nullable();
             $table->dateTime('start_date');
             $table->dateTime('end_date');
             $table->timestamps();
