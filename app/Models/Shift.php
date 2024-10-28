@@ -58,7 +58,6 @@ class Shift extends Model
                 Grid::make()
                     ->schema([
                         ToggleButtons::make('soldier_type')
-                            ->required()
                             ->label(__('Soldier'))
                             ->reactive()
                             ->live()
@@ -101,6 +100,11 @@ class Shift extends Model
 
     public static function afterSave($shift, $record)
     {
+        if (
+            !isset($shift->soldier_id)
+            || !isset($shift->soldier_type)
+        )
+            return;
         $soldier = Soldier::find($shift['soldier_id']);
         $shift = Shift::find($record->id);
         $soldier->update(['capacity_hold' => (float) $soldier->capacity_hold + $shift->task->parallel_weight]);
