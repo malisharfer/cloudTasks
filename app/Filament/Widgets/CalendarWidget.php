@@ -140,15 +140,15 @@ class CalendarWidget extends FullCalendarWidget
 
             if (Task::exists()) {
                 $actions = [
-                    Action::make('Shifts assignment')
+                    Action::make('Create shifts')
                         ->action(fn (): RecurringEvents => self::runEvents())
-                        ->label(__('Shifts assignment'))
+                        ->label(__('Create shifts'))
                         ->icon('heroicon-o-arrow-path')
                         ->visible(current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']))),
 
-                    Action::make('Run Algorithm')
+                    Action::make('Shifts assignment')
                         ->action(fn () => self::run())
-                        ->label(__('Run Algorithm'))
+                        ->label(__('Shifts assignment'))
                         ->icon('heroicon-o-play')
                         ->visible(current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']))),
                 ];
@@ -290,16 +290,16 @@ class CalendarWidget extends FullCalendarWidget
         return [];
     }
 
-    // protected function viewAction(): Action
-    // {
-    //     return ViewAction::make()
-    //         ->fillForm(function (Model $record, array $arguments): array {
-    //             return method_exists($this->model, 'fillForm')
-    //             ? (new $this->model)->fillForm($record, $arguments)
-    //             : [...$record->getAttributes(),
-    //                 'start_date' => $arguments['event']['start'] ?? $record->start_date,
-    //                 'end_date' => $arguments['event']['end'] ?? $record->end_date];
-    //         })
-    //         ->modalHeading(__('View').$this->model::getTitle());
-    // }
+    protected function viewAction(): Action
+    {
+        return ViewAction::make()
+            ->fillForm(function (Model $record, array $arguments): array {
+                return method_exists($this->model, 'fillForm')
+                ? (new $this->model)->fillForm($record, $arguments)
+                : [...$record->getAttributes(),
+                    'start_date' => $arguments['event']['start'] ?? $record->start_date,
+                    'end_date' => $arguments['event']['end'] ?? $record->end_date];
+            })
+            ->modalHeading(__('View').$this->model::getTitle());
+    }
 }
