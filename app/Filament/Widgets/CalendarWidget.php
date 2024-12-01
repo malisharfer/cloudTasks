@@ -8,6 +8,7 @@ use App\Models\Soldier;
 use App\Models\Task;
 use App\Services\RecurringEvents;
 use Carbon\Carbon;
+use App\Services\Algorithm;
 use Filament\Actions\Action;
 use Filament\Forms\Form;
 use Illuminate\Database\Eloquent\Model;
@@ -211,7 +212,11 @@ class CalendarWidget extends FullCalendarWidget
 
     }
 
-    protected function run() {}
+    protected function run() {
+        $algorithm = new Algorithm();
+        $algorithm->run();
+        $this->refreshRecords();
+    }
 
     public function getConfig(): array
     {
