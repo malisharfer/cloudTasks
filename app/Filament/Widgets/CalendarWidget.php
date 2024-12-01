@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Schema;
 use Saade\FilamentFullCalendar\Actions\CreateAction;
 use Saade\FilamentFullCalendar\Actions\DeleteAction;
 use Saade\FilamentFullCalendar\Actions\EditAction;
-use Saade\FilamentFullCalendar\Actions\viewAction;
+use Saade\FilamentFullCalendar\Actions\ViewAction;
 use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
 
