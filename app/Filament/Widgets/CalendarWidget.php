@@ -285,16 +285,16 @@ class CalendarWidget extends FullCalendarWidget
         return [];
     }
 
-    protected function viewAction(): Action
-    {
-        return ViewAction::make()
-            ->fillForm(function (Model $record, array $arguments): array {
-                return method_exists($this->model, 'fillForm')
-                ? (new $this->model)->fillForm($record, $arguments)
-                : [...$record->getAttributes(),
-                    'start_date' => $arguments['event']['start'] ?? $record->start_date,
-                    'end_date' => $arguments['event']['end'] ?? $record->end_date];
-            })
-            ->modalHeading(__('View').$this->model::getTitle());
-    }
+    // protected function viewAction(): Action
+    // {
+    //     return ViewAction::make()
+    //         ->fillForm(function (Model $record, array $arguments): array {
+    //             return method_exists($this->model, 'fillForm')
+    //             ? (new $this->model)->fillForm($record, $arguments)
+    //             : [...$record->getAttributes(),
+    //                 'start_date' => $arguments['event']['start'] ?? $record->start_date,
+    //                 'end_date' => $arguments['event']['end'] ?? $record->end_date];
+    //         })
+    //         ->modalHeading(__('View').$this->model::getTitle());
+    // }
 }
