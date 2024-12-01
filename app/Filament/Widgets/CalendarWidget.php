@@ -147,7 +147,7 @@ class CalendarWidget extends FullCalendarWidget
                         ->visible(current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']))),
 
                     Action::make('Run Algorithm')
-                        ->action(fn (): RecurringEvents => self::runEvents())
+                        ->action(fn () => self::run())
                         ->label(__('Run Algorithm'))
                         ->icon('heroicon-o-play')
                         ->visible(current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']))),
@@ -182,7 +182,6 @@ class CalendarWidget extends FullCalendarWidget
         $recurringEvents = new RecurringEvents($this->currentMonth);
         $recurringEvents->recurringTask();
         $this->refreshRecords();
-
         return $recurringEvents;
     }
 
@@ -216,6 +215,7 @@ class CalendarWidget extends FullCalendarWidget
         $algorithm = new Algorithm();
         $algorithm->run();
         $this->refreshRecords();
+        
     }
 
     public function getConfig(): array
