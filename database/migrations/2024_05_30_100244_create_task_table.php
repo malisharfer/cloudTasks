@@ -20,7 +20,7 @@ return new class extends Migration
             $table->boolean('is_weekend');
             $table->boolean('is_night');
             $table->string('department_name')->nullable();
-            $table->json('recurrence');
+            $table->json('recurring');
             $table->timestamps();
             $table->softDeletes();
         });

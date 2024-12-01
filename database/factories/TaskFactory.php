@@ -19,7 +19,7 @@ class TaskFactory extends Factory
             'is_weekend' => fake()->boolean(),
             'is_night' => fake()->boolean(),
             'department_name' => fake()->name(),
-            'recurrence' => json_encode([]),
+            'recurring' => json_encode([]),
         ];
     }
 }
