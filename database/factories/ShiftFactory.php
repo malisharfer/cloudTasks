@@ -14,9 +14,9 @@ class ShiftFactory extends Factory
         return [
             'soldier_id' => User::factory()->create()->userable_id,
             'task_id' => Task::factory()->create()->id,
-            'start_date' => now(),
             'is_weekend' => fake()->boolean(),
             'parallel_weight' => fake()->randomDigit(),
+            'start_date' => now(),
             'end_date' => Carbon::now()->addDay(),
         ];
     }

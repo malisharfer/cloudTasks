@@ -2,43 +2,86 @@
 
 namespace App\Services;
 
+use App\Enums\DaysInWeek;
+
 class Shift
 {
     public $id;
 
-    public $task_name;
+    public $taskType;
 
     public $range;
 
     public $points;
 
-    public $is_assign;
+    public $isNight;
 
-    public function __construct($id, string $task_name, $start, $end, float $points)
+    public $isWeekend;
+
+    public function __construct($id, string $taskType, $start, $end, float $points, bool $isNight, bool $isWeekend)
     {
         $this->id = $id;
-        $this->task_name = $task_name;
+        $this->taskType = $taskType;
         $this->range = new Range($start, $end);
         $this->points = $points;
-        $this->is_assign = false;
+        $this->isNight = $isNight;
+        $this->isWeekend = $isWeekend;
+    }
+
+    public function getShiftSpaces($shifts)
+    {
+        if ($this->isWeekend) {
+            return $this->getWeekendSpaces($shifts);
+        }
+        if ($this->isNight) {
+            return $this->range->getNightSpaces();
+        }
+
+        return [];
+    }
+
+    protected function getWeekendSpaces($shifts)
+    {
+        if ($this->isFullWeekend($shifts)) {
+            return [$this->range->getDayAfterWeekend()];
+        }
+    }
+
+    protected function isFullWeekend($shifts)
+    {
+        $isFriday = $this->isShiftInclude($this->range, DaysInWeek::FRIDAY);
+        $isSaturday = $this->isShiftInclude($this->range, DaysInWeek::SATURDAY);
+        if ($isFriday && $isSaturday) {
+            return true;
+        }
+        $dayToCheck = $isFriday ? DaysInWeek::SATURDAY : DaysInWeek::FRIDAY;
+        if (! empty($shifts)) {
+            $shiftsInWeekend = $shifts->filter(function ($shift) use ($dayToCheck): bool {
+                return $this->isShiftInclude($shift->range, $dayToCheck);
+            });
+        }
+
+        return ! empty($shiftsInWeekend) ? $this->isAttached($shiftsInWeekend, $this->range, $dayToCheck) : false;
+    }
+
+    protected function isShiftInclude(Range $range, DaysInWeek $dayInWeek): bool
+    {
+        return $range->isRangeInclude($dayInWeek);
+    }
+
+    protected function isAttached($shifts, $range, DaysInWeek $dayInWeek): bool
+    {
+        $expectedDate = $dayInWeek == DaysInWeek::FRIDAY ? $range->start->subDay()->startOfDay() : $range->end->addDay()->startOfDay();
+
+        return $shifts ? collect($shifts)->contains(
+            function ($shift) use ($expectedDate): bool {
+                return $shift->range->start->isSameDay($expectedDate);
+            }
+        ) : false;
     }
 
     protected function name(): string
     {
-        return $this->task_name.': from'.$this->range->start.' to'.$this->range->end;
-    }
-
-    public function isWeekend(): bool
-    {
-        return $this->range->isWeekend();
-    }
-
-    public function isNight(): bool
-    {
-        if ($this->isWeekend()) {
-            return false;
-        }
-
-        return $this->range->isNight();
+        return $this->taskType.': from'.$this->range->start.' to'.$this->range->end;
     }
 }

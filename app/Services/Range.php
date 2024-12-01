@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\DaysInWeek;
 use Carbon\Carbon;
 use Exception;
 
@@ -13,16 +14,16 @@ class Range
 
     public function __construct($start, $end)
     {
-        if ($start > $end) {
+        if (Carbon::parse($start)->isAfter(Carbon::parse($end))) {
             new Exception('Invalid range');
         }
-        $this->start = $start;
-        $this->end = $end;
+        $this->start = Carbon::parse($start)->setTimezone('Asia/Jerusalem');
+        $this->end = Carbon::parse($end)->setTimezone('Asia/Jerusalem');
     }
 
     public function isConflict(Range $other): bool
     {
-        return ! (Carbon::parse($this->start)->isAfter(Carbon::parse($other->end)) || Carbon::parse($this->end)->isBefore(Carbon::parse($other->start)));
+        return $this->start->isBefore($other->end) && $other->start->isBefore($this->end);
     }
 
     public function isWeekend(): bool
@@ -46,11 +47,8 @@ class Range
 
     public function isNight(): bool
     {
-        if ($this->isWeekend()) {
-            return false;
-        }
-
-        return
+        return $this->isWeekend() ?
+            false :
             (
                 ($this->start->day == $this->end->day)
                 && (
@@ -69,5 +67,39 @@ class Range
             || $other->start->monthName == $this->end->monthName
             || $other->end->monthName == $this->start->monthName
             || $other->end->monthName == $this->end->monthName;
+    }
+
+    public function isRangeInclude(DaysInWeek $dayInWeek): bool
+    {
+        $startDayIndex = $this->start->dayOfWeek;
+        $endDayIndex = $this->end->dayOfWeek;
+        $checkDayIndex = date('N', strtotime($dayInWeek->value));
+        if ($startDayIndex <= $endDayIndex) {
+            return $this->start->diffInDays($this->end) > 5 || ($checkDayIndex >= $startDayIndex && $checkDayIndex <= $endDayIndex);
+        }
+
+        return $checkDayIndex >= $startDayIndex || $checkDayIndex <= $endDayIndex;
+    }
+
+    public function getDayAfterWeekend(): Range
+    {
+        $nextDayAfterWeekend = $this->end->next(DaysInWeek::SUNDAY->value)->setTime(8, 0);
+
+        return new Range($nextDayAfterWeekend, $nextDayAfterWeekend->copy()->addDay());
+    }
+
+    public function getNightSpaces()
+    {
+        return [$this->getDayBeforeNight(), $this->getDayAfterNight()];
+    }
+
+    public function getDayBeforeNight(): Range
+    {
+        return new Range($this->start->copy()->subDay()->setTime(20, 0, 0), $this->start);
+    }
+
+    public function getDayAfterNight(): Range
+    {
+        return new Range($this->end, $this->end->copy()->addDay()->setTime(8, 0, 0));
     }
 }

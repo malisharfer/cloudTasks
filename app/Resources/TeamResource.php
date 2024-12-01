@@ -150,7 +150,9 @@ class TeamResource extends Resource
                         ->badge(fn ($record) => Soldier::where('team_id', $record->id)->count())
                         ->url(fn (Team $record): string => route('filament.app.resources.soldiers.index', ['team_id' => $record->id])),
                     EditAction::make(),
-                    DeleteAction::make(),
+                    DeleteAction::make()
+                        ->label(__('Delete'))
+                        ->modalHeading(__('Delete').' '.self::getModelLabel()),
                 ]),
             ])
             ->bulkActions([

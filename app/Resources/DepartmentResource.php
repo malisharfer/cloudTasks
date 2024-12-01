@@ -92,16 +92,18 @@ class DepartmentResource extends Resource
                     Action::make('teams')
                         ->label(__('Add team'))
                         ->color('primary')
-                        ->icon('heroicon-o-users')
+                        ->icon('heroicon-o-user-plus')
                         ->url(fn (Department $record): string => route('filament.app.resources.teams.create', ['department_id' => $record->id])),
                     Action::make('View teams')
                         ->label(__('View teams'))
                         ->color('success')
-                        ->icon('heroicon-o-users')
+                        ->icon('heroicon-o-user-circle')
                         ->badge(fn ($record) => Team::where('department_id', $record->id)->count())
                         ->url(fn (Department $record): string => route('filament.app.resources.teams.index', ['department_id' => $record->id])),
                     EditAction::make(),
-                    DeleteAction::make(),
+                    DeleteAction::make()
+                        ->label(__('Delete'))
+                        ->modalHeading(__('Delete').' '.self::getModelLabel()),
                 ]),
             ])
             ->bulkActions([

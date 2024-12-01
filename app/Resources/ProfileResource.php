@@ -2,9 +2,11 @@
 
 namespace App\Resources;
 
+use App\Models\Shift;
 use App\Models\Soldier;
 use App\Models\Task;
 use App\Resources\ProfileResource\Pages;
+use Carbon\Carbon;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Section;
@@ -52,7 +54,9 @@ class ProfileResource extends Resource
                                 ->label(__('Qualifications'))
                                 ->placeholder(__('Select qualifications'))
                                 ->options(Task::all()->pluck('name', 'name')),
-                            DatePicker::make('enlist_date')->label(__('Enlist date'))->seconds(false),
+                            DatePicker::make('enlist_date')
+                                ->label(__('Enlist date'))
+                                ->seconds(false),
                         ])->columns(2),
                         Section::make([
                             Toggle::make('is_permanent')->Label(__('Is permanent')),
@@ -92,7 +96,17 @@ class ProfileResource extends Resource
                         TextColumn::make('max_nights')->weight(weight: FontWeight::SemiBold)->description(__('Max nights'), position: 'above')->size(TextColumnSize::Large),
                         TextColumn::make('max_weekends')->weight(weight: FontWeight::SemiBold)->description(__('Max weekends'), position: 'above')->size(TextColumnSize::Large),
                         TextColumn::make('capacity')->weight(weight: FontWeight::SemiBold)->description(__('Capacity'), position: 'above')->size(TextColumnSize::Large),
-                        TextColumn::make('capacity_hold')->weight(weight: FontWeight::SemiBold)->description(__('Capacity hold'), position: 'above')->size(TextColumnSize::Large),
+                        TextColumn::make('capacity_hold')
+                            ->default(function () {
+                                $soldierShifts = Shift::where('soldier_id', auth()->user()->userable_id)->get();
+
+                                return $soldierShifts->filter(function (Shift $shift): bool {
+                                    return Carbon::parse($shift->start_date)->month == now()->month || Carbon::parse($shift->end_date)->month == now()->month;
+                                })->sum(fn (Shift $shift) => $shift->parallel_weight == 0 ? $shift->task->parallel_weight : $shift->parallel_weight);
+                            })
+                            ->weight(weight: FontWeight::SemiBold)
+                            ->description(__('Capacity hold'), position: 'above')
+                            ->size(TextColumnSize::Large),
                         TextColumn::make('qualifications')->weight(weight: FontWeight::SemiBold)->description(__('Qualifications'), position: 'above')->size(TextColumnSize::Large),
                     ]),
                 ]),

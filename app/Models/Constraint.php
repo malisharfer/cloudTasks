@@ -4,10 +4,12 @@ namespace App\Models;
 
 use App\Enums\ConstraintType;
 use Carbon\Carbon;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Get;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -26,8 +28,8 @@ class Constraint extends Model
     ];
 
     protected $casts = [
-        'start_date' => 'datetime:Y-m-d',
-        'end_date' => 'datetime:Y-m-d',
+        'start_date' => 'datetime:Y-m-d H:i:s',
+        'end_date' => 'datetime:Y-m-d H:i:s',
     ];
 
     public function soldiers(): BelongsTo
@@ -49,13 +51,21 @@ class Constraint extends Model
                 ->inline()
                 ->options(fn (Get $get) => self::availableOptions($get))
                 ->afterStateUpdated(fn (callable $set, $state, Get $get) => self::updateDates($set, $state, $get)),
-            Hidden::make('start_date')->required(),
-            Hidden::make('end_date')->required(),
+            Hidden::make('start_date')
+                ->required(),
+            Hidden::make('end_date')
+                ->required(),
             Grid::make()
                 ->visible(fn ($get) => in_array($get('constraint_type'), ['Medical', 'Vacation', 'School', 'Not task', 'Low priority not task']))
                 ->schema([
-                    DateTimePicker::make('start_date')->label(__('Start date'))->required(),
-                    DateTimePicker::make('end_date')->label(__('End date'))->required(),
+                    DateTimePicker::make('start_date')
+                        ->label(__('Start date'))
+                        ->minDate(today())
+                        ->required(),
+                    DateTimePicker::make('end_date')
+                        ->label(__('End date'))
+                        ->after('start_date')
+                        ->required(),
                 ]),
         ];
     }
@@ -165,7 +175,9 @@ class Constraint extends Model
     {
         $translatedConstraint = __($this->constraint_type);
 
-        return $translatedConstraint.' '.$this->soldier_name;
+        return $this->soldier_id == auth()->user()->userable_id
+        ? $translatedConstraint
+        : $translatedConstraint.' '.$this->soldier_name;
     }
 
     public function getConstraintColorAttribute()
@@ -173,7 +185,50 @@ class Constraint extends Model
         return ConstraintType::from($this->constraint_type)->getColor();
     }
 
-    public static function getTitle(): string|Htmlable
+    public static function getFilters($calendar)
+    {
+        return Action::make('Filters')
+            ->label(__('Filter'))
+            ->icon('heroicon-m-funnel')
+            ->form(function () use ($calendar) {
+                $constraints = $calendar->getEventsByRole();
+                $soldiersConstraints = array_filter($constraints->toArray(), fn ($constraint) => $constraint['soldier_id'] !== null);
+
+                return [
+                    Select::make('soldier_id')
+                        ->label(__('Soldier'))
+                        ->options(fn (): array => collect($soldiersConstraints)->mapWithKeys(fn ($constraint) => [$constraint['soldier_id'] => User::where('userable_id', $constraint['soldier_id'])
+                            ->first()?->displayName])->toArray())
+                        ->multiple(),
+                ];
+            })
+            ->modalSubmitActionLabel(__('Filter'))
+            ->action(function (array $data) use ($calendar) {
+                $calendar->filterData = $data;
+                $calendar->filter = $data['soldier_id'] === [] ? false : true;
+                $calendar->refreshRecords();
+            });
+    }
+
+    public static function filter($events, $filterData)
+    {
+        return $events
+            ->whereIn('soldier_id', $filterData['soldier_id'])
+            ->values();
+    }
+
+    public static function activeFilters($calendar)
+    {
+        if ($calendar->filter) {
+            $activeFilter = collect($calendar->filterData['soldier_id'])->map(function ($soldier_id) {
+                return User::where('userable_id', $soldier_id)->first()->displayName;
+            });
+        }
+
+        return $activeFilter->toArray();
+    }
+
+    public static function getTitle(): string
     {
         return __('Constraint');
     }

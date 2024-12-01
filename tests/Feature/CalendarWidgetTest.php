@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\ConstraintType;
 use App\Filament\Widgets\CalendarWidget;
 use App\Models\Constraint;
 use App\Models\Shift;
@@ -20,13 +21,17 @@ beforeEach(function () {
 
 it('clicking the save button will save the dragged event data', function () {
 
-    $constraint = Constraint::factory()->create();
+    $constraint = Constraint::factory()->create([
+        'constraint_type' => ConstraintType::NOT_TASK->value,
+        'start_date' => now('Asia/Jerusalem')->addDays(3),
+        'end_date' => now('Asia/Jerusalem')->addDays(4),
+    ]);
 
     $event = [
         'allDay' => false,
         'title' => $constraint->constraint_type,
-        'start' => '2024-09-03 12:00:00',
-        'end' => '2024-09-05 12:00:00',
+        'start' => now('Asia/Jerusalem')->addDays(1),
+        'end' => now('Asia/Jerusalem')->addDays(2),
         'id' => $constraint->id,
         'display' => 'block',
         'backgroundColor' => $constraint->constraint_color,
@@ -60,20 +65,24 @@ it('clicking the save button will save the dragged event data', function () {
 
     $this->assertDatabaseHas(Constraint::class, [
         'id' => $constraint->id,
-        'start_date' => '2024-09-03 12:00:00',
-        'end_date' => '2024-09-05 12:00:00',
+        'start_date' => $event['start'],
+        'end_date' => $event['end'],
     ]);
 });
 
 it('clicking the cancel button will refresh the calendar', function () {
 
-    $constraint = Constraint::factory()->create();
+    $constraint = Constraint::factory()->create([
+        'constraint_type' => ConstraintType::NOT_TASK->value,
+        'start_date' => now('Asia/Jerusalem')->addDays(3),
+        'end_date' => now('Asia/Jerusalem')->addDays(4),
+    ]);
 
     $event = [
         'allDay' => false,
         'title' => $constraint->constraint_type,
-        'start' => '2024-09-03 12:00:00',
-        'end' => '2024-09-05 12:00:00',
+        'start' => now('Asia/Jerusalem')->addDays(1),
+        'end' => now('Asia/Jerusalem')->addDays(2),
         'id' => $constraint->id,
         'display' => 'block',
         'backgroundColor' => $constraint->constraint_color,
@@ -170,4 +179,39 @@ it('prevent create\edit the soldiers events', function () {
     ]);
     expect(Saade\FilamentFullCalendar\FilamentFullCalendarPlugin::get()->isSelectable())->toBeFalse();
     expect(Saade\FilamentFullCalendar\FilamentFullCalendarPlugin::get()->isEditable())->toBeFalse();
+});
+
+it('should refresh the fullcalendar', function () {
+    livewire(CalendarWidget::class, [
+        'model' => Shift::class,
+        'type' => 'my_soldiers',
+    ])
+        ->mountAction('Filters')
+        ->callMountedAction(['submit' => true])
+        ->assertDispatched('filament-fullcalendar--refresh');
+});
+
+it('should filter the fullcalendar', function () {
+    $user = User::factory()->create();
+    $task1 = Task::factory()->create(['type' => 'wash']);
+    $task2 = Task::factory()->create(['type' => 'clean']);
+    Shift::factory()->count(5)->create(['soldier_id' => $user->userable_id, 'task_id' => $task1->id]);
+    Shift::factory()->count(5)->create(['soldier_id' => $user->userable_id, 'task_id' => $task2->id]);
+
+    $calendar = livewire(CalendarWidget::class, [
+        'model' => Shift::class,
+        'keys' => collect([
+            'id',
+            'task_name',
+            'start_date',
+            'end_date',
+            'task_color',
+        ]),
+        'type' => 'my_soldiers',
+    ])
+        ->mountAction('Filters')
+        ->setActionData(['soldier_id' => [$user->userable_id], 'type' => [$task2->id]])
+        ->callMountedAction(['submit' => true])
+        ->call('fetchEvents', ['start' => Carbon::yesterday(), 'end' => Carbon::now()->addDays(5), 'timezone' => 'Asia\/Jerusalem']);
+    expect($calendar->effects['returns'][0])->toHaveCount(5);
 });

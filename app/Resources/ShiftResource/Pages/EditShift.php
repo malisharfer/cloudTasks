@@ -3,7 +3,7 @@
 namespace App\Resources\ShiftResource\Pages;
 
 use App\Resources\ShiftResource;
-use Filament\Actions;
+use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
 class EditShift extends EditRecord
@@ -13,7 +13,8 @@ class EditShift extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            DeleteAction::make()
+                ->label(__('Delete')),
         ];
     }
 }

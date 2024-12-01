@@ -4,19 +4,18 @@ namespace App\Services;
 
 use App\Enums\Availability;
 use App\Enums\Priority;
-use App\Models\Shift;
 
 class Soldier
 {
     public $id;
 
-    public $points_max_data;
+    public $pointsMaxData;
 
-    public $shifts_max_data;
+    public $shiftsMaxData;
 
-    public $nights_max_data;
+    public $nightsMaxData;
 
-    public $weekends_max_data;
+    public $weekendsMaxData;
 
     public $qualifications;
 
@@ -24,51 +23,66 @@ class Soldier
 
     public $shifts;
 
-    public function __construct($id, MaxData $max_points, MaxData $max_shifts, MaxData $max_nights, MaxData $max_weekends, $qualifications, $constraints)
+    public function __construct($id, MaxData $maxPoints, MaxData $maxShifts, MaxData $maxNights, MaxData $maxWeekends, $qualifications, $constraints, $shifts = [])
     {
         $this->id = $id;
-        $this->points_max_data = $max_points;
-        $this->shifts_max_data = $max_shifts;
-        $this->nights_max_data = $max_nights;
-        $this->weekends_max_data = $max_weekends;
+        $this->pointsMaxData = $maxPoints;
+        $this->shiftsMaxData = $maxShifts;
+        $this->nightsMaxData = $maxNights;
+        $this->weekendsMaxData = $maxWeekends;
         $this->qualifications = collect($qualifications);
         $this->constraints = collect($constraints);
-        $this->shifts = collect([]);
+        $this->shifts = collect($shifts);
     }
 
-    public function isQualified(string $task_name): bool
+    public function isQualified(string $taskType): bool
     {
-        return $this->qualifications->contains($task_name);
+        return $this->qualifications->contains($taskType);
     }
 
-    public function isAbleTake(\App\Services\Shift $shift): bool
+    public function isAbleTake(Shift $shift, $spaces): bool
     {
-        return $this->isAvailableByMaxes($shift) && $this->isAvailableByShifts($shift->range);
+        return $this->isAvailableByMaxes($shift)
+            && $this->isAvailableByShifts($shift->range)
+            && $this->isAvailableBySpaces($spaces);
     }
 
-    public function isAvailableByMaxes(\App\Services\Shift $shift): bool
+    public function isAvailableByMaxes(Shift $shift): bool
     {
-        if ($shift->isWeekend() && $this->weekends_max_data->remaining() < 1) {
+        if ($shift->isWeekend && $this->weekendsMaxData->remaining() < $shift->points) {
             return false;
         }
-        if ($shift->isNight() && $this->nights_max_data->remaining() < 1) {
+        if ($shift->isNight && $this->nightsMaxData->remaining() < $shift->points) {
             return false;
         }
 
-        return $this->points_max_data->remaining() >= $shift->points
-            && $this->shifts_max_data->remaining() >= 1;
+        return $this->pointsMaxData->remaining() >= $shift->points
+            && $this->shiftsMaxData->remaining() >= 1;
     }
 
-    protected function isAvailableByShifts(Range $range): bool
+    public function isAvailableByShifts(Range $range): bool
     {
         return ! $this->shifts->contains(function ($shift) use ($range) {
             return $shift->range->isConflict($range);
         });
     }
 
+    public function isAvailableBySpaces($spaces): bool
+    {
+        if ($spaces) {
+            foreach ($spaces as $space) {
+                return ! $this->shifts->contains(function ($shift) use ($space) {
+                    return $shift->range->isConflict($space);
+                });
+            }
+        }
+
+        return true;
+    }
+
     public function isAvailableByConstraints(Range $range): Availability
     {
-        $conflicts = $this->constraints->filter(function ($constraint) use ($range) {
+        $conflicts = $this->constraints->filter(function (Constraint $constraint) use ($range) {
             return $constraint->range->isConflict($range);
         });
 
@@ -87,15 +101,26 @@ class Soldier
         return Availability::BETTER_NOT;
     }
 
-    public function assign(Shift $shift): void
+    public function assign(Shift $shift, $spaces): void
     {
         $this->shifts->push($shift);
-        $this->points_max_data->used += $shift->points;
-        $this->shifts_max_data->used += 1;
-        if ($shift->is_weekend()) {
-            $this->weekends_max_data->used += 1;
-        } elseif ($shift->is_night()) {
-            $this->nights_max_data->used += 1;
+        $this->addSpaces($spaces);
+        $this->pointsMaxData->used += $shift->points;
+        $this->shiftsMaxData->used += 1;
+        if ($shift->isWeekend) {
+            $this->weekendsMaxData->used += $shift->points;
+        } elseif ($shift->isNight) {
+            $this->nightsMaxData->used += $shift->points;
         }
+    }
+
+    protected function addSpaces($spaces)
+    {
+        collect($spaces)->map(fn ($space) => $this->shifts->push(new Shift(0, 'space', $space->start, $space->end, 0, false, false)));
+    }
+
+    public function printMaxStatuses()
+    {
+        echo 'points: '.$this->pointsMaxData->status().', shifts: '.$this->shiftsMaxData->status().', weekends: '.$this->weekendsMaxData->status().', nights: '.$this->nightsMaxData->status();
     }
 }

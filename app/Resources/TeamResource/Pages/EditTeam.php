@@ -7,7 +7,6 @@ use App\Models\Soldier;
 use App\Models\Team;
 use App\Models\User;
 use App\Resources\TeamResource;
-use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Exceptions\Halt;
 use Throwable;
@@ -15,13 +14,6 @@ use Throwable;
 class EditTeam extends EditRecord
 {
     protected static string $resource = TeamResource::class;
-
-    protected function getHeaderActions(): array
-    {
-        return [
-            Actions\DeleteAction::make(),
-        ];
-    }
 
     protected function beforeSave(): void
     {

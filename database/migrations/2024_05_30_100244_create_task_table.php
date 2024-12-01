@@ -22,11 +22,16 @@ return new class extends Migration
             $table->string('department_name')->nullable();
             $table->json('recurrence');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('tasks');
+        Schema::table('tasks', function (Blueprint $table) {
+            $table->dropIfExists();
+            $table->dropSoftDeletes();
+        });
+
     }
 };

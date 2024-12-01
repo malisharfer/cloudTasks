@@ -65,6 +65,7 @@ class FilamentServiceProvider extends PanelProvider
             ->pages([
                 ListProfiles::class,
             ])
+            ->favicon(asset('images/logo.png'))
             ->sidebarWidth('17rem')
             ->maxContentWidth('full')
             ->viteTheme('resources/css/app.css')

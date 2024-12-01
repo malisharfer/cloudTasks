@@ -7,6 +7,7 @@ use App\Models\Soldier;
 use App\Models\Team;
 use App\Models\User;
 use App\Resources\TeamResource;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Support\Exceptions\Halt;
 use Throwable;
@@ -17,6 +18,17 @@ class CreateTeam extends CreateRecord
 
     protected function beforeCreate(): void
     {
+        $name = Team::where('name', '=', $this->data['name'])->pluck('name');
+        if ($name->contains($this->data['name'])) {
+            Notification::make()
+                ->warning()
+                ->title(__('This name already exists in the system!'))
+                ->body(__('Add an identifier to the name so that it is not the same as another name.'))
+                ->persistent()
+                ->send();
+            $this->halt();
+        }
+
         $teams = Team::where('commander_id', $this->data['commander_id'])->get();
         $departments = Department::where('commander_id', $this->data['commander_id'])->get();
         if ($teams->isNotEmpty() || $departments->isNotEmpty()) {

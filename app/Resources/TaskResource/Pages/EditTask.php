@@ -3,7 +3,7 @@
 namespace App\Resources\TaskResource\Pages;
 
 use App\Resources\TaskResource;
-use Filament\Actions;
+use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
 class EditTask extends EditRecord
@@ -13,7 +13,12 @@ class EditTask extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            DeleteAction::make()->label(__('Delete')),
         ];
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
     }
 }

@@ -8,7 +8,8 @@ enum RecurrenceType: string
     case WEEKLY = 'Weekly';
     case MONTHLY = 'Monthly';
     case CUSTOM = 'Custom';
-    case ONETIME = 'OneTime';
+    case ONETIME = 'One time';
+    case DAILY_RANGE = 'Daily range';
 
     public function getLabel(): string
     {
@@ -17,7 +18,8 @@ enum RecurrenceType: string
             self::WEEKLY => __('Weekly'),
             self::MONTHLY => __('Monthly'),
             self::CUSTOM => __('Custom'),
-            self::ONETIME => __('OneTime'),
+            self::ONETIME => __('One time'),
+            self::DAILY_RANGE => __('Daily range'),
         };
     }
 }

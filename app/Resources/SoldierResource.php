@@ -5,11 +5,13 @@ namespace App\Resources;
 use App\Filters\NumberFilter;
 use App\Forms\Components\Flatpickr;
 use App\Models\Department;
+use App\Models\Shift;
 use App\Models\Soldier;
 use App\Models\Task;
 use App\Models\Team;
 use App\Models\User;
 use App\Resources\SoldierResource\Pages;
+use Carbon\Carbon;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Section;
@@ -47,10 +49,10 @@ class SoldierResource extends Resource
     {
         return $form
             ->schema([
-                Section::make()->schema([SoldierResource::personalDetails()])->columns(),
-                Section::make()->schema(SoldierResource::soldierDetails())->columns(),
-                Section::make()->schema(SoldierResource::reserveDays())->columns()->visible(fn (Get $get) => $get('is_reservist')),
-                Section::make()->schema(SoldierResource::constraints())->columns(),
+                Section::make()->schema([self::personalDetails()])->columns(),
+                Section::make()->schema(self::soldierDetails())->columns(),
+                Section::make()->schema(self::reserveDays())->columns()->visible(fn (Get $get) => $get('is_reservist')),
+                Section::make()->schema(self::constraints())->columns(),
             ]);
     }
 
@@ -59,12 +61,17 @@ class SoldierResource extends Resource
         return $table
 
             ->columns([
-                TextColumn::make('user.first_name')
+                TextColumn::make('user')
                     ->label(__('Full name'))
                     ->formatStateUsing(function ($record) {
                         return $record->user->last_name.' '.$record->user->first_name;
                     })
-                    ->searchable(['user->first_name', 'user->last_name'])
+                    ->searchable(query: function ($query, $search) {
+                        $query->whereHas('user', function ($query) use ($search) {
+                            $query->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%");
+                        });
+                    })
                     ->sortable(),
                 BooleanColumn::make('is_reservist')->label(__('Reservist')),
                 BadgeColumn::make('gender')
@@ -82,7 +89,17 @@ class SoldierResource extends Resource
                 TextColumn::make('max_nights')->label(__('Max nights'))->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('max_weekends')->label(__('Max weekends'))->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('capacity')->label(__('Capacity'))->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('capacity_hold')->label(__('Capacity hold'))->numeric()->toggleable(),
+                TextColumn::make('capacity_hold')
+                    ->default(function ($record) {
+                        $soldierShifts = Shift::where('soldier_id', $record->id)->get();
+
+                        return $soldierShifts->filter(function (Shift $shift): bool {
+                            return Carbon::parse($shift->start_date)->month == now()->month || Carbon::parse($shift->end_date)->month == now()->month;
+                        })->sum(fn (Shift $shift) => $shift->parallel_weight == 0 ? $shift->task->parallel_weight : $shift->parallel_weight);
+                    })
+                    ->label(__('Capacity hold'))
+                    ->numeric()
+                    ->toggleable(),
                 BooleanColumn::make('is_trainee')->label(__('Is trainee'))->toggleable(isToggledHiddenByDefault: true),
                 BooleanColumn::make('is_mabat')->label(__('Is mabat'))->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('qualifications')->label(__('Qualifications'))->placeholder(__('No qualifications'))->toggleable(),
@@ -117,7 +134,9 @@ class SoldierResource extends Resource
                     ->searchable()
                     ->options(Task::all()->pluck('name', 'name'))
                     ->query(function (Builder $query, array $data) {
-                        return collect($data['values'])->map(fn ($qualification) => $query->whereJsonContains('qualifications', $qualification));
+                        return collect($data['values'])->map(function ($qualification) use ($query) {
+                            return $query->whereJsonContains('qualifications', $qualification);
+                        });
                     })
                     ->default(null),
                 Filter::make('reservist')
@@ -141,8 +160,11 @@ class SoldierResource extends Resource
                         Fieldset::make('Enlist date')
                             ->label(__('Enlist date'))
                             ->schema([
-                                DatePicker::make('recruitment_from')->label(__('From')),
-                                DatePicker::make('recruitment_until')->label(__('Until')),
+                                DatePicker::make('recruitment_from')
+                                    ->label(__('From')),
+                                DatePicker::make('recruitment_until')
+                                    ->label(__('Until'))
+                                    ->after('recruitment_from'),
                             ]),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -157,7 +179,7 @@ class SoldierResource extends Resource
                             );
                     }),
 
-            ], layout: FiltersLayout::Modal)
+            ], FiltersLayout::Modal)
             ->filtersFormColumns(4)
             ->deferFilters()
             ->filtersTriggerAction(
@@ -168,7 +190,9 @@ class SoldierResource extends Resource
             ->actions([
                 ActionGroup::make([
                     EditAction::make(),
-                    DeleteAction::make(),
+                    DeleteAction::make()
+                        ->label(__('Delete'))
+                        ->modalHeading(__('Delete').' '.self::getModelLabel()),
                     Action::make('update reserve days')
                         ->label(__('Update reserve days'))
                         ->icon('heroicon-o-pencil')
@@ -267,6 +291,7 @@ class SoldierResource extends Resource
             TextInput::make('capacity')
                 ->numeric()
                 ->step(0.25)
+                ->minValue(0)
                 ->label(__('Capacity'))
                 ->required(),
             Section::make([
@@ -294,8 +319,8 @@ class SoldierResource extends Resource
         return [
             Section::make([
                 TextInput::make('max_shifts')->label(__('Max shifts'))->numeric()->minValue(0)->required()->default(0),
-                TextInput::make('max_nights')->label(__('Max nights'))->numeric()->minValue(0)->maxValue(31)->required()->default(0),
-                TextInput::make('max_weekends')->label(__('Max weekends'))->default('')->numeric()->minValue(0)->maxValue(5)->required()->default(0),
+                TextInput::make('max_nights')->label(__('Max nights'))->numeric()->minValue(0)->required()->default(0),
+                TextInput::make('max_weekends')->label(__('Max weekends'))->numeric()->minValue(0)->required()->default(0),
             ])
                 ->columns(3),
             Split::make([
@@ -310,7 +335,7 @@ class SoldierResource extends Resource
                     ->label(__('Qualifications'))
                     ->multiple()
                     ->placeholder(__('Select qualifications'))
-                    ->options(Task::all()->pluck('name', 'name')),
+                    ->options(Task::all()->pluck('type', 'type')),
             ])->columns(2)
                 ->columnSpan('full'),
         ];

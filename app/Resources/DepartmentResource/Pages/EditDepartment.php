@@ -6,7 +6,6 @@ use App\Models\Department;
 use App\Models\Team;
 use App\Models\User;
 use App\Resources\DepartmentResource;
-use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Exceptions\Halt;
 use Throwable;
@@ -14,13 +13,6 @@ use Throwable;
 class EditDepartment extends EditRecord
 {
     protected static string $resource = DepartmentResource::class;
-
-    protected function getHeaderActions(): array
-    {
-        return [
-            Actions\DeleteAction::make(),
-        ];
-    }
 
     protected function beforeSave(): void
     {

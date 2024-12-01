@@ -25,6 +25,7 @@ class ListShifts extends ListRecords
                 ]),
                 'type' => 'my_soldiers',
             ]),
+
         ];
     }
 }

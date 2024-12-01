@@ -3,7 +3,7 @@
 namespace App\Resources\MyConstraintResource\Pages;
 
 use App\Resources\MyConstraintResource;
-use Filament\Actions;
+use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
 class EditMyConstraint extends EditRecord
@@ -13,7 +13,8 @@ class EditMyConstraint extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            DeleteAction::make()
+                ->label(__('Delete')),
         ];
     }
 }

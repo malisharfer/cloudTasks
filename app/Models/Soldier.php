@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Casts\Integer;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
@@ -24,7 +25,6 @@ class Soldier extends Model
         'max_nights',
         'max_weekends',
         'capacity',
-        'capacity_hold',
         'is_trainee',
         'is_mabat',
         'qualifications',
@@ -41,7 +41,8 @@ class Soldier extends Model
         'is_trainee' => 'boolean',
         'is_mabat' => 'boolean',
         'capacity' => Integer::class,
-        'capacity_hold' => Integer::class,
+        'max_nights' => Integer::class,
+        'max_weekends' => Integer::class,
         'qualifications' => 'array',
         'is_reservist' => 'boolean',
         'reserve_dates' => 'array',
@@ -66,6 +67,11 @@ class Soldier extends Model
     public function team_commander(): HasOne
     {
         return $this->hasOne(Team::class);
+    }
+
+    public function team(): BelongsTo
+    {
+        return $this->belongsTo(Team::class);
     }
 
     public function constraints(): HasMany

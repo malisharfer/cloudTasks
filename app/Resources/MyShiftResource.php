@@ -34,7 +34,8 @@ class MyShiftResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->paginated(false);
+        return $table
+            ->paginated(false);
     }
 
     public static function getPages(): array
