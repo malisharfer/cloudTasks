@@ -631,8 +631,8 @@ class DatabaseSeeder extends Seeder
             ]),
         ]);
 
-        // $recurringEvents = new RecurringEvents;
-        // $recurringEvents->recurringTask();
+        $recurringEvents = new RecurringEvents;
+        $recurringEvents->recurringTask();
     }
 
     protected function createConstraints(int $userId)

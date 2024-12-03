@@ -15,15 +15,14 @@ beforeEach(function () {
 });
 
 it('should return the correct available options based on start date and used counts', function () {
-    $get = function ($key) {
-        return $key == 'start_date' ? '2023-04-01 00:00:00' : '2023-04-01 23:59:00';
-    };
+    $startDate = '2023-04-01 00:00:00';
+    $endDate = '2023-04-01 23:59:00';
 
     $class = new ReflectionClass(Constraint::class);
     $availableOptionsMethod = $class->getMethod('availableOptions');
     $availableOptionsMethod->setAccessible(true);
 
-    $result = $availableOptionsMethod->invoke(null, $get);
+    $result = $availableOptionsMethod->invoke(null, $startDate, $endDate);
 
     expect($result)->toBeArray();
     expect($result)->toContain(__('Medical'), __('Vacation'), __('School'), __('Not task'), __('Low priority not task'), __('Not evening'));
@@ -109,5 +108,5 @@ it('should update dates for "Not weekend" and "Low priority not weekend" constra
     Constraint::updateDates($set, null, $getMock);
 
     expect($dates['start_date'])->toBe('2023-03-30 00:00:00');
-    expect($dates['end_date'])->toBe('2023-04-02 00:00:00');
+    expect($dates['end_date'])->toBe('2023-04-01 23:59:00');
 });

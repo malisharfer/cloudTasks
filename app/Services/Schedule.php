@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\Availability;
+use App\Models\Shift as ShiftModel;
 
 class Schedule
 {
@@ -52,13 +53,7 @@ class Schedule
     {
         $this->initShiftsData();
         $this->initSoldiersData();
-        $sortedShifts = $this->getSortedShiftsList();
-        collect($sortedShifts)->map(function (ShiftData $shift) {
-            $success = $this->assignShift($shift);
-            if (! $success) {
-                $this->unAssignments->push($shift->shift);
-            }
-        });
+        $this->assignShifts();
         $this->updateDB();
     }
 
@@ -136,11 +131,21 @@ class Schedule
         $this->shiftsData->push($shiftData);
     }
 
+    protected function getRatio(float $required, float $available): float
+    {
+        return $available == 0 ? 0 : (float) $this->maximumOne((float) $required / $available);
+    }
+
+    protected function maximumOne(float $number): float
+    {
+        return $number > 1 ? 1 : $number;
+    }
+
     protected function getPotentialSoldiers($soldiers, Range $range)
     {
         $potentialSoldiers = $soldiers->filter(function (Soldier $soldier) use ($range) {
             return $soldier->isAvailableByConstraints($range) != Availability::NO;
-        })->map(function (Soldier $soldier) use ($range) {
+        })->map(function (Soldier $soldier) use ($range): PotentialSoldierData {
             $availability = $soldier->isAvailableByConstraints($range);
 
             return new PotentialSoldierData(
@@ -169,15 +174,6 @@ class Schedule
         return $weight;
     }
 
-    protected function getShiftBlockPoints(float $points): float
-    {
-        if ($points == 0) {
-            return 0;
-        }
-
-        return (float) $points / 3;
-    }
-
     protected function getShiftAvailabilityRatio(int $soldiersCount, int $availableSoldiers): float
     {
         if ($availableSoldiers == 0) {
@@ -187,9 +183,29 @@ class Schedule
         return (float) ($soldiersCount - $availableSoldiers) / $soldiersCount;
     }
 
+    protected function getShiftBlockPoints(float $points): float
+    {
+        if ($points == 0) {
+            return 0;
+        }
+
+        return (float) $points / 3;
+    }
+
     protected function initSoldiersData(): void
     {
         $this->soldiers->map(fn (Soldier $soldier) => $this->soldiersDict->put($soldier->id, $soldier));
+    }
+
+    protected function assignShifts()
+    {
+        $sortedShifts = $this->getSortedShiftsList();
+        collect($sortedShifts)->map(function (ShiftData $shift) {
+            $success = $this->assignShift($shift);
+            if (! $success) {
+                $this->unAssignments->push($shift->shift);
+            }
+        });
     }
 
     protected function getSortedShiftsList()
@@ -275,27 +291,8 @@ class Schedule
         return false;
     }
 
-    protected function getRatio(float $required, float $available): float
-    {
-        if ($available == 0) {
-            return 0;
-        }
-        $ratio = (float) $required / $available;
-
-        return (float) $this->maximumOne($ratio);
-    }
-
-    protected function maximumOne(float $number): float
-    {
-        if ($number > 1) {
-            return 1;
-        }
-
-        return $number;
-    }
-
     protected function updateDB()
     {
-        collect($this->assignments)->map(fn (Assignment $assignment) => \App\Models\Shift::where('id', $assignment->shiftId)->update(['soldier_id' => $assignment->soldierId]));
+        collect($this->assignments)->map(fn (Assignment $assignment) => ShiftModel::where('id', $assignment->shiftId)->update(['soldier_id' => $assignment->soldierId]));
     }
 }

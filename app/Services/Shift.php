@@ -42,9 +42,7 @@ class Shift
 
     protected function getWeekendSpaces($shifts)
     {
-        if ($this->isFullWeekend($shifts)) {
-            return [$this->range->getDayAfterWeekend()];
-        }
+        return $this->isFullWeekend($shifts) ? [$this->range->getDayAfterWeekend()] : null;
     }
 
     protected function isFullWeekend($shifts)

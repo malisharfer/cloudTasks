@@ -10,6 +10,9 @@ use App\Models\Department;
 use App\Models\Shift;
 use App\Models\Soldier;
 use App\Models\User;
+use App\Services\Constraint as ConstraintService;
+use App\Services\Shift as ShiftService;
+use App\Services\Soldier as SoldierService;
 use Illuminate\Support\Facades\Cache;
 
 class ManualAssignment
@@ -22,15 +25,7 @@ class ManualAssignment
 
     public function __construct(Shift $shift, string $soldierType)
     {
-        $this->shift = new \App\Services\Shift(
-            $shift->id,
-            $shift->task->type,
-            $shift->start_date,
-            $shift->end_date,
-            $shift->parallel_weight == 0 ? $shift->task->parallel_weight : $shift->parallel_weight,
-            $shift->task->is_night,
-            $shift->is_weekend != null ? $shift->is_weekend : $shift->task->is_weekend
-        );
+        $this->shift = $this->buildShift($shift);
         $this->soldierType = $soldierType;
         $this->soldiers = [];
     }
@@ -118,14 +113,14 @@ class ManualAssignment
 
                     $soldiersShifts->push(...$this->addShiftsSpaces($soldiersShifts));
 
-                    $soldierSums = $this->soldierSum($soldiersShifts);
+                    $capacityHold = $this->capacityHold($soldiersShifts);
 
-                    return new \App\Services\Soldier(
+                    return new SoldierService(
                         $soldier->id,
-                        new MaxData($soldier->capacity, $soldierSums['points']),
-                        new MaxData($soldier->max_shifts, $soldierSums['count']),
-                        new MaxData($soldier->max_nights, $soldierSums['sumNights']),
-                        new MaxData($soldier->max_weekends, $soldierSums['sumWeekends']),
+                        new MaxData($soldier->capacity, $capacityHold['points']),
+                        new MaxData($soldier->max_shifts, $capacityHold['count']),
+                        new MaxData($soldier->max_nights, $capacityHold['sumNights']),
+                        new MaxData($soldier->max_weekends, $capacityHold['sumWeekends']),
                         $soldier->qualifications,
                         $constraints,
                         $soldiersShifts
@@ -148,14 +143,14 @@ class ManualAssignment
 
         $myShifts->push(...$this->addShiftsSpaces($myShifts));
 
-        $soldierSums = $this->soldierSum($myShifts);
+        $capacityHold = $this->capacityHold($myShifts);
 
-        $soldier = new \App\Services\Soldier(
+        $soldier = new SoldierService(
             $me->id,
-            new MaxData($me->capacity, $soldierSums['points']),
-            new MaxData($me->max_shifts, $soldierSums['count']),
-            new MaxData($me->max_nights, $soldierSums['sumNights']),
-            new MaxData($me->max_weekends, $soldierSums['sumWeekends']),
+            new MaxData($me->capacity, $capacityHold['points']),
+            new MaxData($me->max_shifts, $capacityHold['count']),
+            new MaxData($me->max_nights, $capacityHold['sumNights']),
+            new MaxData($me->max_weekends, $capacityHold['sumWeekends']),
             $me->qualifications,
             $constraints,
             $myShifts
@@ -183,30 +178,35 @@ class ManualAssignment
         return Shift::where('soldier_id', $soldier->id)
             ->get()
             ->filter(
-                fn (Shift $shift) => $this->shift->range->isSameMonth(new Range($shift->start_date, $shift->end_date))
-            )->map(fn (Shift $shift) => new \App\Services\Shift(
-                $shift->id,
-                $shift->task->type,
-                $shift->start_date,
-                $shift->end_date,
-                $shift->parallel_weight == 0 ? $shift->task->parallel_weight : $shift->parallel_weight,
-                $shift->task->is_night,
-                $shift->is_weekend != null ? $shift->is_weekend : $shift->task->is_weekend,
-            ));
+                function (Shift $shift): bool {
+                    $range = new Range($shift->start_date, $shift->end_date);
+
+                    return $range->isSameMonth(new Range($this->shift->range->start->startOfMonth(), $this->shift->range->end->endOfMonth()));
+                }
+            )
+            ->map(fn (Shift $shift): ShiftService => $this->buildShift($shift));
+    }
+
+    protected function buildShift(Shift $shift): ShiftService
+    {
+        return new ShiftService(
+            $shift->id,
+            $shift->task->type,
+            $shift->start_date,
+            $shift->end_date,
+            $shift->parallel_weight == 0 ? $shift->task->parallel_weight : $shift->parallel_weight,
+            $shift->task->is_night,
+            $shift->is_weekend != null ? $shift->is_weekend : $shift->task->is_weekend,
+        );
     }
 
     protected function addShiftsSpaces($shifts)
     {
         $allSpaces = collect([]);
-        collect($shifts)->map(function (\App\Services\Shift $shift) use ($shifts, &$allSpaces) {
-            if ($shift->isWeekend) {
-                $spaces = $shift->getShiftSpaces($shifts);
-            }
-            if ($shift->isNight) {
-                $spaces = $shift->getShiftSpaces($shifts);
-            }
+        collect($shifts)->map(function (ShiftService $shift) use ($shifts, &$allSpaces) {
+            $spaces = $shift->isWeekend || $shift->isNight ? $shift->getShiftSpaces($shifts) : null;
             if (! empty($spaces)) {
-                collect($spaces)->map(fn (Range $space) => $allSpaces->push(new \App\Services\Shift(0, 'space', $space->start, $space->end, 0, false, false)));
+                collect($spaces)->map(fn (Range $space) => $allSpaces->push(new ShiftService(0, 'space', $space->start, $space->end, 0, false, false)));
             }
         });
 
@@ -217,8 +217,13 @@ class ManualAssignment
     {
         return Constraint::where('soldier_id', $soldierId)
             ->get()
+            ->filter(function (Constraint $constraint) {
+                $range = new Range($constraint->start_date, $constraint->end_date);
+
+                return $range->isSameMonth(new Range($this->shift->range->start->startOfMonth(), $this->shift->range->end->endOfMonth()));
+            })
             ->map(
-                fn ($constraint) => new \App\Services\Constraint(
+                fn (Constraint $constraint): ConstraintService => new ConstraintService(
                     $constraint->start_date,
                     $constraint->end_date,
                     ConstraintType::getPriority()[$constraint->constraint_type] == 1 ? Priority::HIGH : Priority::LOW
@@ -226,7 +231,7 @@ class ManualAssignment
             );
     }
 
-    protected function soldierSum($shifts)
+    protected function capacityHold($shifts)
     {
         $points = 0;
         $nights = 0;
@@ -254,7 +259,7 @@ class ManualAssignment
     protected function getAvailableSoldiers()
     {
         $availableSoldiers = $this->soldiers->filter(
-            fn (\App\Services\Soldier $soldier) => $soldier->isQualified($this->shift->taskType)
+            fn (SoldierService $soldier) => $soldier->isQualified($this->shift->taskType)
             && $soldier->isAvailableByMaxes($this->shift)
             && $soldier->isAvailableByConstraints($this->shift->range) != Availability::NO
             && $soldier->isAvailableByShifts($this->shift->range)
@@ -262,7 +267,7 @@ class ManualAssignment
         );
 
         return $availableSoldiers->mapWithKeys(
-            function (\App\Services\Soldier $soldier) {
+            function (SoldierService $soldier) {
                 $user = User::where('userable_id', '=', $soldier->id)->first();
 
                 return [$user->userable_id => $user->displayName];

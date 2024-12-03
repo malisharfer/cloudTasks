@@ -28,8 +28,8 @@ class Constraint extends Model
     ];
 
     protected $casts = [
-        'start_date' => 'datetime:Y-m-d H:i:s',
-        'end_date' => 'datetime:Y-m-d H:i:s',
+        'start_date' => 'datetime:Y-m-d',
+        'end_date' => 'datetime:Y-m-d',
     ];
 
     public function soldiers(): BelongsTo
@@ -49,7 +49,7 @@ class Constraint extends Model
                 ->reactive()
                 ->live()
                 ->inline()
-                ->options(fn (Get $get) => self::availableOptions($get))
+                ->options(fn (Get $get) => self::availableOptions($get('start_date'), $get('end_date')))
                 ->afterStateUpdated(fn (callable $set, $state, Get $get) => self::updateDates($set, $state, $get)),
             Hidden::make('start_date')
                 ->required(),
@@ -70,9 +70,9 @@ class Constraint extends Model
         ];
     }
 
-    private static function availableOptions($get): array
+    private static function availableOptions($startDate, $endDate): array
     {
-        $start_date = Carbon::parse($get('start_date'));
+        $start_date = Carbon::parse($startDate);
         $options = array_combine(
             array_map(fn ($enum) => $enum->value, ConstraintType::cases()),
             array_map(fn ($enum) => $enum->getLabel(), ConstraintType::cases())
@@ -86,11 +86,16 @@ class Constraint extends Model
             unset($options[ConstraintType::NOT_WEEKEND->value]);
             unset($options[ConstraintType::LOW_PRIORITY_NOT_WEEKEND->value]);
         }
-        $usedCounts = self::getUsedCountsForCurrentMonth($get('start_date'), $get('end_date'));
+        $usedCounts = self::getUsedCountsForCurrentMonth($startDate, $endDate);
         $limits = ConstraintType::getLimit();
 
         return array_filter($options, fn ($option) => ($limits[array_search($option, array_map(fn ($enum) => $enum->getLabel(), ConstraintType::cases()))] ?? 0) === 0
             || ($usedCounts[array_search($option, array_map(fn ($enum) => $enum->getLabel(), ConstraintType::cases()))] ?? 0) < ($limits[array_search($option, array_map(fn ($enum) => $enum->getLabel(), ConstraintType::cases()))] ?? 0));
+    }
+
+    public static function getAvailableOptions($startDate, $endDate): array
+    {
+        return static::availableOptions($startDate, $endDate);
     }
 
     private static function getUsedCountsForCurrentMonth($startDate, $endDate): array
@@ -137,7 +142,7 @@ class Constraint extends Model
             case 'Not weekend':
             case 'Low priority not weekend':
                 $set('start_date', $startDate->startOfWeek(Carbon::THURSDAY)->toDateTimeString());
-                $set('end_date', $endDate->next(Carbon::SUNDAY)->startOfDay()->toDateTimeString());
+                $set('end_date', $endDate->endOfWeek(Carbon::SATURDAY)->setTime(23, 59, 0)->toDateTimeString());
                 break;
 
             default:
@@ -190,6 +195,7 @@ class Constraint extends Model
         return Action::make('Filters')
             ->label(__('Filter'))
             ->icon('heroicon-m-funnel')
+            ->extraAttributes(['class' => 'fullcalendar'])
             ->form(function () use ($calendar) {
                 $constraints = $calendar->getEventsByRole();
                 $soldiersConstraints = array_filter($constraints->toArray(), fn ($constraint) => $constraint['soldier_id'] !== null);

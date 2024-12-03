@@ -49,10 +49,7 @@ class Soldier
 
     public function isAvailableByMaxes(Shift $shift): bool
     {
-        if ($shift->isWeekend && $this->weekendsMaxData->remaining() < $shift->points) {
-            return false;
-        }
-        if ($shift->isNight && $this->nightsMaxData->remaining() < $shift->points) {
+        if (($shift->isWeekend && $this->weekendsMaxData->remaining() < $shift->points) || ($shift->isNight && $this->nightsMaxData->remaining() < $shift->points)) {
             return false;
         }
 

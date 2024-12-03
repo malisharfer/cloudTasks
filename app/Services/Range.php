@@ -63,10 +63,7 @@ class Range
 
     public function isSameMonth(Range $other): bool
     {
-        return $other->start->monthName == $this->start->monthName
-            || $other->start->monthName == $this->end->monthName
-            || $other->end->monthName == $this->start->monthName
-            || $other->end->monthName == $this->end->monthName;
+        return $this->isConflict($other);
     }
 
     public function isRangeInclude(DaysInWeek $dayInWeek): bool

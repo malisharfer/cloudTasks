@@ -5,7 +5,6 @@ use App\Models\Shift;
 use App\Models\Soldier;
 use App\Models\Task;
 use App\Services\Algorithm;
-use Carbon\Carbon;
 
 it('should return only unassigned shifts', function () {
     $reflection = new ReflectionClass(Algorithm::class);
@@ -24,6 +23,8 @@ it('should return shifts with their task details', function () {
     Shift::factory()->count(3)->create([
         'task_id' => $task->id,
         'soldier_id' => null,
+        'start_date' => now()->addMonth(),
+        'end_date' => now()->addMonth()->addDay(),
     ]);
     $shiftsWithTasks = $method->invoke(new Algorithm);
     $shiftsWithTasks->map(fn ($shift) => expect($shift->isNight)->toBe($task->is_night));
@@ -50,8 +51,8 @@ it('should return soldiers with their constraints details', function () {
     Constraint::factory()->count(3)->create([
         'soldier_id' => $soldier->id,
         'constraint_type' => 'Not task',
-        'start_date' => now(),
-        'end_date' => Carbon::now()->addDay(),
+        'start_date' => now()->addMonth(),
+        'end_date' => now()->addMonth()->addDay(),
     ]);
     $soldierWithConstraints = $method->invoke(new Algorithm);
     expect($soldierWithConstraints[0]->constraints->count())->toBe(3);

@@ -2,7 +2,7 @@
     .fi-section{
         overflow-x: auto;
     }
-    .fi-section-content-ctn{
+    .fi-section-content-ctn:has(.fullcalendar){
         width: 650px;
     }
     .filament-fullcalendar .fc-toolbar-title{

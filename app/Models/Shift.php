@@ -198,6 +198,7 @@ class Shift extends Model
         return Action::make('Filters')
             ->label(__('Filter'))
             ->icon('heroicon-m-funnel')
+            ->extraAttributes(['class' => 'fullcalendar'])
             ->form(function () use ($calendar) {
                 $shifts = $calendar->getEventsByRole();
                 $soldiersShifts = array_filter($shifts->toArray(), fn ($shift) => $shift['soldier_id'] !== null);
