@@ -17,6 +17,7 @@ use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Split;
+
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
@@ -51,7 +52,7 @@ class SoldierResource extends Resource
             ->schema([
                 Section::make()->schema([self::personalDetails()])->columns(),
                 Section::make()->schema(self::soldierDetails())->columns(),
-                Section::make()->schema(self::reserveDays())->columns()->visible(fn(Get $get) => $get('is_reservist')),
+                Section::make()->schema(self::reserveDays())->columns()->visible(fn (Get $get) => $get('is_reservist')),
                 Section::make()->schema(self::constraints())->columns(),
             ]);
     }
@@ -64,7 +65,7 @@ class SoldierResource extends Resource
                 TextColumn::make('user')
                     ->label(__('Full name'))
                     ->formatStateUsing(function ($record) {
-                        return $record->user->last_name . ' ' . $record->user->first_name;
+                        return $record->user->last_name.' '.$record->user->first_name;
                     })
                     ->searchable(query: function ($query, $search) {
                         $query->whereHas('user', function ($query) use ($search) {
@@ -76,9 +77,9 @@ class SoldierResource extends Resource
                 BooleanColumn::make('is_reservist')->label(__('Reservist')),
                 BadgeColumn::make('gender')
                     ->label(__('Gender'))
-                    ->formatStateUsing(fn($state) => $state ? __('Male') : __('Female'))
+                    ->formatStateUsing(fn ($state) => $state ? __('Male') : __('Female'))
                     ->badge()
-                    ->color(fn($state) => $state ? 'info' : 'primary')
+                    ->color(fn ($state) => $state ? 'info' : 'primary')
                     ->sortable(),
                 TextColumn::make('reserve_dates')->label(__('Reserve dates'))->date()->listWithLineBreaks()->limitList(1)->expandableLimitedList()->placeholder('---')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('next_reserve_dates')->label(__('Next reserve dates'))->date()->listWithLineBreaks()->limitList(1)->expandableLimitedList()->placeholder('---')->toggleable(isToggledHiddenByDefault: true),
@@ -95,7 +96,7 @@ class SoldierResource extends Resource
 
                         return $soldierShifts->filter(function (Shift $shift): bool {
                             return Carbon::parse($shift->start_date)->month == now()->month || Carbon::parse($shift->end_date)->month == now()->month;
-                        })->sum(fn(Shift $shift) => $shift->parallel_weight == 0 ? $shift->task->parallel_weight : $shift->parallel_weight);
+                        })->sum(fn (Shift $shift) => $shift->parallel_weight == 0 ? $shift->task->parallel_weight : $shift->parallel_weight);
                     })
                     ->label(__('Capacity hold'))
                     ->numeric()
@@ -110,7 +111,7 @@ class SoldierResource extends Resource
                 }
             })
             ->toggleColumnsTriggerAction(
-                fn(Action $action) => $action
+                fn (Action $action) => $action
                     ->button()
                     ->label(__('Columns')),
             )
@@ -141,19 +142,19 @@ class SoldierResource extends Resource
                     ->default(null),
                 Filter::make('reservist')
                     ->label(__('Reservist'))
-                    ->query(fn(Builder $query): Builder => $query->where('is_reservist', 1))
+                    ->query(fn (Builder $query): Builder => $query->where('is_reservist', 1))
                     ->toggle(),
                 Filter::make('is_mabat')
                     ->label(__('Is mabat'))
-                    ->query(fn(Builder $query): Builder => $query->where('is_mabat', true))
+                    ->query(fn (Builder $query): Builder => $query->where('is_mabat', true))
                     ->toggle(),
                 Filter::make('has_exemption')
                     ->label(__('Exemption'))
-                    ->query(fn(Builder $query): Builder => $query->where('has_exemption', true))
+                    ->query(fn (Builder $query): Builder => $query->where('has_exemption', true))
                     ->toggle(),
                 Filter::make('is_trainee')
                     ->label(__('Is trainee'))
-                    ->query(fn(Builder $query): Builder => $query->where('is_trainee', true))
+                    ->query(fn (Builder $query): Builder => $query->where('is_trainee', true))
                     ->toggle(),
                 Filter::make('enlist_date')
                     ->form([
@@ -171,11 +172,11 @@ class SoldierResource extends Resource
                         return $query
                             ->when(
                                 $data['recruitment_from'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('enlist_date', '>=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('enlist_date', '>=', $date),
                             )
                             ->when(
                                 $data['recruitment_until'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('enlist_date', '<=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('enlist_date', '<=', $date),
                             );
                     }),
 
@@ -183,7 +184,7 @@ class SoldierResource extends Resource
             ->filtersFormColumns(4)
             ->deferFilters()
             ->filtersTriggerAction(
-                fn(Action $action) => $action
+                fn (Action $action) => $action
                     ->button()
                     ->label(__('Filter'))
             )
@@ -192,7 +193,7 @@ class SoldierResource extends Resource
                     EditAction::make(),
                     DeleteAction::make()
                         ->label(__('Delete'))
-                        ->modalHeading(__('Delete') . ' ' . self::getModelLabel()),
+                        ->modalHeading(__('Delete').' '.self::getModelLabel()),
                     Action::make('update reserve days')
                         ->label(__('Update reserve days'))
                         ->icon('heroicon-o-pencil')
@@ -212,7 +213,7 @@ class SoldierResource extends Resource
                             $record->save();
                         })
                         ->closeModalByClickingAway(false)
-                        ->hidden(fn($record) => !$record->is_reservist),
+                        ->hidden(fn ($record) => ! $record->is_reservist),
                     ReplicateAction::make()
                         ->icon('heroicon-o-document-duplicate')
                         ->color('success')
@@ -265,6 +266,7 @@ class SoldierResource extends Resource
                     ->password()
                     ->revealable()
                     ->length(7)
+                    ->hiddenOn('edit')
                     ->required(),
             ])->columns(3);
     }
@@ -333,9 +335,8 @@ class SoldierResource extends Resource
                     ->multiple()
                     ->placeholder(__('Select qualifications'))
                     ->options(Task::all()->pluck('type', 'type')),
-                    ])->columns(3),
+            ])->columns(3),
         ];
-
     }
 
     public static function getModelLabel(): string

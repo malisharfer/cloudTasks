@@ -28,8 +28,8 @@ class Constraint extends Model
     ];
 
     protected $casts = [
-        'start_date' => 'datetime:Y-m-d',
-        'end_date' => 'datetime:Y-m-d',
+        'start_date' => 'datetime:Y-m-d H:i:s',
+        'end_date' => 'datetime:Y-m-d H:i:s',
     ];
 
     public function soldiers(): BelongsTo

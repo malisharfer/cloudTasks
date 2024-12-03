@@ -2,14 +2,13 @@
 
 namespace App\Providers;
 
+use Filament\Support\Assets\Css;
+use Filament\Support\Facades\FilamentAsset;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
-use Filament\Support\Assets\Css;
-use Filament\Support\Facades\FilamentAsset;
-
 
 class AppServiceProvider extends ServiceProvider
 {

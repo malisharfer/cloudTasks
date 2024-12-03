@@ -45,7 +45,6 @@ class User extends Authenticatable implements HasName,FilamentUser
     {
         return $this->displayName;
     }
-    
     public function viewAny(User $user): bool
     {
         return $user->hasRole('manager');

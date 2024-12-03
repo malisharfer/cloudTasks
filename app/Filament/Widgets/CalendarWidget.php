@@ -45,8 +45,8 @@ class CalendarWidget extends FullCalendarWidget
     {
 
         $this->currentMonth = (Carbon::parse($fetchInfo['start'])->day != 1)
-            ? Carbon::parse($fetchInfo['start'])->addMonth()->year . '-' . Carbon::parse($fetchInfo['start'])->addMonth()->month . '-' . '01'
-            : Carbon::parse($fetchInfo['start'])->year . '-' . Carbon::parse($fetchInfo['start'])->month . '-' . '01';
+            ? Carbon::parse($fetchInfo['start'])->addMonth()->year.'-'.Carbon::parse($fetchInfo['start'])->addMonth()->month.'-'.'01'
+            : Carbon::parse($fetchInfo['start'])->year.'-'.Carbon::parse($fetchInfo['start'])->month.'-'.'01';
 
         $events = $this->getEventsByRole();
 
@@ -83,18 +83,18 @@ class CalendarWidget extends FullCalendarWidget
                 ->orWhereNull('soldier_id')
                 ->get()
                 ->filter(function (Model $object) use ($current_user_id) {
-                        $soldier = Soldier::where('id', '=', $object->soldier_id)->first();
+                    $soldier = Soldier::where('id', '=', $object->soldier_id)->first();
 
-                        return !$soldier || $soldier?->team?->department?->commander_id == $current_user_id;
-                    }),
+                    return ! $soldier || $soldier?->team?->department?->commander_id == $current_user_id;
+                }),
             'team-commander' => $this->model::where('soldier_id', '!=', $current_user_id)
                 ->orWhereNull('soldier_id')
                 ->get()
                 ->filter(function (Model $object) use ($current_user_id) {
-                        $soldier = Soldier::where('id', '=', $object->soldier_id)->first();
+                    $soldier = Soldier::where('id', '=', $object->soldier_id)->first();
 
-                        return !$soldier || $soldier?->team?->commander_id == $current_user_id;
-                    }),
+                    return ! $soldier || $soldier?->team?->commander_id == $current_user_id;
+                }),
         } : $this->model::where('soldier_id', '=', $current_user_id)->get();
     }
 
@@ -122,8 +122,8 @@ class CalendarWidget extends FullCalendarWidget
                                 'end_date' => $arguments['end'] ?? null,
                             ]);
                         })
-                        ->label($this->model::getTitle() . ' ' . __('New'))
-                        ->modalHeading(__('Create') . ' ' . $this->model::getTitle())
+                        ->label($this->model::getTitle().' '.__('New'))
+                        ->modalHeading(__('Create').' '.$this->model::getTitle())
                         ->disabled(function (array $arguments) use ($today) {
                             $startDate = Carbon::parse($arguments['start'] ?? null);
 
@@ -139,14 +139,13 @@ class CalendarWidget extends FullCalendarWidget
             if (Task::exists()) {
                 $actions = [
                     Action::make('Create shifts')
-                        ->action(fn() => $this->runEvents())
+                        ->action(fn () => $this->runEvents())
                         ->label(__('Create shifts'))
                         ->icon('heroicon-o-arrow-path')
                         ->visible(current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])))
                         ->extraAttributes(['class' => 'fullcalendar']),
-
-                    Action::make('Shifts assignment')
-                        ->action(fn() => $this->runAlgorithm())
+                        Action::make('Shifts assignment')
+                        ->action(fn () => $this->runAlgorithm())
                         ->label(__('Shifts assignment'))
                         ->icon('heroicon-o-play')
                         ->visible(current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])))
@@ -254,19 +253,19 @@ class CalendarWidget extends FullCalendarWidget
                     return [
                         $action->makeExtraModalAction(__('Save'), arguments: ['save' => true])
                             ->color('primary')
-                            ->disabled(!$canSave),
+                            ->disabled(! $canSave),
                         $action->makeExtraModalAction(__('Cancel'), arguments: ['cancel' => true])
                             ->color('primary'),
                     ];
                 })
-                ->modalHeading(__('Edit') . ' ' . $this->model::getTitle())
+                ->modalHeading(__('Edit').' '.$this->model::getTitle())
                 ->action(function (array $data, array $arguments, Model $record): void {
                     $data = method_exists($this->model, 'setData') ? $data = $this->model::setData($record, $data) : $data;
                     if ($arguments['cancel'] ?? false) {
                         $this->refreshRecords();
                     }
                     if ($arguments['save'] ?? false) {
-                        $columns = Schema::getColumnListing(strtolower(class_basename($this->model)) . 's');
+                        $columns = Schema::getColumnListing(strtolower(class_basename($this->model)).'s');
                         $filteredData = array_intersect_key($data, array_flip($columns));
                         $record = $this->model::find($record['id']);
                         if ($record) {
@@ -285,7 +284,7 @@ class CalendarWidget extends FullCalendarWidget
             if (method_exists($this->model, 'getAction')) {
                 $action = $this->model::getAction($this)
                     ->visible(function (): bool {
-                        $record = is_array($this->mountedActionsData) && !empty($this->mountedActionsData)
+                        $record = is_array($this->mountedActionsData) && ! empty($this->mountedActionsData)
                             ? (object) $this->mountedActionsData[0]
                             : (object) $this->mountedActionsData;
 
@@ -317,6 +316,6 @@ class CalendarWidget extends FullCalendarWidget
                         'end_date' => $arguments['event']['end'] ?? $record->end_date,
                     ];
             })
-            ->modalHeading(__('View') . $this->model::getTitle());
+            ->modalHeading(__('View').$this->model::getTitle());
     }
 }

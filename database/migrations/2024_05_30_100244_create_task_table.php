@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('name');
             $table->time('start_hour');
             $table->integer('duration');
-            $table->integer('parallel_weight');
+            $table->integer('parallel_weight')->default(0);
             $table->string('type');
             $table->string('color');
             $table->boolean('is_alert');
