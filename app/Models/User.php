@@ -10,10 +10,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasPermissions;
 use Spatie\Permission\Traits\HasRoles;
-use Filament\Models\Contracts\FilamentUser;
-use Filament\Panel;
 
-class User extends Authenticatable implements HasName,FilamentUser
+class User extends Authenticatable implements HasName
 {
     use HasFactory, HasPermissions, HasRoles, Notifiable;
 
@@ -44,13 +42,5 @@ class User extends Authenticatable implements HasName,FilamentUser
     public function getFilamentName(): string
     {
         return $this->displayName;
-    }
-    public function viewAny(User $user): bool
-    {
-        return $user->hasRole('manager');
-    }
-    public function canAccessPanel(Panel $panel): bool
-    {
-        return true;
     }
 }

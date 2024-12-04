@@ -35,7 +35,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.REGISTRY_LOGIN_SERVER }}/luy6
+          images: ${{ secrets.REGISTRY_LOGIN_SERVER }}/luy7
           flavor: |
             latest=false
           tags: |
