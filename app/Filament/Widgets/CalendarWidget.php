@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Schema;
 use Saade\FilamentFullCalendar\Actions\CreateAction;
 use Saade\FilamentFullCalendar\Actions\DeleteAction;
 use Saade\FilamentFullCalendar\Actions\EditAction;
-use Saade\FilamentFullCalendar\Actions\ViewAction;
+use Saade\FilamentFullCalendar\Actions\viewAction;
 use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
 
@@ -138,13 +138,13 @@ class CalendarWidget extends FullCalendarWidget
 
             if (Task::exists()) {
                 $actions = [
-                    Action::make('Create shifts')
+                    Action::make('Create Shifts')
                         ->action(fn () => $this->runEvents())
-                        ->label(__('Create shifts'))
+                        ->label(__('Create Shifts'))
                         ->icon('heroicon-o-arrow-path')
                         ->visible(current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])))
                         ->extraAttributes(['class' => 'fullcalendar']),
-                        Action::make('Shifts assignment')
+                    Action::make('Shifts assignment')
                         ->action(fn () => $this->runAlgorithm())
                         ->label(__('Shifts assignment'))
                         ->icon('heroicon-o-play')
