@@ -121,7 +121,8 @@ class Constraint extends Model
     {
         $constraintType = $get('constraint_type');
         $startDate = Carbon::parse($get('start_date'));
-        $endDate = Carbon::parse($get('end_date'));
+        // $endDate = Carbon::parse($get('end_date'));
+        $endDate = max($startDate,Carbon::parse($get('end_date')));
 
         switch ($constraintType) {
             case 'Medical':
