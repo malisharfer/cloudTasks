@@ -97,7 +97,7 @@ class ManualAssignment
             ->filter(function ($user) {
                 $soldier = $this->getSoldierBy($user->userable_id);
 
-                return ! $soldier->is_reservist && $soldier->id != auth()->user()->userable_id;
+                return !$soldier->is_reservist && $soldier->id != auth()->user()->userable_id;
             });
     }
 
@@ -181,10 +181,10 @@ class ManualAssignment
                 function (Shift $shift): bool {
                     $range = new Range($shift->start_date, $shift->end_date);
 
-                    return $range->isSameMonth(new Range($this->shift->range->start->startOfMonth(), $this->shift->range->end->endOfMonth()));
+                    return $range->isSameMonth(new Range($this->shift->range->start->copy()->startOfMonth(), $this->shift->range->end->copy()->endOfMonth()));
                 }
             )
-            ->map(fn (Shift $shift): ShiftService => $this->buildShift($shift));
+            ->map(fn(Shift $shift): ShiftService => $this->buildShift($shift));
     }
 
     protected function buildShift(Shift $shift): ShiftService
@@ -205,8 +205,8 @@ class ManualAssignment
         $allSpaces = collect([]);
         collect($shifts)->map(function (ShiftService $shift) use ($shifts, &$allSpaces) {
             $spaces = $shift->isWeekend || $shift->isNight ? $shift->getShiftSpaces($shifts) : null;
-            if (! empty($spaces)) {
-                collect($spaces)->map(fn (Range $space) => $allSpaces->push(new ShiftService(0, 'space', $space->start, $space->end, 0, false, false)));
+            if (!empty($spaces)) {
+                collect($spaces)->map(fn(Range $space) => $allSpaces->push(new ShiftService(0, 'space', $space->start, $space->end, 0, false, false)));
             }
         });
 
@@ -220,10 +220,10 @@ class ManualAssignment
             ->filter(function (Constraint $constraint) {
                 $range = new Range($constraint->start_date, $constraint->end_date);
 
-                return $range->isSameMonth(new Range($this->shift->range->start->startOfMonth(), $this->shift->range->end->endOfMonth()));
+                return $range->isSameMonth(new Range($this->shift->range->start->copy()->startOfMonth(), $this->shift->range->end->copy()->endOfMonth()));
             })
             ->map(
-                fn (Constraint $constraint): ConstraintService => new ConstraintService(
+                fn(Constraint $constraint): ConstraintService => new ConstraintService(
                     $constraint->start_date,
                     $constraint->end_date,
                     ConstraintType::getPriority()[$constraint->constraint_type] == 1 ? Priority::HIGH : Priority::LOW
@@ -259,7 +259,7 @@ class ManualAssignment
     protected function getAvailableSoldiers()
     {
         $availableSoldiers = $this->soldiers->filter(
-            fn (SoldierService $soldier) => $soldier->isQualified($this->shift->taskType)
+            fn(SoldierService $soldier) => $soldier->isQualified($this->shift->taskType)
             && $soldier->isAvailableByMaxes($this->shift)
             && $soldier->isAvailableByConstraints($this->shift->range) != Availability::NO
             && $soldier->isAvailableByShifts($this->shift->range)

@@ -436,7 +436,7 @@ class TaskResource extends Resource
         $shift->id = null;
         $shift->task = $task;
         $shift->start_date = Carbon::parse($task_date->format('Y-m-d').' '.$get('start_hour'));
-        $shift->end_date = $shift->start_date->addHours((float) ($get('duration')));
+        $shift->end_date = $shift->start_date->copy()->addHours((float) ($get('duration')));
         $shift->parallel_weight = $get('parallel_weight');
 
         return $shift;
