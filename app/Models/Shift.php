@@ -215,47 +215,56 @@ class Shift extends Model
                         ->multiple(),
                 ];
             })
-            ->modalSubmitActionLabel(__('Filter'))
-            ->action(function (array $data) use ($calendar) {
-                $calendar->filterData = $data;
-                $calendar->filter = $data['soldier_id'] === [] && $data['type'] === [] ? false : true;
-                $calendar->refreshRecords();
+            ->modalSubmitAction(false)
+            ->extraModalFooterActions(fn (Action $action): array => [
+                $action->makeModalSubmitAction('Filter', arguments: ['Filter' => true])->color('success')->label(__('Filter')),
+                $action->makeModalSubmitAction('Unassigned shifts', arguments: ['UnassignedShifts' => true])->color('primary')->label(__('Unassigned shifts')),
+            ])
+            ->action(function (array $data, array $arguments) use ($calendar) {
+                if ($arguments['Filter'] ?? false) {
+                    $calendar->filterData = $data;
+                    $calendar->filter = ! ($data['soldier_id'] === [] && $data['type'] === []);
+                    $calendar->refreshRecords();
+                }
+                if ($arguments['UnassignedShifts'] ?? false) {
+                    $calendar->filterData = 'UnassignedShifts';
+                    $calendar->filter = true;
+                    $calendar->refreshRecords();
+                }
             });
     }
 
     public static function filter($events, $filterData)
     {
-        if ($filterData['soldier_id'] == []) {
-            return $events
-                ->whereIn('task_id', $filterData['type'])
-                ->values();
-        }
-        if ($filterData['type'] == []) {
-            return $events
-                ->whereIn('soldier_id', $filterData['soldier_id'])
-                ->values();
-        }
-
         return $events
-            ->whereIn('soldier_id', $filterData['soldier_id'])
-            ->whereIn('task_id', $filterData['type'])
+            ->when($filterData === 'UnassignedShifts', fn ($query) => $query
+                ->where('soldier_id', null))
+            ->when(! empty($filterData['soldier_id']), fn ($query) => $query
+                ->whereIn('soldier_id', $filterData['soldier_id']))
+            ->when(! empty($filterData['type']), fn ($query) => $query
+                ->whereIn('task_id', $filterData['type']))
             ->values();
     }
 
     public static function activeFilters($calendar)
     {
-        $activeFilter = collect();
         if ($calendar->filter) {
-            $soldiers = collect($calendar->filterData['soldier_id'])->map(function ($soldier_id) {
-                return User::where('userable_id', $soldier_id)->first()->displayName;
-            });
-            $tasks = collect($calendar->filterData['type'])->map(function ($task_id) {
-                return Task::find($task_id)->name;
-            });
-            $activeFilter = $soldiers->concat($tasks);
+            return $calendar->filterData === 'UnassignedShifts'
+            ? ['Unassigned shifts']
+            : collect($calendar->filterData['soldier_id'])
+                ->map(function ($soldier_id) {
+                    return User::where('userable_id', $soldier_id)->first()->displayName ?? null;
+                })
+                ->concat(
+                    collect($calendar->filterData['type'])->map(function ($task_id) {
+                        return Task::find($task_id)?->name;
+                    })
+                )
+                ->filter()
+                ->toArray();
         }
 
-        return $activeFilter->toArray();
+        return [];
     }
 
     public static function getTitle(): string

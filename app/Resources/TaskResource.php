@@ -272,6 +272,7 @@ class TaskResource extends Resource
                 ->numeric()
                 ->minValue(0)
                 ->default(0)
+                ->step(0.25)
                 ->label(__('Parallel weight')),
             ColorPicker::make('color')
                 ->label(__('Color'))

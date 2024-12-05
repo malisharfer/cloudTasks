@@ -142,7 +142,7 @@ class Constraint extends Model
             case 'Not weekend':
             case 'Low priority not weekend':
                 $set('start_date', $startDate->startOfWeek(Carbon::THURSDAY)->toDateTimeString());
-                $set('end_date', $endDate->endOfWeek(Carbon::SATURDAY)->setTime(23, 59, 0)->toDateTimeString());
+                $set('end_date', $startDate->endOfWeek(Carbon::SATURDAY)->setTime(23, 59, 0)->toDateTimeString());
                 break;
 
             default:

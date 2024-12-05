@@ -187,7 +187,7 @@ it('should refresh the fullcalendar', function () {
         'type' => 'my_soldiers',
     ])
         ->mountAction('Filters')
-        ->callMountedAction(['submit' => true])
+        ->callMountedAction(['Filter' => true])
         ->assertDispatched('filament-fullcalendar--refresh');
 });
 
@@ -211,7 +211,32 @@ it('should filter the fullcalendar', function () {
     ])
         ->mountAction('Filters')
         ->setActionData(['soldier_id' => [$user->userable_id], 'type' => [$task2->id]])
-        ->callMountedAction(['submit' => true])
+        ->callMountedAction(['Filter' => true])
         ->call('fetchEvents', ['start' => Carbon::yesterday(), 'end' => Carbon::now()->addDays(5), 'timezone' => 'Asia\/Jerusalem']);
     expect($calendar->effects['returns'][0])->toHaveCount(5);
+});
+
+it('should filter the unassigned shifts', function () {
+    $task1 = Task::factory()->create(['type' => 'wash']);
+    $task2 = Task::factory()->create(['type' => 'clean']);
+    Shift::factory()->count(5)->create(['soldier_id' => 1, 'task_id' => $task1->id]);
+    Shift::factory()->count(5)->create(['soldier_id' => 1, 'task_id' => $task2->id]);
+    Shift::factory()->count(5)->create(['task_id' => $task1->id]);
+    Shift::factory()->count(5)->create(['task_id' => $task2->id]);
+
+    $calendar = livewire(CalendarWidget::class, [
+        'model' => Shift::class,
+        'keys' => collect([
+            'id',
+            'task_name',
+            'start_date',
+            'end_date',
+            'task_color',
+        ]),
+        'type' => 'my_soldiers',
+    ])
+        ->mountAction('Filters')
+        ->callMountedAction(['Unassigned shifts' => true])
+        ->call('fetchEvents', ['start' => Carbon::yesterday(), 'end' => Carbon::now()->addDays(5), 'timezone' => 'Asia\/Jerusalem']);
+    expect($calendar->effects['returns'][0])->toHaveCount(10);
 });

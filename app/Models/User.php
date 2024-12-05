@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasName;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -10,10 +12,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasPermissions;
 use Spatie\Permission\Traits\HasRoles;
-use Filament\Models\Contracts\FilamentUser;
-use Filament\Panel;
 
-class User extends Authenticatable implements HasName,FilamentUser
+class User extends Authenticatable implements FilamentUser, HasName
 {
     use HasFactory, HasPermissions, HasRoles, Notifiable;
 
@@ -45,10 +45,12 @@ class User extends Authenticatable implements HasName,FilamentUser
     {
         return $this->displayName;
     }
+
     public function viewAny(User $user): bool
     {
         return $user->hasRole('manager');
     }
+
     public function canAccessPanel(Panel $panel): bool
     {
         return true;

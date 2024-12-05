@@ -33,7 +33,7 @@ class CalendarWidget extends FullCalendarWidget
 
     public bool $filter = false;
 
-    public $filterData = [];
+    public $filterData;
 
     public $lastFilterData = [];
 
@@ -131,49 +131,50 @@ class CalendarWidget extends FullCalendarWidget
                         })->extraAttributes(['class' => 'fullcalendar']),
                 ];
             }
-        } elseif ($this->model !== Shift::class) {
-            FilamentFullCalendarPlugin::get()->editable(false);
-            FilamentFullCalendarPlugin::get()->selectable(false);
         } else {
-
-            if (Task::exists()) {
-                $actions = [
-                    Action::make('Create Shifts')
-                        ->action(fn () => $this->runEvents())
-                        ->label(__('Create Shifts'))
-                        ->icon('heroicon-o-arrow-path')
-                        ->visible(current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])))
-                        ->extraAttributes(['class' => 'fullcalendar']),
-                    Action::make('Shifts assignment')
-                        ->action(fn () => $this->runAlgorithm())
-                        ->label(__('Shifts assignment'))
-                        ->icon('heroicon-o-play')
-                        ->visible(current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])))
-                        ->extraAttributes(['class' => 'fullcalendar']),
-                ];
+            if ($this->model !== Shift::class) {
+                FilamentFullCalendarPlugin::get()->editable(false);
+                FilamentFullCalendarPlugin::get()->selectable(false);
+            } else {
+                if (Task::exists()) {
+                    $actions = [
+                        Action::make('Create shifts')
+                            ->action(fn () => $this->runEvents())
+                            ->label(__('Create shifts'))
+                            ->icon('heroicon-o-arrow-path')
+                            ->visible(current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])))
+                            ->extraAttributes(['class' => 'fullcalendar']),
+                        Action::make('Shifts assignment')
+                            ->action(fn () => $this->runAlgorithm())
+                            ->label(__('Shifts assignment'))
+                            ->icon('heroicon-o-play')
+                            ->visible(current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])))
+                            ->extraAttributes(['class' => 'fullcalendar']),
+                    ];
+                }
             }
+            if ($this->lastFilterData != $this->filterData) {
+                $this->refreshRecords();
+                $this->lastFilterData = $this->filterData;
+            }
+            if ($this->filter) {
+                return array_merge(self::activeFilters(), [
+                    self::resetFilters(),
+                    $this->model::getFilters($this)
+                        ->closeModalByClickingAway(false),
+                ]);
+            }
+
+            return array_merge(
+                $actions ?? [],
+                [
+                    $this->model::getFilters($this)
+                        ->closeModalByClickingAway(false),
+                ]
+            );
         }
 
-        if ($this->lastFilterData != $this->filterData) {
-            $this->refreshRecords();
-            $this->lastFilterData = $this->filterData;
-        }
-
-        if ($this->filter) {
-            return array_merge(self::activeFilters(), [
-                self::resetFilters(),
-                $this->model::getFilters($this)
-                    ->closeModalByClickingAway(false),
-            ]);
-        }
-
-        return array_merge(
-            $actions ?? [],
-            [
-                $this->model::getFilters($this)
-                    ->closeModalByClickingAway(false),
-            ]
-        );
+        return [];
     }
 
     protected function runEvents()
@@ -208,7 +209,7 @@ class CalendarWidget extends FullCalendarWidget
 
         $tags = collect($activeFilters)->map(function ($tag) {
             return Action::make($tag)
-                ->label($tag)
+                ->label(__($tag))
                 ->disabled()
                 ->badge()
                 ->extraAttributes(['class' => 'fullcalendar']);

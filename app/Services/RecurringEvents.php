@@ -25,7 +25,6 @@ class RecurringEvents
 
     public function recurringTask(): void
     {
-
         $tasks = Task::get();
         $tasks->filter(function ($task) {
             return $task->recurring['type'] !== 'Daily range' && $task->recurring['type'] !== 'One time';
