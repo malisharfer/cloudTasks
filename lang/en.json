@@ -1,0 +1,4 @@
+{
+    "File name":":month month's shifts for :name",
+    "Holiday shift notification":"hello <em>:user</em><strong>!</strong><br>the shift weight must be updated <em>:task</em> which takes place on: <em>:start_date</em> "
+}

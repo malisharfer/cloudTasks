@@ -3,7 +3,6 @@
 namespace App\Resources\TeamResource\Pages;
 
 use App\Models\Department;
-use App\Models\Soldier;
 use App\Models\Team;
 use App\Models\User;
 use App\Resources\TeamResource;
@@ -63,14 +62,7 @@ class EditTeam extends EditRecord
 
     protected function afterSave(): void
     {
-        $this->attachCommander();
         $this->assignRoles();
-    }
-
-    protected function attachCommander(): void
-    {
-        Soldier::where('id', $this->data['commander_id'])
-            ->update(['team_id' => Team::latest()->pluck('id')->first()]);
     }
 
     protected function assignRoles()

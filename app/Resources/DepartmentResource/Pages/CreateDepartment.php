@@ -30,7 +30,7 @@ class CreateDepartment extends CreateRecord
 
         $teams = Team::where('commander_id', operator: $this->data['commander_id'])->get();
         $departments = Department::where('commander_id', $this->data['commander_id'])->get();
-        if ($teams->isNotEmpty() || $departments->isNotEmpty()) {
+        if ($teams->isNotEmpty() || $departments->isNotEmpty() || $this->data['commander_id'] == null) {
             DepartmentResource::checkCommander($teams, $departments, $this->data);
             $this->halt();
         }
@@ -81,6 +81,6 @@ class CreateDepartment extends CreateRecord
     protected function assignRoles()
     {
         $user = User::where('userable_id', $this->record->commander_id)->first();
-        $user->assignRole('department-commander');
+        $user?->assignRole('department-commander');
     }
 }

@@ -1,0 +1,36 @@
+name: 🧪 Test
+
+on:
+  push:
+
+jobs:
+  tests:
+    name: Run tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📂 Checkout
+        uses: actions/checkout@v3
+
+      - name: 🐍 Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_pgsql
+          coverage: none
+
+      - name: ⏬ Run Dependencies install
+        run: |
+          composer install -n --prefer-dist
+          npm install
+          npm run build
+
+      - name: 🐍 Prepare Laravel Application
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan config:cache
+          php artisan migrate --env=testing
+
+      - name: ✅ Run tests
+        run: php artisan test

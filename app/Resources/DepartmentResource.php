@@ -10,6 +10,7 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Notifications\Actions as NotificationsService;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\Action;
@@ -73,7 +74,7 @@ class DepartmentResource extends Resource
                     ->sortable(),
                 TextColumn::make('commander.user')
                     ->formatStateUsing(function ($state) {
-                        return $state->last_name.', '.$state->first_name;
+                        return $state->last_name.' '.$state->first_name;
                     })
                     ->label(__(key: 'Commander'))
                     ->searchable()
@@ -115,26 +116,33 @@ class DepartmentResource extends Resource
 
     public static function checkCommander($teams, $departments, $data)
     {
+        $isCommanderNull = $data['commander_id'] === null;
+        $type = $teams->isNotEmpty() ? 'soldiers' : 'teams';
+
+        $body = $isCommanderNull
+            ? __('You did not choose a commander. With your approval, you leave the team without a commander. Are you sure?', ['type' => $type])
+            : __('The commander you selected is already registered as a commander. His selection will leave his :type without a commander. Are you sure?', ['type' => $type]);
+        $actions = array_filter([
+            ! $isCommanderNull ? NotificationsService\Action::make($teams->isNotEmpty() ? __('View team') : __('View department'))
+                ->button()
+                ->url(
+                    fn () => $teams->isNotEmpty()
+                    ? route('filament.app.resources.teams.index', ['commander_id' => $data['commander_id']])
+                    : route('filament.app.resources.departments.index', ['commander_id' => $data['commander_id']])
+                ) : null,
+            NotificationsService\Action::make('confirm')
+                ->label(__('Confirm'))
+                ->button()
+                ->dispatch('confirmCreate', data: ['teams' => $teams, 'departments' => $departments]),
+            NotificationsService\Action::make(__('Cancel'))
+                ->button()
+                ->close(),
+        ]);
         Notification::make()
             ->title(__('Save department'))
             ->persistent()
-            ->body(__('The commander you selected is already registered as a commander. His selection will leave his :type without a commander. Are you sure?', ['type' => $teams->isNotEmpty() ? 'soldiers' : 'teams']))
-            ->actions([
-                \Filament\Notifications\Actions\Action::make($teams->isNotEmpty() ? __('View team') : __('View department'))
-                    ->button()
-                    ->url(
-                        fn () => $teams->isNotEmpty() ?
-                        route('filament.app.resources.teams.index', ['commander_id' => $data['commander_id']]) :
-                        route('filament.app.resources.departments.index', ['commander_id' => $data['commander_id']])
-                    ),
-                \Filament\Notifications\Actions\Action::make('confirm')
-                    ->label(__('Confirm'))
-                    ->button()
-                    ->dispatch('confirmCreate', data: ['teams' => $teams, 'departments' => $departments]),
-                \Filament\Notifications\Actions\Action::make(__('Cancel'))
-                    ->button()
-                    ->close(),
-            ])
+            ->body($body)
+            ->actions($actions)
             ->send();
     }
 

@@ -6,6 +6,7 @@ use App\Models\Shift;
 use App\Models\Task;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Filament\Notifications\Notification;
 
 class RecurringEvents
 {
@@ -123,8 +124,8 @@ class RecurringEvents
     protected function createPeriod()
     {
         return $this->task->recurring['type'] == 'Daily range' ?
-            CarbonPeriod::between($this->task['recurring']['start_date'], $this->task['recurring']['end_date']) :
-            CarbonPeriod::between($this->month->copy()->startOfMonth(), $this->month->copy()->endOfMonth());
+            CarbonPeriod::between(max($this->task['recurring']['start_date'], Carbon::tomorrow()), $this->task['recurring']['end_date']) :
+            CarbonPeriod::between(max($this->month->copy()->startOfMonth(), Carbon::tomorrow()), $this->month->copy()->endOfMonth());
     }
 
     protected function createShifts(array $dates)
@@ -139,9 +140,28 @@ class RecurringEvents
                 && checkdate($date->month, $date->day, $date->year)
             ) {
                 $shift = new Shift;
+                $holiday = new Holidays($date->month, $date->day, $date->year);
                 $shift->start_date = $date;
                 $shift->end_date = $this->calculateEndDateTime($date);
                 $shift->task_id = $this->task['id'];
+                if ($holiday->isHoliday) {
+                    $shift->is_weekend = 1;
+                    $shiftType = Task::where('id', $shift->task_id)->pluck('type')->first();
+                    $task = Task::where([['type', $shiftType], ['is_weekend', 1]])->pluck('parallel_weight')->first();
+                    $task ?
+                    $shift->parallel_weight = $task
+                    : Notification::make()
+                        ->title(__('Update parallel weight of holiday shift'))
+                        ->persistent()
+                        ->body(
+                            __('Holiday shift notification', [
+                                'user' => auth()->user()->displayName,
+                                'task' => $shiftType,
+                                'start_date' => $shift->start_date,
+                            ])
+                        )
+                        ->sendToDatabase(auth()->user(), true);
+                }
                 $shift->save();
             }
         });

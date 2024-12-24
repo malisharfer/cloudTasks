@@ -77,15 +77,8 @@ class CreateTeam extends CreateRecord
 
     protected function afterCreate(): void
     {
-        $this->attachCommander();
         $this->attachSoldiers();
         $this->assignRoles();
-    }
-
-    protected function attachCommander(): void
-    {
-        Soldier::where('id', $this->data['commander_id'])
-            ->update(['team_id' => Team::latest()->pluck('id')->first()]);
     }
 
     protected function attachSoldiers(): void

@@ -27,7 +27,7 @@ class Algorithm
             ->filter(function (Shift $shift) {
                 $range = new Range($shift->start_date, $shift->end_date);
 
-                return $range->isSameMonth(new Range($this->date->copy()->startOfMonth(), $this->date->copy()->endOfMonth()));
+                return $range->isSameMonth(new Range(max($this->date->copy()->startOfMonth(), Carbon::tomorrow()), $this->date->copy()->endOfMonth()));
             })
             ->map(fn (Shift $shift): ShiftService => $this->buildShift($shift));
     }
