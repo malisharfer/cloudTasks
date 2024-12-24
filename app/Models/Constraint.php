@@ -88,9 +88,18 @@ class Constraint extends Model
         }
         $usedCounts = self::getUsedCountsForCurrentMonth($startDate, $endDate);
         $limits = ConstraintType::getLimit();
+        $constraintsWithinLimit = [];
+        foreach ($options as $constraint => $label) {
+            $used = $usedCounts[$constraint] ?? 0;
+            $limit = $limits[$constraint] ?? 0;
 
-        return array_filter($options, fn ($option) => ($limits[array_search($option, array_map(fn ($enum) => $enum->getLabel(), ConstraintType::cases()))] ?? 0) === 0
-            || ($usedCounts[array_search($option, array_map(fn ($enum) => $enum->getLabel(), ConstraintType::cases()))] ?? 0) < ($limits[array_search($option, array_map(fn ($enum) => $enum->getLabel(), ConstraintType::cases()))] ?? 0));
+            if ($limit === 0 || $used < $limit) {
+                $constraintsWithinLimit[$constraint] = $label;
+            }
+        }
+
+        return $constraintsWithinLimit;
+
     }
 
     public static function getAvailableOptions($startDate, $endDate): array
@@ -121,8 +130,7 @@ class Constraint extends Model
     {
         $constraintType = $get('constraint_type');
         $startDate = Carbon::parse($get('start_date'));
-        // $endDate = Carbon::parse($get('end_date'));
-        $endDate = max($startDate,Carbon::parse($get('end_date')));
+        $endDate = max($startDate, Carbon::parse($get('end_date')));
 
         switch ($constraintType) {
             case 'Medical':
@@ -194,8 +202,9 @@ class Constraint extends Model
     public static function getFilters($calendar)
     {
         return Action::make('Filters')
+            ->iconButton()
             ->label(__('Filter'))
-            ->icon('heroicon-m-funnel')
+            ->icon('heroicon-o-funnel')
             ->extraAttributes(['class' => 'fullcalendar'])
             ->form(function () use ($calendar) {
                 $constraints = $calendar->getEventsByRole();

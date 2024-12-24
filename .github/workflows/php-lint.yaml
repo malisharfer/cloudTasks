@@ -1,0 +1,29 @@
+name: 💄 Lint
+
+on:
+  push:
+
+jobs:
+  build:
+    name: Run Linter
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📂 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🐍 Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_pgsql
+          coverage: none
+
+      - name: ⏬ Install dependencies
+        run: |
+          composer install -n --prefer-dist
+          composer require laravel/pint --dev
+
+      - name: 💄 Run Pint
+        run: |
+          ./vendor/bin/pint --config pint.json --test

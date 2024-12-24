@@ -21,8 +21,8 @@ it('should create shifts for daily recurring', function () {
     $this->recurringEvents->recurringTask();
     $this->assertDatabaseHas('shifts', [
         'task_id' => $task->id,
-        'start_date' => Carbon::parse($this->now->startOfMonth()->format('Y-m-d').' '.$task['start_hour']),
-        'end_date' => Carbon::parse($this->now->startOfMonth()->format('Y-m-d').' '.$task['start_hour'])->addHours($task['duration']),
+        'start_date' => Carbon::parse($this->now->tomorrow()->format('Y-m-d').' '.$task['start_hour']),
+        'end_date' => Carbon::parse($this->now->tomorrow()->format('Y-m-d').' '.$task['start_hour'])->addHours($task['duration']),
     ]);
 });
 
@@ -34,8 +34,8 @@ it('should create shifts for weekly recurring', function () {
         'duration' => 2,
     ]);
     $expectedShiftDates = collect([
-        $this->now->startOfMonth()->next('Sunday')->format('Y-m-d'),
-        $this->now->startOfMonth()->next('Tuesday')->format('Y-m-d'),
+        $this->now->tomorrow()->next('Sunday')->format('Y-m-d'),
+        $this->now->tomorrow()->next('Tuesday')->format('Y-m-d'),
     ]);
     $this->recurringEvents->recurringTask();
     $this->assertDatabaseHas('shifts', [
@@ -96,16 +96,16 @@ it('should create shifts for custom recurring', function () {
 it('should create shift for One time task', function () {
     $task = Task::factory()->create([
         'name' => 'One time Task',
-        'recurring' => ['type' => 'One time', 'date' => '2024-11-13'],
+        'recurring' => ['type' => 'One time', 'date' => Carbon::tomorrow()->toDateString()],
         'start_hour' => '13:00:00',
         'duration' => 1,
     ]);
 
     $this->recurringEvents->oneTimeTask($task);
     $date = Carbon::create(
-        2024,
-        11,
-        13,
+        Carbon::tomorrow()->year,
+        Carbon::tomorrow()->month,
+        Carbon::tomorrow()->day,
     );
     $this->assertDatabaseHas('shifts', [
         'task_id' => $task->id,
@@ -117,7 +117,7 @@ it('should create shift for One time task', function () {
 it('should create shifts for Daily range task', function () {
     $task = Task::factory()->create([
         'name' => 'Daily range Task',
-        'recurring' => ['type' => 'Daily range', 'start_date' => '2022-12-01', 'end_date' => '2022-12-05'],
+        'recurring' => ['type' => 'Daily range', 'start_date' => Carbon::tomorrow()->toDateString(), 'end_date' => Carbon::tomorrow()->addDays(5)->toDateString()],
         'start_hour' => '13:00:00',
         'duration' => 1,
     ]);
@@ -126,7 +126,7 @@ it('should create shifts for Daily range task', function () {
 
     $this->assertDatabaseHas('shifts', [
         'task_id' => $task->id,
-        'start_date' => Carbon::parse('2022-12-01'.' '.$task['start_hour']),
-        'end_date' => Carbon::parse('2022-12-01'.' '.$task['start_hour'])->addHours($task['duration']),
+        'start_date' => Carbon::parse(Carbon::tomorrow()->toDateString().' '.$task['start_hour']),
+        'end_date' => Carbon::parse(Carbon::tomorrow()->toDateString().' '.$task['start_hour'])->addHours($task['duration']),
     ]);
 });

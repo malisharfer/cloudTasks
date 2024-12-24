@@ -2,6 +2,7 @@
 
 use App\Services\Algorithm;
 use App\Services\RecurringEvents;
+use App\Services\ShiftAssignmentNotification;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -15,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule) {
         $schedule->call(fn () => app(RecurringEvents::class)->recurringTask())->monthlyOn(20, '08:00');
         $schedule->call(fn () => app(Algorithm::class)->run())->monthlyOn(20, '10:00');
+        $schedule->call(fn () => app(ShiftAssignmentNotification::class)->sendNotification())->monthlyOn(1, '08:00');
     })
     ->withMiddleware(function (Middleware $middleware) {})
     ->withExceptions(function (Exceptions $exceptions) {})->create();

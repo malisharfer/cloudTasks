@@ -68,6 +68,6 @@ class EditDepartment extends EditRecord
     protected function assignRoles()
     {
         $user = User::where('userable_id', $this->record->commander_id)->first();
-        $user->assignRole('department-commander');
+        $user?->assignRole('department-commander');
     }
 }

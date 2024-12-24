@@ -11,6 +11,7 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Notifications\Actions as NotificationsService;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\Action;
@@ -95,7 +96,7 @@ class TeamResource extends Resource
                 TextColumn::make('commander.user')
                     ->label(__('Commander'))
                     ->formatStateUsing(function ($state) {
-                        return $state->last_name.', '.$state->first_name;
+                        return $state->last_name.' '.$state->first_name;
                     })
                     ->label(__('Commander'))
                     ->searchable()
@@ -139,6 +140,7 @@ class TeamResource extends Resource
                                 ->multiple()
                                 ->searchable(),
                         ])
+                        ->closeModalByClickingAway(false)
                         ->action(function (array $data, Team $record): void {
                             collect($data['members'])->map(fn ($soldier_id) => Soldier::where('id', $soldier_id)
                                 ->update(['team_id' => $record->id]));
@@ -169,17 +171,17 @@ class TeamResource extends Resource
             ->persistent()
             ->body(__('The commander you selected is already registered as a commander. His selection will leave his soldiers without a commander. Are you sure?'))
             ->actions([
-                \Filament\Notifications\Actions\Action::make(__('View ').($teams->isNotEmpty() ? __('Team') : __('Department')))
+                NotificationsService\Action::make(__('View ').($teams->isNotEmpty() ? __('Team') : __('Department')))
                     ->button()
                     ->url(
                         fn () => $teams->isNotEmpty() ?
                         route('filament.app.resources.teams.index', ['commander_id' => $data['commander_id']]) :
                         route('filament.app.resources.departments.index', ['commander_id' => $data['commander_id']])
                     ),
-                \Filament\Notifications\Actions\Action::make(__('Confirm'))
+                NotificationsService\Action::make(__('Confirm'))
                     ->button()
                     ->dispatch('confirmCreate', data: ['teams' => $teams, 'departments' => $departments]),
-                \Filament\Notifications\Actions\Action::make(__('Cancel'))
+                NotificationsService\Action::make(__('Cancel'))
                     ->button()
                     ->close(),
             ])

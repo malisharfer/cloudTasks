@@ -1,0 +1,30 @@
+name: 🔖 release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  update-release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      issues: write
+      contents: write
+
+    steps:
+      - name: 📂 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦️ Create ZIP Archive
+        run: zip -r ${{ github.event.repository.name }}.zip .
+
+      - name: ⬆️ upload-release-asset
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: ./${{ github.event.repository.name }}.zip
+
+      - name: 📝 Update Release Description with Closed Issues and Assignees
+        run: bash github-scripts/find-closed-issues.sh ${{ secrets.GITHUB_TOKEN }} ${{ github.event.release.url }}

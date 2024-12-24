@@ -295,9 +295,13 @@ class SoldierResource extends Resource
                 ->label(__('Capacity'))
                 ->required(),
             Section::make([
-                Toggle::make('is_reservist')->label(__('Reservist'))->live(),
-                Toggle::make('is_permanent')->label(__('Is permanent')),
-                Toggle::make('has_exemption')->label(__('Exemption')),
+                Toggle::make('is_reservist')
+                    ->label(__('Reservist'))
+                    ->live(),
+                Toggle::make('is_permanent')
+                    ->label(__('Is permanent')),
+                Toggle::make('has_exemption')
+                    ->label(__('Exemption')),
             ])->columns(3),
         ];
     }
@@ -318,9 +322,27 @@ class SoldierResource extends Resource
     {
         return [
             Section::make([
-                TextInput::make('max_shifts')->label(__('Max shifts'))->numeric()->minValue(0)->required()->default(0),
-                TextInput::make('max_nights')->label(__('Max nights'))->numeric()->minValue(0)->required()->default(0),
-                TextInput::make('max_weekends')->label(__('Max weekends'))->numeric()->minValue(0)->required()->default(0),
+                TextInput::make('max_shifts')
+                    ->label(__('Max shifts'))
+                    ->numeric()
+                    ->step(0.25)
+                    ->minValue(0)
+                    ->required()
+                    ->default(0),
+                TextInput::make('max_nights')
+                    ->label(__('Max nights'))
+                    ->numeric()
+                    ->step(0.25)
+                    ->minValue(0)
+                    ->required()
+                    ->default(0),
+                TextInput::make('max_weekends')
+                    ->label(__('Max weekends'))
+                    ->numeric()
+                    ->step(0.25)
+                    ->minValue(0)
+                    ->required()
+                    ->default(0),
             ])
                 ->columns(3),
             Section::make([

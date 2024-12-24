@@ -24,7 +24,7 @@ RUN apt-get update \
     "unzip (>=6.0)" \
     "vim-tiny (>=2)" \
   && apt-get install -y nodejs npm \
-  && npm install -g npm@latest \
+  && npm install -g npm@7  \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -53,6 +53,7 @@ RUN install-php-extensions \
     opcache \
     redis \
     sockets \
+    calendar\
     zip
 
 RUN composer install

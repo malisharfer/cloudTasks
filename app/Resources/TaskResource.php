@@ -158,7 +158,7 @@ class TaskResource extends Resource
                             ->size(TextColumnSize::Small)
                             ->extraAttributes(['style' => 'margin-left: 15px;']),
                         TextColumn::make('recurring.start_date')
-                            ->description(__('StartDate'), position: 'above')
+                            ->description(__('Start date'), position: 'above')
                             ->size(TextColumnSize::Small)
                             ->extraAttributes(['style' => 'margin-left: 15px;']),
                         TextColumn::make('recurring.end_date')
@@ -362,8 +362,10 @@ class TaskResource extends Resource
                                     }
                                 )
                                 ->default(null)
-                                ->placeholder('Select soldier')
-                                ->visible(
+                                ->placeholder(function (Get $get) {
+                                    return self::getSoldiers($get)->isEmpty() ? __('No suitable soldiers') : __('Select a soldier');
+                                }
+                                )->visible(
                                     fn (Get $get): bool => $get('soldier_type')
                                     && $get('soldier_type') != 'me'
                                 ),
@@ -400,7 +402,7 @@ class TaskResource extends Resource
                 ->put('me', __('Me'))
                 ->toArray();
         }
-        if (current(array: array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])) != 'manager') {
+        if (current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])) != 'manager') {
             return collect($options)
                 ->put('my_soldiers', __('My Soldiers'))
                 ->toArray();
@@ -414,7 +416,7 @@ class TaskResource extends Resource
         $shift = self::taskDetails($get);
         $manual_assignment = new ManualAssignment($shift, 'me');
 
-        return $manual_assignment->amIAvailable($get('type'));
+        return $manual_assignment->amIAvailable();
     }
 
     protected static function getSoldiers(Get $get)
@@ -422,7 +424,7 @@ class TaskResource extends Resource
         $shift = self::taskDetails($get);
         $manual_assignment = new ManualAssignment($shift, $get('soldier_type'));
 
-        return $manual_assignment->getSoldiers($get('type'), $get('department_name'));
+        return $manual_assignment->getSoldiers($get('department_name'));
     }
 
     protected static function taskDetails(Get $get)

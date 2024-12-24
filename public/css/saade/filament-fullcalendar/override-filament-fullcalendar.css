@@ -26,8 +26,8 @@
     background-color:#ffffff ;
     color: #d0d0d0;
     cursor: not-allowed;
-}
-
-.filament-fullcalendar .fc-day-past{
     --fc-highlight-color: #ffffff;
+}
+.fc-day-sat{
+    background-color: #f5f2f2;
 }

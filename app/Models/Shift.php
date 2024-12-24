@@ -196,8 +196,9 @@ class Shift extends Model
     public static function getFilters($calendar)
     {
         return Action::make('Filters')
+            ->iconButton()
             ->label(__('Filter'))
-            ->icon('heroicon-m-funnel')
+            ->icon('heroicon-o-funnel')
             ->extraAttributes(['class' => 'fullcalendar'])
             ->form(function () use ($calendar) {
                 $shifts = $calendar->getEventsByRole();
