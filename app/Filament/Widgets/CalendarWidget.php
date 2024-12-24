@@ -147,10 +147,9 @@ class CalendarWidget extends FullCalendarWidget
     protected function headerActions(): array
     {
         $this->currentMonth ?? $this->currentMonth = Carbon::now()->year.'-'.Carbon::now()->month;
-        if ($this->lastFilterData != $this->filterData || $this->lastMonth !== $this->currentMonth) {
+        if ($this->lastFilterData != $this->filterData) {
             $this->refreshRecords();
             $this->lastFilterData = $this->filterData;
-            $this->lastMonth = $this->currentMonth;
         }
         $today = now()->startOfDay();
         $actions = [];

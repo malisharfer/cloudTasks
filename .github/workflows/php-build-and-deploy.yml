@@ -35,14 +35,14 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.REGISTRY_LOGIN_SERVER }}/version1_2
+          images: ${{ secrets.REGISTRY_LOGIN_SERVER }}/version1_3
           flavor: |
             latest=false
           tags: |
             type=raw,value=latest
             type=semver,pattern=v{{version}}
             type=semver,pattern=v{{major}}.{{minor}}
-
+            
       - name: 🐳 Docker Build & Push
         uses: docker/build-push-action@v5
         id: docker_build
