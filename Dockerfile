@@ -53,7 +53,6 @@ RUN install-php-extensions \
     opcache \
     redis \
     sockets \
-    calendar\
     zip
 
 RUN composer install
