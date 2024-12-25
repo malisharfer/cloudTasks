@@ -70,10 +70,9 @@ _run() {
   case "${CONTAINER_MODE}" in
     app)
       echo "🚀 Running octane..."
-      # composer require laravel/octane
-      # ${ARTISAN} octane:frankenphp --host=0.0.0.0 --port="${CONTAINER_PORT}" 
       ${ARTISAN} schedule:work &
-      ${ARTISAN} serve --host=0.0.0.0 --port="${CONTAINER_PORT}" 
+      ${ARTISAN} octane:frankenphp --host=0.0.0.0 --port="${CONTAINER_PORT}"
+      # ${ARTISAN} serve --host=0.0.0.0 --port="${CONTAINER_PORT}" 
       ;;
     worker)
       echo "⏳ Running the queue..."
