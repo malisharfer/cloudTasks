@@ -169,8 +169,7 @@ class TeamResource extends Resource
         Notification::make()
             ->title(__('Save team'))
             ->persistent()
-            ->body(__('The commander you selected is already registered as a commander. His selection will leave his soldiers without a commander. Are you sure?'))
-            ->actions([
+            ->body(__('The commander you selected is already registered as a commander. His selection will leave his :type without a commander. Are you sure?'))->actions([
                 NotificationsService\Action::make(__('View ').($teams->isNotEmpty() ? __('Team') : __('Department')))
                     ->button()
                     ->url(

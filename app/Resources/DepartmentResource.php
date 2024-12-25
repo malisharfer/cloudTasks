@@ -120,7 +120,7 @@ class DepartmentResource extends Resource
         $type = $teams->isNotEmpty() ? 'soldiers' : 'teams';
 
         $body = $isCommanderNull
-            ? __('You did not choose a commander. With your approval, you leave the team without a commander. Are you sure?', ['type' => $type])
+            ? __('You did not choose a commander. With your approval, you leave the department without a commander. Are you sure?', ['type' => $type])
             : __('The commander you selected is already registered as a commander. His selection will leave his :type without a commander. Are you sure?', ['type' => $type]);
         $actions = array_filter([
             ! $isCommanderNull ? NotificationsService\Action::make($teams->isNotEmpty() ? __('View team') : __('View department'))

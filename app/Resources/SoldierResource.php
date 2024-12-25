@@ -79,6 +79,29 @@ class SoldierResource extends Resource
                     ->badge()
                     ->color(fn ($state) => $state ? 'info' : 'primary')
                     ->sortable(),
+                TextColumn::make('role')
+                    ->label(__('Role'))
+                    ->visible(collect(auth()->user()->getRoleNames())->intersect(['manager', 'department-commander'])->isNotEmpty())
+                    ->default(
+                        function ($record) {
+                            $roles = Soldier::find($record->id)->user->getRoleNames()->first();
+
+                            return match ($roles) {
+                                'manager' => __('Manager'),
+                                'department-commander' => __('Department commander'),
+                                'team-commander' => __('Team commander'),
+                                'soldier' => __('Soldier'),
+                                default => null,
+                            };
+                        }
+                    ),
+                TextColumn::make('teamSoldier')
+                    ->label(__('Team'))
+                    ->default(function ($record) {
+                        $soldier = Soldier::find($record->id);
+
+                        return $soldier->team ? $soldier->team->name : null;
+                    }),
                 TextColumn::make('reserve_dates')->label(__('Reserve dates'))->date()->listWithLineBreaks()->limitList(1)->expandableLimitedList()->placeholder('---')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('next_reserve_dates')->label(__('Next reserve dates'))->date()->listWithLineBreaks()->limitList(1)->expandableLimitedList()->placeholder('---')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('enlist_date')->label(__('Enlist date'))->sortable()->date()->toggleable(),
@@ -235,8 +258,10 @@ class SoldierResource extends Resource
             return parent::getEloquentQuery()->where('id', '!=', User::where('userable_id', auth()->user()->id)->value('userable_id'));
         }
 
-        return parent::getEloquentQuery()->where('team_id', Team::select('id')->where('commander_id', auth()->user()->userable_id))
-            ->orWhere('team_id', Team::select('id')->where('department_id', Department::select('id')->where('commander_id', auth()->user()->userable_id)));
+        return parent::getEloquentQuery()
+            ->whereIn('team_id', Team::select('id')->where('department_id', Department::select('id')->where('commander_id', auth()->user()->userable_id)))
+            ->orWhere('team_id', Team::select('id')->where('commander_id', auth()->user()->userable_id));
+
     }
 
     public static function getPages(): array
@@ -287,7 +312,8 @@ class SoldierResource extends Resource
             TextInput::make('course')
                 ->label(__('Course'))
                 ->numeric()
-                ->minValue(0),
+                ->minValue(0)
+                ->required(),
             TextInput::make('capacity')
                 ->numeric()
                 ->step(0.25)

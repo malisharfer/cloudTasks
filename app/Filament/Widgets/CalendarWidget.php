@@ -147,7 +147,7 @@ class CalendarWidget extends FullCalendarWidget
     protected function headerActions(): array
     {
         $this->currentMonth ?? $this->currentMonth = Carbon::now()->year.'-'.Carbon::now()->month;
-        if ($this->lastFilterData != $this->filterData) {
+        if ($this->lastFilterData != $this->filterData ) {
             $this->refreshRecords();
             $this->lastFilterData = $this->filterData;
         }
@@ -187,7 +187,8 @@ class CalendarWidget extends FullCalendarWidget
                                 ->action(function () {
                                     return Excel::download(new ShiftsExport($this->getEventsByRole(), $this->currentMonth), __('File name', [
                                         'name' => auth()->user()->displayName,
-                                        'month' => $this->currentMonth]).'.xlsx');
+                                        'month' => $this->currentMonth,
+                                    ]).'.xlsx');
                                 }),
                             Action::make('Create shifts')
                                 ->action(fn () => $this->runEvents())
@@ -406,5 +407,15 @@ class CalendarWidget extends FullCalendarWidget
                     ];
             })
             ->modalHeading(__('View').$this->model::getTitle());
+    }
+
+    public function eventDidMount(): string
+    {
+        return <<<'JS'
+        function({ event, timeText, isStart, isEnd, isMirror, isPast, isFuture, isToday, el, view }){
+            el.setAttribute("x-tooltip", "tooltip");
+            el.setAttribute("x-data", "{ tooltip: '"+event.title+"' }");
+        }
+    JS;
     }
 }

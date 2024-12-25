@@ -10,15 +10,18 @@ use Database\Seeders\PermissionSeeder;
 
 it('allows department commander to view his soldiers', function () {
     $department_commander_user = User::factory()->create([
-        'userable_id' => Soldier::factory()->create()->id,
+        'userable_id' => $departmentCommanderSoldier = Soldier::factory()->create()->id,
     ]);
     $soldiers = Soldier::factory()->count(10)->create([
         'team_id' => Team::factory()->create([
             'department_id' => Department::factory()->create([
-                'commander_id' => $department_commander_user->userable_id,
+                'commander_id' => $departmentCommanderSoldier,
             ])->id,
         ])->id,
-    ]);
+    ])->each(function ($soldier) {
+        User::factory()->create(['userable_id' => $soldier->id]);
+    });
+
     $newSoldiers = Soldier::factory()->count(10)->create([]);
     $this
         ->seed(PermissionSeeder::class)

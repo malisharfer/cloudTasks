@@ -1,11 +1,13 @@
 <?php
 
 use App\Models\Soldier;
+use App\Models\User;
 use App\Resources\SoldierResource\Pages\ListSoldiers;
 use Database\Seeders\PermissionSeeder;
 
 it('redirects to edit the replicated soldier after replicating a soldier', function () {
     $soldier = Soldier::factory()->create();
+    User::factory()->create(['userable_id' => $soldier->id]);
     $this
         ->seed(PermissionSeeder::class)
         ->asUser('manager')
