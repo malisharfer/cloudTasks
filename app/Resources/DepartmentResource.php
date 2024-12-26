@@ -3,6 +3,7 @@
 namespace App\Resources;
 
 use App\Models\Department;
+use App\Models\Soldier;
 use App\Models\Team;
 use App\Models\User;
 use App\Resources\DepartmentResource\Pages;
@@ -58,6 +59,7 @@ class DepartmentResource extends Resource
                                 return [$user->userable_id => $user->displayName];
                             })
                         )
+                        ->optionsLimit(Soldier::count())
                         ->searchable(),
                 ])->columns(2),
 
@@ -133,7 +135,7 @@ class DepartmentResource extends Resource
             NotificationsService\Action::make('confirm')
                 ->label(__('Confirm'))
                 ->button()
-                ->dispatch('confirmCreate', data: ['teams' => $teams, 'departments' => $departments]),
+                ->dispatch('confirmCreate', ['teams' => $teams, 'departments' => $departments]),
             NotificationsService\Action::make(__('Cancel'))
                 ->button()
                 ->close(),

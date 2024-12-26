@@ -9,6 +9,7 @@ use App\Models\Soldier;
 use App\Models\Task;
 use App\Services\Algorithm;
 use App\Services\Holidays;
+use App\Services\Range;
 use App\Services\RecurringEvents;
 use Carbon\Carbon;
 use Filament\Actions\Action;
@@ -109,7 +110,7 @@ class CalendarWidget extends FullCalendarWidget
     public function getEventsByRole()
     {
         $current_user_id = auth()->user()->userable_id;
-        $role = current(array: array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']));
+        $role = current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']));
 
         return ($this->type === 'my_soldiers') ? match ($role) {
             'manager' => $this->model::where('soldier_id', '!=', $current_user_id)
@@ -147,9 +148,10 @@ class CalendarWidget extends FullCalendarWidget
     protected function headerActions(): array
     {
         $this->currentMonth ?? $this->currentMonth = Carbon::now()->year.'-'.Carbon::now()->month;
-        if ($this->lastFilterData != $this->filterData ) {
+        if ($this->lastFilterData != $this->filterData || $this->lastMonth !== $this->currentMonth) {
             $this->refreshRecords();
             $this->lastFilterData = $this->filterData;
+            $this->lastMonth = $this->currentMonth;
         }
         $today = now()->startOfDay();
         $actions = [];
@@ -296,7 +298,32 @@ class CalendarWidget extends FullCalendarWidget
 
     protected function modalActions(): array
     {
-        $basicActions = [
+        $basicActions = $this->getBasicActions();
+        $changeAction = $this->getChangeActions();
+
+        if (
+            ($this->model == Constraint::class && $this->type == 'my')
+            || ($this->model == Shift::class && $this->type == 'my_soldiers')
+            || ($this->model == Shift::class && $this->type == 'my' && array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'department-commander', 'team-commander']))
+        ) {
+            if ($this->model == Shift::class) {
+                return array_merge($basicActions, $changeAction);
+            }
+
+            return $basicActions;
+        }
+        if ($this->model == Shift::class && $this->type == 'my') {
+            return $changeAction;
+        }
+        FilamentFullCalendarPlugin::get()->editable(false);
+        FilamentFullCalendarPlugin::get()->selectable(false);
+
+        return [];
+    }
+
+    protected function getBasicActions()
+    {
+        return [
             EditAction::make()
                 ->fillForm(function (Model $record, array $arguments): array {
                     return method_exists($this->model, 'fillForm')
@@ -307,7 +334,6 @@ class CalendarWidget extends FullCalendarWidget
                             'end_date' => $arguments['event']['end'] ?? $record->end_date,
                         ];
                 })
-                ->hidden($this->model === Shift::class && $this->type === 'my' && ! array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'department-commander', 'team-commander']))
                 ->modalCloseButton(false)
                 ->modalCancelAction(false)
                 ->modalSubmitAction(false)
@@ -322,27 +348,26 @@ class CalendarWidget extends FullCalendarWidget
                             )
                         ) : true
                     );
-                    $oldDate = date('l', strtotime($this->mountedActionsArguments[0]['oldEvent']['start']));
-                    $newDate = date('l', strtotime($this->mountedActionsData[0]['start_date']));
-                    $startOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
-                    if (
-                        $this->model === Shift::class &&
-                        (in_array($oldDate, $startOfWeek) !== in_array($newDate, $startOfWeek))
-                    ) {
-                        Notification::make()
-                            ->info()
-                            ->title(__('Update dragged shift details!'))
-                            ->body(__('Pay attention to update the shift details according to the changes you made .'))
-                            ->color('info')
-                            ->persistent()
-                            ->send();
+                    if (! empty($arguments) && $this->model === Shift::class) {
+                        $oldDate = date('l', strtotime($this->mountedActionsArguments[0]['oldEvent']['start']));
+                        $newDate = date('l', strtotime($this->mountedActionsData[0]['start_date']));
+                        $startOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
+                        if ((in_array($oldDate, $startOfWeek) !== in_array($newDate, $startOfWeek))) {
+                            Notification::make()
+                                ->info()
+                                ->title(__('Update dragged shift details!'))
+                                ->body(__('Pay attention to update the shift details according to the changes you made .'))
+                                ->color('info')
+                                ->persistent()
+                                ->send();
+                        }
                     }
 
                     return [
-                        $action->makeExtraModalAction(__('Save'), arguments: ['save' => true])
+                        $action->makeExtraModalAction(__('Save'), ['save' => true])
                             ->color('primary')
                             ->disabled(! $canSave),
-                        $action->makeExtraModalAction(__('Cancel'), arguments: ['cancel' => true])
+                        $action->makeExtraModalAction(__('Cancel'), ['cancel' => true])
                             ->color('primary'),
                     ];
                 })
@@ -366,32 +391,30 @@ class CalendarWidget extends FullCalendarWidget
                     }
                 }),
             DeleteAction::make()
-                ->label(__('Delete'))
-                ->hidden($this->model === Shift::class && $this->type === 'my' && ! array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'department-commander', 'team-commander'])),
-
+                ->label(__('Delete')),
         ];
-        if (($this->type === 'my' && $this->model === Constraint::class) || ($this->type === 'my_soldiers' && $this->model === Shift::class)) {
-            if (method_exists($this->model, 'getAction')) {
-                $action = $this->model::getAction($this)
-                    ->visible(function (): bool {
-                        $record = is_array($this->mountedActionsData) && ! empty($this->mountedActionsData)
-                            ? (object) $this->mountedActionsData[0]
-                            : (object) $this->mountedActionsData;
+    }
 
-                        return $this->model === 'App\Models\Shift' && $record->soldier_id !== null;
-                    })
-                    ->closeModalByClickingAway(false)
-                    ->cancelParentActions();
+    protected function getChangeActions()
+    {
+        return [
+            Shift::exchangeAction()
+                ->visible(fn (): bool => $this->displayButton())
+                ->cancelParentActions(),
+            Shift::changeAction()
+                ->visible(fn (): bool => $this->displayButton())
+                ->cancelParentActions(),
+        ];
+    }
 
-                return array_merge($basicActions, [$action]);
-            }
+    protected function displayButton(): bool
+    {
+        $record = is_array($this->mountedActionsData) && ! empty($this->mountedActionsData)
+            ? (object) $this->mountedActionsData[0]
+            : (object) $this->mountedActionsData;
+        $range = new Range($record->start_date, $record->end_date);
 
-            return $basicActions;
-        }
-        FilamentFullCalendarPlugin::get()->editable(false);
-        FilamentFullCalendarPlugin::get()->selectable(false);
-
-        return [];
+        return $record->soldier_id !== null && ! $range->isPass();
     }
 
     protected function viewAction(): Action
@@ -406,6 +429,9 @@ class CalendarWidget extends FullCalendarWidget
                         'end_date' => $arguments['event']['end'] ?? $record->end_date,
                     ];
             })
+            ->modalFooterActions(fn (FullCalendarWidget $livewire) => [
+                ...$livewire->getCachedModalActions(),
+            ])
             ->modalHeading(__('View').$this->model::getTitle());
     }
 

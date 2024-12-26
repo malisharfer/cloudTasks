@@ -28,7 +28,7 @@ class CreateDepartment extends CreateRecord
             $this->halt();
         }
 
-        $teams = Team::where('commander_id', operator: $this->data['commander_id'])->get();
+        $teams = Team::where('commander_id', $this->data['commander_id'])->get();
         $departments = Department::where('commander_id', $this->data['commander_id'])->get();
         if ($teams->isNotEmpty() || $departments->isNotEmpty() || $this->data['commander_id'] == null) {
             DepartmentResource::checkCommander($teams, $departments, $this->data);

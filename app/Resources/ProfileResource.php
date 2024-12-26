@@ -102,7 +102,7 @@ class ProfileResource extends Resource
 
                                 return $soldierShifts->filter(function (Shift $shift): bool {
                                     return Carbon::parse($shift->start_date)->month == now()->month || Carbon::parse($shift->end_date)->month == now()->month;
-                                })->sum(fn (Shift $shift) => $shift->parallel_weight == 0 ? $shift->task->parallel_weight : $shift->parallel_weight);
+                                })->sum(fn (Shift $shift) => $shift->parallel_weight === null ? $shift->task->parallel_weight : $shift->parallel_weight);
                             })
                             ->weight(weight: FontWeight::SemiBold)
                             ->description(__('Capacity hold'), position: 'above')

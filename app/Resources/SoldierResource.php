@@ -37,6 +37,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Session;
 
 class SoldierResource extends Resource
 {
@@ -57,8 +58,9 @@ class SoldierResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
+        Session::put('is_replica', false);
 
+        return $table
             ->columns([
                 TextColumn::make('user')
                     ->label(__('Full name'))
@@ -117,7 +119,7 @@ class SoldierResource extends Resource
 
                         return $soldierShifts->filter(function (Shift $shift): bool {
                             return Carbon::parse($shift->start_date)->month == now()->month || Carbon::parse($shift->end_date)->month == now()->month;
-                        })->sum(fn (Shift $shift) => $shift->parallel_weight == 0 ? $shift->task->parallel_weight : $shift->parallel_weight);
+                        })->sum(fn (Shift $shift) => $shift->parallel_weight === null ? $shift->task->parallel_weight : $shift->parallel_weight);
                     })
                     ->label(__('Capacity hold'))
                     ->numeric()
@@ -238,6 +240,7 @@ class SoldierResource extends Resource
                     ReplicateAction::make()
                         ->icon('heroicon-o-document-duplicate')
                         ->color('success')
+                        ->before(fn () => Session::put('is_replica', true))
                         ->after(function (Soldier $replica): void {
                             redirect()->route('filament.app.resources.soldiers.edit', ['record' => $replica->id]);
                         })
@@ -289,7 +292,11 @@ class SoldierResource extends Resource
                     ->password()
                     ->revealable()
                     ->length(7)
-                    ->hiddenOn('edit')
+                    ->hidden(function () {
+                        $isReplica = Session::get('is_replica');
+
+                        return request()->route()->getName() === 'filament.app.resources.soldiers.edit' && ! $isReplica;
+                    })
                     ->required(),
             ])->columns(3);
     }
@@ -351,7 +358,7 @@ class SoldierResource extends Resource
                 TextInput::make('max_shifts')
                     ->label(__('Max shifts'))
                     ->numeric()
-                    ->step(0.25)
+                    ->step(1)
                     ->minValue(0)
                     ->required()
                     ->default(0),

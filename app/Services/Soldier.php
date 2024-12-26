@@ -115,9 +115,4 @@ class Soldier
     {
         collect($spaces)->map(fn ($space) => $this->shifts->push(new Shift(0, 'space', $space->start, $space->end, 0, false, false)));
     }
-
-    public function printMaxStatuses()
-    {
-        echo 'points: '.$this->pointsMaxData->status().', shifts: '.$this->shiftsMaxData->status().', weekends: '.$this->weekendsMaxData->status().', nights: '.$this->nightsMaxData->status();
-    }
 }

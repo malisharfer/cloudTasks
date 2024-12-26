@@ -60,7 +60,7 @@ class Schedule
     protected function initShiftsData(): void
     {
         $groupedShifts = collect($this->shifts)->groupBy('taskType');
-        $groupedShifts->each(callback: function ($shifts, $taskType) {
+        $groupedShifts->each(function ($shifts, $taskType) {
             $this->addShiftsDataByTask($taskType, collect($shifts));
         });
     }

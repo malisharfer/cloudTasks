@@ -20,7 +20,7 @@ class Test
                     $shift->end_date,
                 );
 
-                return $range->isSameMonth(new Range($month->startOfMonth(), $month->endOfMonth()));
+                return $range->isSameMonth(new Range($month->copy()->startOfMonth(), $month->copy()->endOfMonth()));
             })
             ->groupBy('soldier_id');
 
@@ -49,12 +49,12 @@ class Test
 
     protected function howMuchWeekends($shifts)
     {
-        return $shifts->filter(fn ($shift) => $shift->is_weekend != null ? $shift->is_weekend : $shift->task->is_weekend)->count();
+        return $shifts->filter(fn ($shift) => $shift->is_weekend !== null ? $shift->is_weekend : $shift->task->is_weekend)->count();
     }
 
     protected function howMuchPoints($shifts)
     {
-        return collect($shifts)->sum(fn ($shift) => $shift->parallel_weight != null ? $shift->parallel_weight : $shift->task->parallel_weight);
+        return collect($shifts)->sum(fn ($shift) => $shift->parallel_weight !== null ? $shift->parallel_weight : $shift->task->parallel_weight);
     }
 
     protected function howMuchLowConstraintsRejected($constraints, $shifts): int

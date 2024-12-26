@@ -66,6 +66,11 @@ class Range
         return $this->isConflict($other);
     }
 
+    public function isPass(): bool
+    {
+        return Carbon::now()->greaterThan($this->start) || Carbon::now()->greaterThan($this->end);
+    }
+
     public function isRangeInclude(DaysInWeek $dayInWeek): bool
     {
         $startDayIndex = $this->start->dayOfWeek;

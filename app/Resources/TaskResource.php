@@ -162,7 +162,7 @@ class TaskResource extends Resource
                             ->size(TextColumnSize::Small)
                             ->extraAttributes(['style' => 'margin-left: 15px;']),
                         TextColumn::make('recurring.end_date')
-                            ->description(__('EndDate'), position: 'above')
+                            ->description(__('End date'), position: 'above')
                             ->size(TextColumnSize::Small)
                             ->extraAttributes(['style' => 'margin-left: 15px;']),
                     ])

@@ -9,7 +9,6 @@ use App\Models\Constraint;
 use App\Models\Soldier;
 use App\Models\Task;
 use App\Models\User;
-use App\Services\RecurringEvents;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Database\Seeder;
@@ -332,7 +331,7 @@ class DatabaseSeeder extends Seeder
             ]),
         ]);
         Task::factory()->create([
-            'name' => 'hatasa א-ה בשבוע לילה',
+            'name' => 'hatasa א-ה לילה',
             'start_hour' => '02:00:00',
             'duration' => 6,
             'parallel_weight' => 1,
@@ -630,9 +629,6 @@ class DatabaseSeeder extends Seeder
                 'days_in_week' => [DaysInWeek::SUNDAY],
             ]),
         ]);
-
-        $recurringEvents = new RecurringEvents;
-        $recurringEvents->recurringTask();
     }
 
     protected function createConstraints(int $userId)

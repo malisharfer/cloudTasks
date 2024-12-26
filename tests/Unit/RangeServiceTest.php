@@ -14,6 +14,26 @@ it('should return false if the date have not conflict', function () {
     expect($range->isConflict(new Range(Carbon::create(2024, 5, 14, 5), Carbon::create(2024, 5, 14, 16))))->toBeFalse();
 });
 
+it('should return true if the dates are in the same month', function () {
+    $range = new Range(Carbon::create(2024, 5, 14, 17), Carbon::create(2024, 5, 14, 18));
+    expect($range->isSameMonth(new Range(Carbon::create(2024, 5, 14, 5), Carbon::create(2024, 5, 14, 18))))->toBeTrue();
+});
+
+it('should return false if the dates are not in the same month', function () {
+    $range = new Range(Carbon::create(2024, 5, 14, 17), Carbon::create(2024, 5, 14, 18));
+    expect($range->isSameMonth(new Range(Carbon::create(2024, 4, 14, 5), Carbon::create(2024, 4, 14, 18))))->toBeFalse();
+});
+
+it('should return true if the date has passed', function () {
+    $range = new Range(Carbon::create(2024, 5, 14, 17), Carbon::create(2024, 5, 14, 18));
+    expect($range->isPass())->toBeTrue();
+});
+
+it('should return false if the date has passed', function () {
+    $range = new Range(now()->addDay(), now()->addDays(2));
+    expect($range->isPass())->toBeFalse();
+});
+
 it('should return true if range include the provided day', function () {
     $range = new Range(Carbon::create(2024, 11, 3), Carbon::create(2024, 11, 11));
     expect($range->isRangeInclude(DaysInWeek::THURSDAY))->toBeTrue();

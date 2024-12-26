@@ -4,6 +4,7 @@ namespace App\Resources\SoldierResource\Pages;
 
 use App\Resources\SoldierResource;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Support\Facades\Session;
 
 class EditSoldier extends EditRecord
 {
@@ -28,5 +29,6 @@ class EditSoldier extends EditRecord
     {
         $user = $this->record->user;
         $user->getRoleNames()->isEmpty() ? $user->assignRole('soldier') : null;
+        Session::put('is_replica', false);
     }
 }
