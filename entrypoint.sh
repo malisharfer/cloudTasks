@@ -76,12 +76,13 @@ _run() {
       ;;
     worker)
       echo "⏳ Running the queue..."
-      exec "${ARTISAN}" queue:work -vv \
-        --no-interaction \
-        --tries="${CONTAINER_WORKER_TRIES}" \
-        --sleep="${CONTAINER_WORKER_SLEEP}" \
-        --timeout="${CONTAINER_WORKER_TIMEOUT}" \
-        --delay="${CONTAINER_WORKER_DELAY}"
+      exec "${ARTISAN}" queue:work 
+        #  -vv \
+        # --no-interaction \
+        # --tries="${CONTAINER_WORKER_TRIES}" \
+        # --sleep="${CONTAINER_WORKER_SLEEP}" \
+        # --timeout="${CONTAINER_WORKER_TIMEOUT}" \
+        # --delay="${CONTAINER_WORKER_DELAY}"
       ;;
     horizon)
       echo "Running horizon..."
