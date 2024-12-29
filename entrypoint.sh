@@ -72,20 +72,18 @@ _run() {
       echo "🚀 Running octane..."
       ${ARTISAN} schedule:work &
       ${ARTISAN} octane:frankenphp --host=0.0.0.0 --port="${CONTAINER_PORT}" &
-      ${ARTISAN} queue:work &
-      ${ARTISAN} schedule:run --verbose --no-interaction &
-       sleep "${CONTAINER_SCHEDULER_INTERVAL}s"
+      ${ARTISAN} queue:work
       # ${ARTISAN} serve --host=0.0.0.0 --port="${CONTAINER_PORT}" 
       ;;
     worker)
       echo "⏳ Running the queue..."
-      # exec "${ARTISAN}" queue:work 
-        #  -vv \
-        # --no-interaction \
-        # --tries="${CONTAINER_WORKER_TRIES}" \
-        # --sleep="${CONTAINER_WORKER_SLEEP}" \
-        # --timeout="${CONTAINER_WORKER_TIMEOUT}" \
-        # --delay="${CONTAINER_WORKER_DELAY}"
+      exec "${ARTISAN}" queue:work 
+         -vv \
+        --no-interaction \
+        --tries="${CONTAINER_WORKER_TRIES}" \
+        --sleep="${CONTAINER_WORKER_SLEEP}" \
+        --timeout="${CONTAINER_WORKER_TIMEOUT}" \
+        --delay="${CONTAINER_WORKER_DELAY}"
       ;;
     horizon)
       echo "Running horizon..."
