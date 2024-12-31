@@ -70,9 +70,18 @@ _run() {
   case "${CONTAINER_MODE}" in
     app)
       echo "🚀 Running octane..."
+      # ${ARTISAN} schedule:work &
+      # ${ARTISAN} octane:frankenphp --host=0.0.0.0 --port="${CONTAINER_PORT}" &
+      # ${ARTISAN} queue:
+      ${ARTISAN} queue:work -vv \
+        --no-interaction \
+        --tries="${CONTAINER_WORKER_TRIES}" \
+        --sleep="${CONTAINER_WORKER_SLEEP}" \
+        --timeout="${CONTAINER_WORKER_TIMEOUT}" \
+        --delay="${CONTAINER_WORKER_DELAY}" &
       ${ARTISAN} schedule:work &
-      ${ARTISAN} octane:frankenphp --host=0.0.0.0 --port="${CONTAINER_PORT}" &
-      ${ARTISAN} queue:work
+      ${ARTISAN} octane:frankenphp --host=0.0.0.0 --port="${CONTAINER_PORT}" 
+      ;;
       # ${ARTISAN} serve --host=0.0.0.0 --port="${CONTAINER_PORT}" 
       ;;
     worker)

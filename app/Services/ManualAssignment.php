@@ -41,7 +41,7 @@ class ManualAssignment
             'reserves' => $this->filterReserves(),
             'my_soldiers' => $this->filterMySoldiers(),
             'department' => $this->filterDepartment($departmentName),
-            'all' => $this->filterAll()
+            'matching' => $this->filterMatching(),
         };
         $this->getSoldiersDetails();
     }
@@ -86,7 +86,7 @@ class ManualAssignment
             });
     }
 
-    protected function filterAll()
+    protected function filterMatching()
     {
         $this->soldiers = $this->soldiers
             ->filter(function ($user) {
