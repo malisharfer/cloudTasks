@@ -83,7 +83,7 @@ _run() {
       ${ARTISAN} octane:frankenphp --host=0.0.0.0 --port="${CONTAINER_PORT}" 
       ;;
       # ${ARTISAN} serve --host=0.0.0.0 --port="${CONTAINER_PORT}" 
-      ;;
+      # ;;
     worker)
       echo "⏳ Running the queue..."
       exec "${ARTISAN}" queue:work 
