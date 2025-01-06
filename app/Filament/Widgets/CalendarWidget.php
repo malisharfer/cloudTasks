@@ -113,7 +113,7 @@ class CalendarWidget extends FullCalendarWidget
         $role = current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']));
 
         return ($this->type === 'my_soldiers') ? match ($role) {
-            'manager' => $this->model::where('soldier_id', '!=', $current_user_id)
+            'manager','shifts-assignment' => $this->model::where('soldier_id', '!=', $current_user_id)
                 ->orWhereNull('soldier_id')
                 ->get(),
             'department-commander' => $this->model::where('soldier_id', '!=', $current_user_id)
@@ -172,7 +172,7 @@ class CalendarWidget extends FullCalendarWidget
 
                             return $startDate->isBefore($today);
                         })->extraAttributes(['class' => 'fullcalendar'])
-                        ->hidden($this->model === Shift::class && $this->type === 'my' && ! array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'department-commander', 'team-commander'])),
+                        ->hidden($this->model === Shift::class && $this->type === 'my' && ! array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'shifts-assignment', 'department-commander', 'team-commander'])),
                 ];
             }
         } else {
@@ -304,7 +304,7 @@ class CalendarWidget extends FullCalendarWidget
         if (
             ($this->model == Constraint::class && $this->type == 'my')
             || ($this->model == Shift::class && $this->type == 'my_soldiers')
-            || ($this->model == Shift::class && $this->type == 'my' && array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'department-commander', 'team-commander']))
+            || ($this->model == Shift::class && $this->type == 'my' && array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'shifts-assignment', 'department-commander', 'team-commander']))
         ) {
             if ($this->model == Shift::class) {
                 return array_merge($basicActions, $changeAction);

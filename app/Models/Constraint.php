@@ -15,7 +15,6 @@ use Filament\Forms\Get;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\DB;
 
 class Constraint extends Model
 {
@@ -87,12 +86,13 @@ class Constraint extends Model
             unset($options[ConstraintType::LOW_PRIORITY_NOT_WEEKEND->value]);
         }
         $usedCounts = self::getUsedCountsForCurrentMonth($startDate, $endDate);
-        $limits = ConstraintType::getLimit();
+        $limits = Soldier::where('id', auth()->user()->userable_id)->pluck('constraints_limit')->first()
+        ? Soldier::where('id', auth()->user()->userable_id)->pluck('constraints_limit')->first()
+        : ConstraintType::getLimit();
         $constraintsWithinLimit = [];
         foreach ($options as $constraint => $label) {
             $used = $usedCounts[$constraint] ?? 0;
             $limit = $limits[$constraint] ?? 0;
-
             if ($limit === 0 || $used < $limit) {
                 $constraintsWithinLimit[$constraint] = $label;
             }
@@ -109,11 +109,9 @@ class Constraint extends Model
 
     private static function getUsedCountsForCurrentMonth($startDate, $endDate): array
     {
-        $currentUserId = auth()->user()->userable_id;
 
         foreach (ConstraintType::cases() as $enum) {
-            $usedCount = DB::table('constraints')
-                ->where('soldier_id', $currentUserId)
+            $usedCount = Constraint::where('soldier_id', auth()->user()->userable_id)
                 ->where('constraint_type', $enum->value)
                 ->whereBetween('start_date', [
                     Carbon::parse($startDate)->startOfMonth(),

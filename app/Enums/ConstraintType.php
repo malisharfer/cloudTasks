@@ -34,45 +34,45 @@ enum ConstraintType: string implements HasLabel
     public static function getPriority(): array
     {
         return [
-            self::NOT_EVENING->value => 1,
-            self::NOT_THURSDAY_EVENING->value => 1,
             self::NOT_WEEKEND->value => 1,
             self::LOW_PRIORITY_NOT_WEEKEND->value => 2,
+            self::NOT_TASK->value => 1,
+            self::LOW_PRIORITY_NOT_TASK->value => 2,
+            self::NOT_EVENING->value => 1,
+            self::NOT_THURSDAY_EVENING->value => 1,
             self::VACATION->value => 1,
             self::MEDICAL->value => 1,
             self::SCHOOL->value => 1,
-            self::NOT_TASK->value => 1,
-            self::LOW_PRIORITY_NOT_TASK->value => 2,
         ];
     }
 
     public static function getLimit(): array
     {
         return [
-            self::NOT_EVENING->value => 4,
-            self::NOT_THURSDAY_EVENING->value => 1,
             self::NOT_WEEKEND->value => 1,
             self::LOW_PRIORITY_NOT_WEEKEND->value => 1,
+            self::NOT_TASK->value => 3,
+            self::LOW_PRIORITY_NOT_TASK->value => 3,
+            self::NOT_EVENING->value => 4,
+            self::NOT_THURSDAY_EVENING->value => 1,
             self::VACATION->value => 0,
             self::MEDICAL->value => 0,
             self::SCHOOL->value => 4,
-            self::NOT_TASK->value => 3,
-            self::LOW_PRIORITY_NOT_TASK->value => 3,
         ];
     }
 
     public function getColor(): string|array|null
     {
         return match ($this) {
-            self::NOT_EVENING => '#ffd4e5',
-            self::NOT_THURSDAY_EVENING => '#ffdfba',
             self::NOT_WEEKEND => '#ffffba',
             self::LOW_PRIORITY_NOT_WEEKEND => '#adb2fb',
+            self::NOT_TASK => '#96ead7',
+            self::LOW_PRIORITY_NOT_TASK => '#baffc9',
+            self::NOT_EVENING => '#ffd4e5',
+            self::NOT_THURSDAY_EVENING => '#ffdfba',
             self::VACATION => '#bae1ff',
             self::MEDICAL => '#f2d7fb',
             self::SCHOOL => '#f9a7a7',
-            self::NOT_TASK => '#96ead7',
-            self::LOW_PRIORITY_NOT_TASK => '#baffc9',
         };
     }
 }

@@ -31,6 +31,7 @@ class Soldier extends Model
         'is_reservist',
         'reserve_dates',
         'next_reserve_dates',
+        'constraints_limit',
     ];
 
     protected $casts = [
@@ -47,6 +48,7 @@ class Soldier extends Model
         'is_reservist' => 'boolean',
         'reserve_dates' => 'array',
         'next_reserve_dates' => 'array',
+        'constraints_limit' => 'array',
     ];
 
     public function user(): MorphOne

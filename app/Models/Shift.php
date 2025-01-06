@@ -169,7 +169,7 @@ class Shift extends Model
                 ->put('me', __('Me'))
                 ->toArray();
         }
-        if (current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])) != 'manager') {
+        if (current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])) != 'manager' || current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])) != 'shifts-assignment') {
             return collect($options)
                 ->put('my_soldiers', __('My Soldiers'))
                 ->toArray();

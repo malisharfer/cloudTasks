@@ -219,7 +219,7 @@ class TeamResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        if (auth()->user()->hasRole('manager')) {
+        if (auth()->user()->hasRole('manager') || auth()->user()->hasRole('shifts-assignment')) {
             return parent::getEloquentQuery();
         }
 

@@ -26,6 +26,7 @@ return new class extends Migration
             $table->boolean('is_reservist')->default(false);
             $table->json('reserve_dates')->nullable();
             $table->json('next_reserve_dates')->nullable();
+            $table->json('constraints_limit')->nullable();
             $table->timestamps();
         });
     }

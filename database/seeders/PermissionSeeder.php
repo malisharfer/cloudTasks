@@ -16,6 +16,7 @@ class PermissionSeeder extends Seeder
             'soldier',
             'team-commander',
             'department-commander',
+            'shifts-assignment',
             'manager',
         ])->map(function (?string $role) {
             Role::firstOrCreate(

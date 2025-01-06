@@ -40,7 +40,7 @@ class CreateSoldier extends CreateRecord
     protected function afterCreate()
     {
         $user = $this->record->user;
-        $user->assignRole('soldier');
+        $this->data['shifts-assignment'] == 1 ? $user->assignRole('soldier', 'shifts-assignment') : $user->assignRole('soldier');
     }
 
     protected function getRedirectUrl(): string
@@ -69,6 +69,11 @@ class CreateSoldier extends CreateRecord
                 ->label(__('Additional settings'))
                 ->schema([
                     Section::make()->schema(SoldierResource::constraints())->columns(),
+                ]),
+            Step::make('Constraints limit')
+                ->label(__('Constraints limit'))
+                ->schema([
+                    Section::make()->schema(SoldierResource::constraintsLimit())->columns(),
                 ]),
         ];
     }

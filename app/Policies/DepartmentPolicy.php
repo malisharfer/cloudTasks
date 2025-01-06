@@ -8,6 +8,6 @@ class DepartmentPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasRole('manager');
+        return $user->hasRole(['manager', 'shifts-assignment']);
     }
 }

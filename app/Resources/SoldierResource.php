@@ -2,6 +2,7 @@
 
 namespace App\Resources;
 
+use App\Enums\ConstraintType;
 use App\Filters\NumberFilter;
 use App\Forms\Components\Flatpickr;
 use App\Models\Department;
@@ -14,6 +15,7 @@ use App\Resources\SoldierResource\Pages;
 use Carbon\Carbon;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Fieldset;
+use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -53,6 +55,7 @@ class SoldierResource extends Resource
                 Section::make()->schema(self::soldierDetails())->columns(),
                 Section::make()->schema(self::reserveDays())->columns()->visible(fn (Get $get) => $get('is_reservist')),
                 Section::make()->schema(self::constraints())->columns(),
+                Section::make()->schema(self::constraintsLimit())->columns(),
             ]);
     }
 
@@ -83,13 +86,14 @@ class SoldierResource extends Resource
                     ->sortable(),
                 TextColumn::make('role')
                     ->label(__('Role'))
-                    ->visible(collect(auth()->user()->getRoleNames())->intersect(['manager', 'department-commander'])->isNotEmpty())
+                    ->visible(collect(auth()->user()->getRoleNames())->intersect(['manager', 'shifts-assignment', 'department-commander'])->isNotEmpty())
                     ->default(
                         function ($record) {
                             $roles = Soldier::find($record->id)->user->getRoleNames()->first();
 
                             return match ($roles) {
                                 'manager' => __('Manager'),
+                                'shifts-assignment' => __('A shifts assignment'),
                                 'department-commander' => __('Department commander'),
                                 'team-commander' => __('Team commander'),
                                 'soldier' => __('Soldier'),
@@ -104,15 +108,15 @@ class SoldierResource extends Resource
 
                         return $soldier->team ? $soldier->team->name : null;
                     }),
-                TextColumn::make('reserve_dates')->label(__('Reserve dates'))->date()->listWithLineBreaks()->limitList(1)->expandableLimitedList()->placeholder('---')->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('next_reserve_dates')->label(__('Next reserve dates'))->date()->listWithLineBreaks()->limitList(1)->expandableLimitedList()->placeholder('---')->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('reserve_dates')->label(__('Reserve dates'))->date()->listWithLineBreaks()->limitList(1)->expandableLimitedList()->placeholder('---')->toggleable(true, true),
+                TextColumn::make('next_reserve_dates')->label(__('Next reserve dates'))->date()->listWithLineBreaks()->limitList(1)->expandableLimitedList()->placeholder('---')->toggleable(true, true),
                 TextColumn::make('enlist_date')->label(__('Enlist date'))->sortable()->date()->toggleable(),
-                TextColumn::make('course')->label(__('Course'))->toggleable(isToggledHiddenByDefault: true),
-                BooleanColumn::make('has_exemption')->label(__('Exemption'))->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('max_shifts')->label(__('Max shifts'))->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('max_nights')->label(__('Max nights'))->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('max_weekends')->label(__('Max weekends'))->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('capacity')->label(__('Capacity'))->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('course')->label(__('Course'))->toggleable(true, true),
+                BooleanColumn::make('has_exemption')->label(__('Exemption'))->toggleable(true, true),
+                TextColumn::make('max_shifts')->label(__('Max shifts'))->toggleable(true, true),
+                TextColumn::make('max_nights')->label(__('Max nights'))->toggleable(true, true),
+                TextColumn::make('max_weekends')->label(__('Max weekends'))->toggleable(true, true),
+                TextColumn::make('capacity')->label(__('Capacity'))->toggleable(true, true),
                 TextColumn::make('capacity_hold')
                     ->default(function ($record) {
                         $soldierShifts = Shift::where('soldier_id', $record->id)->get();
@@ -124,9 +128,10 @@ class SoldierResource extends Resource
                     ->label(__('Capacity hold'))
                     ->numeric()
                     ->toggleable(),
-                BooleanColumn::make('is_trainee')->label(__('Is trainee'))->toggleable(isToggledHiddenByDefault: true),
-                BooleanColumn::make('is_mabat')->label(__('Is mabat'))->toggleable(isToggledHiddenByDefault: true),
+                BooleanColumn::make('is_trainee')->label(__('Is trainee'))->toggleable(true, true),
+                BooleanColumn::make('is_mabat')->label(__('Is mabat'))->toggleable(true, true),
                 TextColumn::make('qualifications')->label(__('Qualifications'))->placeholder(__('No qualifications'))->toggleable(),
+                TextColumn::make('constraints_limit')->label(__('Constraints limit'))->toggleable(true, true),
             ])
             ->modifyQueryUsing(function (Builder $query) {
                 if (request()->input('team_id')) {
@@ -257,7 +262,7 @@ class SoldierResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        if (auth()->user()->hasRole('manager')) {
+        if (auth()->user()->hasRole('manager') || auth()->user()->hasRole('shifts-assignment')) {
             return parent::getEloquentQuery()->where('id', '!=', User::where('userable_id', auth()->user()->id)->value('userable_id'));
         }
 
@@ -313,6 +318,9 @@ class SoldierResource extends Resource
                 ->label(__('Gender'))
                 ->grouped()
                 ->required(),
+            Toggle::make('shifts-assignment')
+                ->label(__('A shifts assignment'))
+                ->visible(auth()->user()->getRoleNames()->contains('manager')),
             DatePicker::make('enlist_date')
                 ->label(__('Enlist date'))
                 ->seconds(false),
@@ -389,6 +397,62 @@ class SoldierResource extends Resource
                     ->placeholder(__('Select qualifications'))
                     ->options(Task::all()->pluck('type', 'type')),
             ])->columns(3),
+        ];
+    }
+
+    public static function constraintsLimit()
+    {
+        return [
+            Group::make([
+                TextInput::make('Not weekend')
+                    ->label(__('Not weekend'))
+                    ->numeric()
+                    ->minValue(0)
+                    ->default(ConstraintType::getLimit()['Not weekend']),
+                TextInput::make('Low priority not weekend')
+                    ->label(__('Low priority not weekend'))
+                    ->numeric()
+                    ->minValue(0)
+                    ->default(ConstraintType::getLimit()['Low priority not weekend']),
+                TextInput::make('Not task')
+                    ->label(__('Not task'))
+                    ->numeric()
+                    ->minValue(0)
+                    ->default(ConstraintType::getLimit()['Not task']),
+                TextInput::make('Low priority not task')
+                    ->label(__('Low priority not task'))
+                    ->numeric()
+                    ->minValue(0)
+                    ->default(ConstraintType::getLimit()['Low priority not task']),
+                TextInput::make('Not evening')
+                    ->label(__('Not evening'))
+                    ->numeric()
+                    ->minValue(0)
+                    ->default(ConstraintType::getLimit()['Not evening']),
+                TextInput::make('Not Thursday evening')
+                    ->label(__('Not Thursday evening'))
+                    ->numeric()
+                    ->minValue(0)
+                    ->default(ConstraintType::getLimit()['Not Thursday evening']),
+                TextInput::make('Vacation')
+                    ->label(__('Vacation'))
+                    ->numeric()
+                    ->minValue(0)
+                    ->default(ConstraintType::getLimit()['Vacation']),
+                TextInput::make('Medical')
+                    ->label(__('Medical'))
+                    ->numeric()
+                    ->minValue(0)
+                    ->default(ConstraintType::getLimit()['Medical']),
+                TextInput::make('School')
+                    ->label(__('School'))
+                    ->numeric()
+                    ->minValue(0)
+                    ->default(ConstraintType::getLimit()['School']),
+            ])
+                ->statePath('constraints_limit')
+                ->columns(9)
+                ->columnSpanFull(),
         ];
     }
 

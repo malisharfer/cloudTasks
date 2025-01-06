@@ -52,8 +52,8 @@ it('should return array of constraint service type of constraints that have not 
     $futureConstraints = Constraint::factory()->count(3)->create([
         'soldier_id' => Soldier::factory()->create()->id,
         'constraint_type' => ConstraintType::NOT_TASK->value,
-        'start_date' => now()->addDay(),
-        'end_date' => now()->addDays(2),
+        'start_date' => now()->isLastOfMonth() ? now()->subDays(6) : now()->addHours(7),
+        'end_date' => now()->isLastOfMonth() ? now()->subDays(5) : now()->addHours(8),
     ]);
     $constraints = collect([...$pastConstraints, ...$futureConstraints]);
     $range = new Range(now()->startOfMonth(), now()->endOfMonth());
@@ -80,7 +80,10 @@ it('should return shifts spaces', function () {
 
 it('should return soldiers shifts', function () {
     $soldier = Soldier::factory()->create();
-    $shifts = Shift::factory()->count(3)->create(['soldier_id' => $soldier->id, 'start_date' => now()->addDay()->startOfSecond(), 'end_date' => now()->addDays(2)->startOfSecond()]);
+    $shifts = Shift::factory()->count(3)->create([
+        'soldier_id' => $soldier->id,
+        'start_date' => now()->isLastOfMonth() ? now()->subDays(6)->startOfSecond() : now()->addHours(7)->startOfSecond(),
+        'end_date' => now()->isLastOfMonth() ? now()->subDays(5)->startOfSecond() : now()->addHours(8)->startOfSecond()]);
     $result = $shifts->map(fn ($shift) => Helpers::buildShift($shift));
     expect(Helpers::getSoldiersShifts($soldier->id, new Range(now()->startOfMonth(), now()->endOfMonth())))->toEqual($result);
 });
@@ -90,8 +93,8 @@ it('should return soldiers constraints', function () {
     Constraint::factory()->count(4)->create([
         'soldier_id' => $soldier->id,
         'constraint_type' => ConstraintType::NOT_TASK->value,
-        'start_date' => now()->subDays(2),
-        'end_date' => now()->subDay(),
+        'start_date' => now()->isLastOfMonth() ? now()->subDays(9) : now()->addHours(5),
+        'end_date' => now()->isLastOfMonth() ? now()->subDays(8) : now()->addHours(6),
     ]);
     $range = new Range(now()->startOfMonth(), now()->endOfMonth());
     expect(Helpers::getConstraintBy($soldier->id, $range))->toHaveCount(4);

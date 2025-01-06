@@ -16,8 +16,8 @@ it('should return the matching soldiers for shift', function () {
             'is_night' => false,
         ])->id,
         'is_weekend' => false,
-        'start_date' => now(),
-        'end_date' => now()->addHour(),
+        'start_date' => now()->isLastOfMonth() ? now()->subDays(8) : now()->addHours(5),
+        'end_date' => now()->isLastOfMonth() ? now()->subDays(7) : now()->addHours(6),
     ]);
     $soldier1 = Soldier::factory()->create([
         'qualifications' => ['clean', 'jump'],
@@ -51,14 +51,14 @@ it('should return the matching soldiers for shift', function () {
         'task_id' => Task::factory()->create([
             'type' => 'clean',
         ])->id,
-        'start_date' => now()->isStartOfMonth() ? now() : now()->subHours(2),
-        'end_date' => now()->isLastOfMonth() ? now()->addHour() : now()->addHours(2),
+        'start_date' => now()->isLastOfMonth() ? now()->subDays(9) : now()->addHours(4),
+        'end_date' => now()->isLastOfMonth() ? now()->subDays(6) : now()->addHours(7),
     ]);
     Constraint::factory()->create([
         'soldier_id' => $soldier6->id,
         'constraint_type' => ConstraintType::NOT_TASK->value,
-        'start_date' => now()->isStartOfMonth() ? now()->subDay() : now()->subHour(),
-        'end_date' => now()->isLastOfMonth() ? now()->addDay() : now()->addHours(4),
+        'start_date' => now()->isLastOfMonth() ? now()->subDays(9) : now()->addHours(4),
+        'end_date' => now()->isLastOfMonth() ? now()->subDays(6) : now()->addHours(7),
     ]);
 
     $result = [
@@ -84,8 +84,8 @@ it('should return the matching shifts for exchanging', function () {
             'is_night' => false,
         ])->id,
         'is_weekend' => false,
-        'start_date' => now(),
-        'end_date' => now()->addHour(),
+        'start_date' => now()->isLastOfMonth() ? now()->subDays(8) : now()->addHours(5),
+        'end_date' => now()->isLastOfMonth() ? now()->subDays(7) : now()->addHours(6),
     ]);
     $shift1 = Shift::factory()->create([
         'soldier_id' => User::factory()->create([
@@ -97,8 +97,8 @@ it('should return the matching shifts for exchanging', function () {
         'task_id' => Task::factory()->create([
             'type' => 'jump',
         ])->id,
-        'start_date' => now()->isLastOfMonth() ? now()->subDays(8) : now()->addHours(5),
-        'end_date' => now()->isLastOfMonth() ? now()->subDays(7) : now()->addHours(6),
+        'start_date' => now()->isLastOfMonth() ? now()->subDays(10) : now()->addHours(7),
+        'end_date' => now()->isLastOfMonth() ? now()->subDays(9) : now()->addHours(8),
     ]);
     $shift2 = Shift::factory()->create([
         'soldier_id' => User::factory()->create([
@@ -110,8 +110,8 @@ it('should return the matching shifts for exchanging', function () {
         'task_id' => Task::factory()->create([
             'type' => 'run',
         ])->id,
-        'start_date' => now()->isLastOfMonth() ? now()->subDays(8) : now()->addHours(5),
-        'end_date' => now()->isLastOfMonth() ? now()->subDays(7) : now()->addHours(6),
+        'start_date' => now()->isLastOfMonth() ? now()->subDays(3) : now()->addHours(1),
+        'end_date' => now()->isLastOfMonth() ? now()->subDays(2) : now()->addHours(2),
     ]);
     $shift3 = Shift::factory()->create([
         'soldier_id' => User::factory()->create([
@@ -123,8 +123,8 @@ it('should return the matching shifts for exchanging', function () {
         'task_id' => Task::factory()->create([
             'type' => 'run',
         ])->id,
-        'start_date' => now()->isLastOfMonth() ? now()->subDays(8) : now()->addHours(5),
-        'end_date' => now()->isLastOfMonth() ? now()->subDays(7) : now()->addHours(6),
+        'start_date' => now()->isLastOfMonth() ? now()->subDays(9) : now()->addHours(4),
+        'end_date' => now()->isLastOfMonth() ? now()->subDays(6) : now()->addHours(7),
     ]);
     $shift4 = Shift::factory()->create([
         'soldier_id' => User::factory()->create([
@@ -136,8 +136,8 @@ it('should return the matching shifts for exchanging', function () {
         'task_id' => Task::factory()->create([
             'type' => 'jump',
         ])->id,
-        'start_date' => now()->isLastOfMonth() ? now()->subDays(8) : now()->addHours(5),
-        'end_date' => now()->isLastOfMonth() ? now()->subDays(7) : now()->addHours(6),
+        'start_date' => now()->isLastOfMonth() ? now()->subDays(10) : now()->addHours(2),
+        'end_date' => now()->isLastOfMonth() ? now()->subDays(9) : now()->addHours(3),
     ]);
     $shift5 = Shift::factory()->create([
         'soldier_id' => User::factory()->create([
@@ -149,8 +149,8 @@ it('should return the matching shifts for exchanging', function () {
         'task_id' => Task::factory()->create([
             'type' => 'clean',
         ])->id,
-        'start_date' => now()->isStartOfMonth() ? now() : now()->subHours(2),
-        'end_date' => now()->isLastOfMonth() ? now()->addHour() : now()->addHours(2),
+        'start_date' => now()->isLastOfMonth() ? now()->subDays(9) : now()->addHours(4),
+        'end_date' => now()->isLastOfMonth() ? now()->subDays(6) : now()->addHours(7),
     ]);
     $shift6 = Shift::factory()->create([
         'soldier_id' => User::factory()->create([
@@ -162,14 +162,14 @@ it('should return the matching shifts for exchanging', function () {
         'task_id' => Task::factory()->create([
             'type' => 'clean',
         ])->id,
-        'start_date' => now()->isLastOfMonth() ? now()->subDays(8) : now()->addHours(5),
-        'end_date' => now()->isLastOfMonth() ? now()->subDays(7) : now()->addHours(6),
+        'start_date' => now()->isLastOfMonth() ? now()->subDays(2) : now()->addHours(1),
+        'end_date' => now()->isLastOfMonth() ? now()->subDays(1) : now()->addHours(2),
     ]);
     Constraint::factory()->create([
         'soldier_id' => $shift6->soldier_id,
         'constraint_type' => ConstraintType::NOT_TASK->value,
-        'start_date' => now()->subHour(),
-        'end_date' => now()->addHours(2),
+        'start_date' => now()->isLastOfMonth() ? now()->subDays(9) : now()->addHours(4),
+        'end_date' => now()->isLastOfMonth() ? now()->subDays(6) : now()->addHours(7),
     ]);
     $expectedShifts = collect([$shift1->id, $shift4->id]);
     $changeAssignment = new ChangeAssignment($shiftForExchange);
