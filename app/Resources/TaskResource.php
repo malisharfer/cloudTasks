@@ -8,13 +8,16 @@ use App\Filters\NumberFilter;
 use App\Models\Department;
 use App\Models\Shift;
 use App\Models\Task;
+use App\Models\User;
 use App\Resources\TaskResource\Pages;
 use App\Services\ManualAssignment;
+use Cache;
 use Carbon\Carbon;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -351,9 +354,7 @@ class TaskResource extends Resource
                                 ->options(
                                     fn (Get $get) => self::getOptions($get)
                                 )
-                                ->afterStateUpdated(function (callable $set) {
-                                    $set('soldier_id', null);
-                                }),
+                                ->afterStateUpdated(fn (callable $set) => $set('soldier_id', null)),
                             Select::make('soldier_id')
                                 ->label(__('Assign soldier'))
                                 ->options(
@@ -362,13 +363,16 @@ class TaskResource extends Resource
                                     }
                                 )
                                 ->default(null)
-                                ->placeholder(function (Get $get) {
-                                    return self::getSoldiers($get)->isEmpty() ? __('No suitable soldiers') : __('Select a soldier');
-                                }
-                                )->visible(
+                                ->placeholder(fn (Get $get) => self::getSoldiers($get)->isEmpty() ? __('No suitable soldiers') : __('Select a soldier'))
+                                ->visible(
                                     fn (Get $get): bool => $get('soldier_type')
                                     && $get('soldier_type') != 'me'
                                 ),
+                            Placeholder::make('')
+                                ->content(__('Assigning the soldier to this shift is your sole responsibility!'))
+                                ->extraAttributes(['style' => 'color: red; font-family: Arial, Helvetica, sans-serif; font-size: 20px'])
+                                ->live()
+                                ->visible(fn (Get $get) => $get('soldier_type') === 'all'),
                         ]),
                 ]),
         ];
@@ -390,6 +394,7 @@ class TaskResource extends Resource
     {
         $options = [
             'reserves' => __('Reserves'),
+            'matching' => __('Matching soldiers'),
             'all' => __('All'),
         ];
         if ($get('department_name')) {
@@ -402,7 +407,7 @@ class TaskResource extends Resource
                 ->put('me', __('Me'))
                 ->toArray();
         }
-        if (current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])) != 'manager' || current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])) != 'shifts-assignment') {
+        if (current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])) !== 'manager' && current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])) !== 'shifts-assignment') {
             return collect($options)
                 ->put('my_soldiers', __('My Soldiers'))
                 ->toArray();
@@ -421,10 +426,19 @@ class TaskResource extends Resource
 
     protected static function getSoldiers(Get $get)
     {
-        $shift = self::taskDetails($get);
-        $manual_assignment = new ManualAssignment($shift, $get('soldier_type'));
+        if ($get('soldier_type') !== 'all') {
+            $shift = self::taskDetails($get);
+            $manual_assignment = new ManualAssignment($shift, $get('soldier_type'));
 
-        return $manual_assignment->getSoldiers($get('department_name'));
+            return $manual_assignment->getSoldiers($get('department_name'));
+        }
+
+        return Cache::remember('users', 30 * 60, function () {
+            return User::all();
+        })
+            ->mapWithKeys(function ($user) {
+                return [$user->userable_id => $user->displayName];
+            });
     }
 
     protected static function taskDetails(Get $get)
