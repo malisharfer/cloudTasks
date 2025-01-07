@@ -33,6 +33,7 @@ class DatabaseSeeder extends Seeder
                 'max_weekends' => 10,
                 'max_shifts' => 10,
                 'max_nights' => 10,
+                'course' => fake()->numberBetween(0, 5),
                 'is_reservist' => false,
             ])->id,
         ]);
@@ -47,6 +48,7 @@ class DatabaseSeeder extends Seeder
                     'max_weekends' => 5.5,
                     'max_shifts' => 10,
                     'max_nights' => 5.5,
+                    'course' => fake()->numberBetween(0, 5),
                     'is_reservist' => false,
                 ])->id,
             ]);
@@ -62,6 +64,7 @@ class DatabaseSeeder extends Seeder
                     'max_weekends' => 6,
                     'max_shifts' => 7,
                     'max_nights' => 6,
+                    'course' => fake()->numberBetween(0, 5),
                     'is_reservist' => false,
                 ])->id,
             ]);
@@ -77,6 +80,7 @@ class DatabaseSeeder extends Seeder
                     'max_weekends' => 5.5,
                     'max_shifts' => 6,
                     'max_nights' => 5.5,
+                    'course' => fake()->numberBetween(0, 5),
                     'is_reservist' => false,
                 ])->id,
             ]);
@@ -92,6 +96,7 @@ class DatabaseSeeder extends Seeder
                     'max_weekends' => 5,
                     'max_shifts' => 5,
                     'max_nights' => 5,
+                    'course' => fake()->numberBetween(0, 5),
                     'is_reservist' => false,
                 ])->id,
             ]);
@@ -107,6 +112,7 @@ class DatabaseSeeder extends Seeder
                     'max_weekends' => 0,
                     'max_shifts' => 4,
                     'max_nights' => 0,
+                    'course' => fake()->numberBetween(0, 5),
                     'is_reservist' => false,
                 ])->id,
             ]);
@@ -122,6 +128,7 @@ class DatabaseSeeder extends Seeder
                     'max_weekends' => 10,
                     'max_shifts' => 12,
                     'max_nights' => 10,
+                    'course' => fake()->numberBetween(0, 5),
                     'is_reservist' => false,
                 ])->id,
             ]);

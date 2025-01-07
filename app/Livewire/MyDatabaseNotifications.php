@@ -2,118 +2,208 @@
 
 namespace App\Livewire;
 
+use App\Filament\Notifications\MyNotification;
 use App\Models\Shift;
 use App\Models\Soldier;
+use App\Models\User;
 use App\Services\ChangeAssignment;
 use Filament\Notifications\Actions\Action as NotificationAction;
 use Filament\Notifications\Livewire\DatabaseNotifications;
-use Filament\Notifications\Notification;
 use Livewire\Attributes\On;
 
 class MyDatabaseNotifications extends DatabaseNotifications
 {
     #[On('confirmExchange')]
-    public function confirmExchange($approverRole, $requestingSoldier, $approvingSoldier, $shiftA, $shiftB)
+    public function confirmExchange($approverRole, $soldierAId, $soldierBId, $shiftAId, $shiftBId, $requesterId)
     {
-        $this->confirmExchangeByRole($approverRole, $requestingSoldier, $approvingSoldier, $shiftA, $shiftB);
+        $this->confirmExchangeByRole($approverRole, $soldierAId, $soldierBId, $shiftAId, $shiftBId, $requesterId);
     }
 
-    protected function confirmExchangeByRole($approverRole, $requestingSoldier, $approvingSoldier, $shiftA, $shiftB)
+    protected function confirmExchangeByRole($approverRole, $soldierAId, $soldierBId, $shiftAId, $shiftBId, $requesterId)
     {
-        $approverRole ?
-            $this->commanderConfirmExchange($requestingSoldier, $approvingSoldier, $shiftA, $shiftB) :
-            $this->soldierConfirmExchange($requestingSoldier, $approvingSoldier, $shiftA, $shiftB);
+        match ($approverRole) {
+            'shifts-assignment' => $this->shiftAssignmentConfirmExchange($soldierAId, $soldierBId, $shiftAId, $shiftBId, $requesterId),
+            'team-commander', 'department-commander' => $this->commanderConfirmExchange($soldierAId, $soldierBId, $shiftAId, $shiftBId),
+            'soldier' => $this->soldierConfirmExchange($soldierAId, $soldierBId, $shiftAId, $shiftBId)
+        };
     }
 
-    protected function commanderConfirmExchange($requestingSoldier, $approvingSoldier, $shiftA, $shiftB)
+    protected function shiftAssignmentConfirmExchange($soldierAId, $soldierBId, $shiftAId, $shiftBId, $requesterId)
     {
-        $requestingSoldier = Soldier::find($requestingSoldier);
-        $approvingSoldier = Soldier::find($approvingSoldier);
-        $shiftA = Shift::find($shiftA);
-        $shiftB = Shift::find($shiftB);
-        $changeAssignment = new ChangeAssignment($shiftA);
-        $changeAssignment->exchange($shiftB);
+        $soldierA = Soldier::find($soldierAId);
+        $soldierB = Soldier::find($soldierBId);
+        $shiftA = Shift::find($shiftAId);
+        $shiftB = Shift::find($shiftBId);
+        $this->shiftAssignmentExchange($shiftA, $shiftB);
+        $this->deleteNonRelevantNotifications($shiftAId.'-'.$shiftBId);
+        $this->sendNotification(
+            __('Exchange shift'),
+            __(
+                'Shifts assignment notification of exchanging shifts for first soldier',
+                [
+                    'soldierAName' => $soldierA->user->displayName,
+                    'shiftAName' => $shiftA->task->name,
+                    'shiftAStart' => $shiftA->start_date,
+                    'shiftAEnd' => $shiftA->end_date,
+                    'soldierBName' => $soldierB->user->displayName,
+                    'shiftBName' => $shiftB->task->name,
+                    'shiftBStart' => $shiftB->start_date,
+                    'shiftBEnd' => $shiftB->end_date,
+                    'shiftsAssignmentName' => auth()->user()->displayName,
+                ]
+            ),
+            [],
+            $soldierA->user
+        );
+        $this->sendNotification(
+            __('Exchange shift'),
+            __(
+                'Shifts assignment notification of exchanging shifts for second soldier',
+                [
+                    'soldierBName' => $soldierB->user->displayName,
+                    'shiftBName' => $shiftB->task->name,
+                    'shiftBStart' => $shiftB->start_date,
+                    'shiftBEnd' => $shiftB->end_date,
+                    'soldierAName' => $soldierA->user->displayName,
+                    'shiftAName' => $shiftA->task->name,
+                    'shiftAStart' => $shiftA->start_date,
+                    'shiftAEnd' => $shiftA->end_date,
+                    'shiftsAssignmentName' => auth()->user()->displayName,
+                ]
+            ),
+            [],
+            $soldierB->user
+        );
+        $this->sendNotification(
+            __('Exchange shift'),
+            __(
+                'Shifts assignment notification of exchanging shifts for commander',
+                [
+                    'commanderName' => User::find($requesterId)->displayName,
+                    'shiftAName' => $shiftA->task->name,
+                    'soldierAName' => $soldierA->user->displayName,
+                    'shiftAStart' => $shiftA->start_date,
+                    'shiftAEnd' => $shiftA->end_date,
+                    'soldierBName' => $soldierB->user->displayName,
+                    'shiftBName' => $shiftB->task->name,
+                    'shiftBStart' => $shiftB->start_date,
+                    'shiftBEnd' => $shiftB->end_date,
+                    'shiftsAssignmentName' => auth()->user()->displayName,
+                ]
+            ),
+            [],
+            User::find($requesterId)
+        );
+        $this->getShiftsAssignments()
+            ->filter(fn ($shiftsAssignment) => $shiftsAssignment->id !== auth()->user()->id)
+            ->map(
+                fn ($shiftsAssignment) => $this->sendNotification(
+                    __('Exchange shift'),
+                    __(
+                        'Shifts assignment notification of exchanging shifts for shifts assignment',
+                        [
+                            'shiftsAssignmentName' => $shiftsAssignment->displayName,
+                            'shiftAName' => $shiftA->task->name,
+                            'soldierAName' => $soldierA->user->displayName,
+                            'shiftAStart' => $shiftA->start_date,
+                            'shiftAEnd' => $shiftA->end_date,
+                            'soldierBName' => $soldierB->user->displayName,
+                            'shiftBName' => $shiftB->task->name,
+                            'shiftBStart' => $shiftB->start_date,
+                            'shiftBEnd' => $shiftB->end_date,
+                            'shiftsAssignment2Name' => auth()->user()->displayName,
+                        ]
+                    ),
+                    [],
+                    $shiftsAssignment
+                )
+            );
+    }
+
+    protected function shiftAssignmentExchange($shiftAId, $shiftBId)
+    {
+        $changeAssignment = new ChangeAssignment($shiftAId);
+        $changeAssignment->exchange($shiftBId);
         $this->dispatch('filament-fullcalendar--refresh');
-        if ($requestingSoldier->team->commander->id !== $approvingSoldier->id) {
-            $this->sendNotification(
-                __('Approve exchange shift request'),
-                __(
-                    'Commander notification of approving exchange shift request for the requesting soldier',
-                    [
-                        'requestingSoldierName' => $requestingSoldier->user->displayName,
-                        'shiftAName' => $shiftA->task->name,
-                        'shiftAStart' => $shiftA->start_date,
-                        'shiftAEnd' => $shiftA->end_date,
-                        'approvingSoldierName' => $approvingSoldier->user->displayName,
-                        'shiftBName' => $shiftB->task->name,
-                        'shiftBStart' => $shiftB->start_date,
-                        'shiftBEnd' => $shiftB->end_date,
-                        'commanderName' => $requestingSoldier->team->commander->user->displayName,
-                    ]
-                ),
-                [],
-                $requestingSoldier->user
-            );
-            $this->sendNotification(
-                __('Approve exchange shift request'),
-                __(
-                    'Commander notification of approving exchange shift request for the approving soldier',
-                    [
-                        'approvingSoldierName' => $approvingSoldier->user->displayName,
-                        'requestingSoldierName' => $requestingSoldier->user->displayName,
-                        'shiftBName' => $shiftB->task->name,
-                        'shiftBStart' => $shiftB->start_date,
-                        'shiftBEnd' => $shiftB->end_date,
-                        'shiftAName' => $shiftA->task->name,
-                        'shiftAStart' => $shiftA->start_date,
-                        'shiftAEnd' => $shiftA->end_date,
-                        'commanderName' => $requestingSoldier->team->commander->user->displayName,
-                    ]
-                ),
-                [],
-                $approvingSoldier->user
-            );
-        } else {
-            $this->sendNotification(
-                __('Approve exchange shift request'),
-                __(
-                    'Commander notification of approving exchange shift request for the requesting soldier',
-                    [
-                        'requestingSoldierName' => $requestingSoldier->user->displayName,
-                        'shiftAName' => $shiftA->task->name,
-                        'shiftAStart' => $shiftA->start_date,
-                        'shiftAEnd' => $shiftA->end_date,
-                        'approvingSoldierName' => $approvingSoldier->user->displayName,
-                        'shiftBName' => $shiftB->task->name,
-                        'shiftBStart' => $shiftB->start_date,
-                        'shiftBEnd' => $shiftB->end_date,
-                        'commanderName' => $requestingSoldier->team->commander->user->displayName,
-                    ]
-                ),
-                [],
-                $requestingSoldier->user
-            );
-        }
     }
 
-    protected function soldierConfirmExchange($requestingSoldier, $approvingSoldier, $shiftA, $shiftB)
+    protected function commanderConfirmExchange($soldierAId, $soldierBId, $shiftAId, $shiftBId)
     {
-        $requestingSoldier = Soldier::find($requestingSoldier);
-        $approvingSoldier = Soldier::find($approvingSoldier);
-        $shiftA = Shift::find($shiftA);
-        $shiftB = Shift::find($shiftB);
-        $commander = $requestingSoldier->team->commander->user;
+        $shiftA = Shift::find($shiftAId);
+        $shiftB = Shift::find($shiftBId);
+        $this->getShiftsAssignments()
+            ->map(
+                fn ($shiftsAssignment) => $this->sendNotification(
+                    __('Request for shift exchange'),
+                    __(
+                        'Request for shift exchange from shifts assignments',
+                        [
+                            'shiftsAssignmentName' => $shiftsAssignment->displayName,
+                            'soldierAName' => Soldier::find($soldierAId)->user->displayName,
+                            'shiftAName' => $shiftA->task->name,
+                            'shiftAStart' => $shiftA->start_date,
+                            'shiftAEnd' => $shiftA->end_date,
+                            'soldierBName' => Soldier::find($soldierBId)->user->displayName,
+                            'shiftBName' => $shiftB->task->name,
+                            'shiftBStart' => $shiftB->start_date,
+                            'shiftBEnd' => $shiftB->end_date,
+                        ]
+                    ),
+                    [
+                        NotificationAction::make('confirm')
+                            ->label(__('Confirm'))
+                            ->color('success')
+                            ->icon('heroicon-s-hand-thumb-up')
+                            ->button()
+                            ->dispatch('confirmExchange', [
+                                'approverRole' => 'shifts-assignment',
+                                'soldierAId' => $shiftA->soldier_id,
+                                'soldierBId' => $shiftB->soldier_id,
+                                'shiftAId' => $shiftA->id,
+                                'shiftBId' => $shiftB->id,
+                                'requesterId' => auth()->user()->id,
+                            ])
+                            ->close(),
+                        NotificationAction::make('deny')
+                            ->label(__('Deny'))
+                            ->color('danger')
+                            ->icon('heroicon-m-hand-thumb-down')
+                            ->button()
+                            ->dispatch('denyExchange', [
+                                'rejectorRole' => 'shifts-assignment',
+                                'soldierAId' => $shiftA->soldier_id,
+                                'soldierBId' => $shiftB->soldier_id,
+                                'shiftAId' => $shiftA->id,
+                                'shiftBId' => $shiftB->id,
+                                'requesterId' => auth()->user()->id,
+                                'sendToSoldiers' => true,
+                            ])
+                            ->close(),
+                    ],
+                    $shiftsAssignment,
+                    $shiftA->id.'-'.$shiftB->id
+                )
+            );
+    }
+
+    protected function soldierConfirmExchange($soldierAId, $soldierBId, $shiftAId, $shiftBId)
+    {
+        $soldierA = Soldier::find($soldierAId);
+        $soldierB = Soldier::find($soldierBId);
+        $shiftA = Shift::find($shiftAId);
+        $shiftB = Shift::find($shiftBId);
+        $commander = $soldierA->team->commander->user;
         $this->sendNotification(
             __('Request for shift exchange'),
             __(
                 'Request for shift exchange from commander',
                 [
                     'commanderName' => $commander->displayName,
-                    'requestingSoldierName' => $requestingSoldier->user->displayName,
+                    'soldierAName' => $soldierA->user->displayName,
                     'shiftAName' => $shiftA->task->name,
                     'shiftAStart' => $shiftA->start_date,
                     'shiftAEnd' => $shiftA->end_date,
-                    'approvingSoldierName' => $approvingSoldier->user->displayName,
+                    'soldierBName' => $soldierB->user->displayName,
                     'shiftBName' => $shiftB->task->name,
                     'shiftBStart' => $shiftB->start_date,
                     'shiftBEnd' => $shiftB->end_date,
@@ -126,11 +216,12 @@ class MyDatabaseNotifications extends DatabaseNotifications
                     ->icon('heroicon-s-hand-thumb-up')
                     ->button()
                     ->dispatch('confirmExchange', [
-                        'approverRole' => 'commander',
-                        'requestingSoldier' => $requestingSoldier->id,
-                        'approvingSoldier' => $approvingSoldier->id,
-                        'shiftA' => $shiftA->id,
-                        'shiftB' => $shiftB->id,
+                        'approverRole' => 'team-commander',
+                        'soldierAId' => $soldierA->id,
+                        'soldierBId' => $soldierB->id,
+                        'shiftAId' => $shiftA->id,
+                        'shiftBId' => $shiftB->id,
+                        'requesterId' => auth()->user()->id,
                     ])
                     ->close(),
                 NotificationAction::make('deny')
@@ -139,11 +230,13 @@ class MyDatabaseNotifications extends DatabaseNotifications
                     ->icon('heroicon-m-hand-thumb-down')
                     ->button()
                     ->dispatch('denyExchange', [
-                        'rejectorRole' => 'commander',
-                        'requestingSoldier' => $requestingSoldier->id,
-                        'rejectingSoldier' => $approvingSoldier->id,
-                        'shiftA' => $shiftA->id,
-                        'shiftB' => $shiftB->id,
+                        'rejectorRole' => 'team-commander',
+                        'soldierAId' => $soldierA->id,
+                        'soldierBId' => $soldierB->id,
+                        'shiftAId' => $shiftA->id,
+                        'shiftBId' => $shiftB->id,
+                        'requesterId' => auth()->user()->id,
+                        'sendToSoldiers' => true,
                     ])
                     ->close(),
             ],
@@ -152,201 +245,368 @@ class MyDatabaseNotifications extends DatabaseNotifications
     }
 
     #[On('denyExchange')]
-    public function denyExchange($rejectorRole, $requestingSoldier, $rejectingSoldier, $shiftA, $shiftB): void
+    public function denyExchange($rejectorRole, $soldierAId, $soldierBId, $shiftAId, $shiftBId, $requesterId, $sendToSoldiers): void
     {
-        $this->denyExchangeByRole($rejectorRole, $requestingSoldier, $rejectingSoldier, $shiftA, $shiftB);
+        $this->denyExchangeByRole($rejectorRole, $soldierAId, $soldierBId, $shiftAId, $shiftBId, $requesterId, $sendToSoldiers);
     }
 
-    protected function denyExchangeByRole($rejectorRole, $requestingSoldier, $rejectingSoldier, $shiftA, $shiftB)
+    protected function denyExchangeByRole($rejectorRole, $soldierAId, $soldierBId, $shiftAId, $shiftBId, $requesterId, $sendToSoldiers)
     {
-        $rejectorRole ?
-            $this->commanderDenyExchange($requestingSoldier, $rejectingSoldier, $shiftA, $shiftB) :
-            $this->soldierDenyExchange($requestingSoldier, $rejectingSoldier, $shiftA, $shiftB);
+        match ($rejectorRole) {
+            'shifts-assignment' => $this->shiftAssignmentDenyExchange($soldierAId, $soldierBId, $shiftAId, $shiftBId, $requesterId, $sendToSoldiers),
+            'team-commander', 'department-commander' => $this->commanderDenyExchange($soldierAId, $soldierBId, $shiftAId, $shiftBId),
+            'soldier' => $this->soldierDenyExchange($soldierAId, $soldierBId, $shiftAId, $shiftBId)
+        };
     }
 
-    protected function commanderDenyExchange($requestingSoldier, $rejectingSoldier, $shiftA, $shiftB)
+    protected function shiftAssignmentDenyExchange($soldierAId, $soldierBId, $shiftAId, $shiftBId, $requesterId, $sendToSoldiers)
     {
-        $requestingSoldier = Soldier::find($requestingSoldier);
-        $rejectingSoldier = Soldier::find($rejectingSoldier);
-        $shiftA = Shift::find($shiftA);
-        $shiftB = Shift::find($shiftB);
-        if ($requestingSoldier->team->commander->id !== $rejectingSoldier->id) {
+        $soldierA = Soldier::find($soldierAId);
+        $soldierB = Soldier::find($soldierBId);
+        $shiftA = Shift::find($shiftAId);
+        $shiftB = Shift::find($shiftBId);
+        $this->deleteNonRelevantNotifications($shiftAId.'-'.$shiftBId);
+        if ($sendToSoldiers) {
             $this->sendNotification(
                 __('Deny exchange shift request'),
                 __(
-                    'Commander notification of rejection exchange shift request for the requesting soldier',
+                    'Shifts assignment notification of deny exchanging shifts for first soldier',
                     [
-                        'requestingSoldierName' => $requestingSoldier->user->displayName,
+                        'soldierAName' => $soldierA->user->displayName,
                         'shiftAName' => $shiftA->task->name,
                         'shiftAStart' => $shiftA->start_date,
                         'shiftAEnd' => $shiftA->end_date,
-                        'rejectingSoldierName' => $rejectingSoldier->user->displayName,
                         'shiftBName' => $shiftB->task->name,
+                        'soldierBName' => $soldierB->user->displayName,
                         'shiftBStart' => $shiftB->start_date,
                         'shiftBEnd' => $shiftB->end_date,
-                        'commanderName' => $requestingSoldier->team->commander->user->displayName,
+                        'shiftsAssignmentName' => auth()->user()->displayName,
                     ]
                 ),
                 [],
-                $requestingSoldier->user
+                $soldierA->user
             );
             $this->sendNotification(
                 __('Deny exchange shift request'),
                 __(
-                    'Commander notification of rejection exchange shift request for the rejection soldier',
+                    'Shifts assignment notification of deny exchanging shifts for second soldier',
                     [
-                        'rejectingSoldierName' => $rejectingSoldier->user->displayName,
-                        'requestingSoldierName' => $requestingSoldier->user->displayName,
+                        'soldierBName' => $soldierB->user->displayName,
+                        'soldierAName' => $soldierA->user->displayName,
+                        'shiftAName' => $shiftA->task->name,
+                        'shiftAStart' => $shiftA->start_date,
+                        'shiftAEnd' => $shiftA->end_date,
+                        'shiftBName' => $shiftB->task->name,
+                        'shiftBStart' => $shiftB->start_date,
+                        'shiftBEnd' => $shiftB->end_date,
+                        'shiftsAssignmentName' => auth()->user()->displayName,
+                    ]
+                ),
+                [],
+                $soldierB->user
+            );
+        }
+        $this->sendNotification(
+            __('Deny exchange shift request'),
+            __(
+                'Shifts assignment notification of deny exchanging shifts for commander',
+                [
+                    'commanderName' => User::find($requesterId)->displayName,
+                    'shiftAName' => $shiftA->task->name,
+                    'soldierAName' => $soldierA->user->displayName,
+                    'shiftAStart' => $shiftA->start_date,
+                    'shiftAEnd' => $shiftA->end_date,
+                    'shiftBName' => $shiftB->task->name,
+                    'soldierBName' => $soldierB->user->displayName,
+                    'shiftBStart' => $shiftB->start_date,
+                    'shiftBEnd' => $shiftB->end_date,
+                    'shiftsAssignmentName' => auth()->user()->displayName,
+                ]
+            ),
+            [],
+            User::find($requesterId)
+        );
+        $this->getShiftsAssignments()
+            ->filter(fn ($shiftsAssignment) => $shiftsAssignment->id !== auth()->user()->id)
+            ->map(
+                fn ($shiftsAssignment) => $this->sendNotification(
+                    __('Deny exchange shift request'),
+                    __(
+                        'Shifts assignment notification of deny exchanging shifts for shifts assignment',
+                        [
+                            'shiftsAssignmentName' => $shiftsAssignment->displayName,
+                            'shiftAName' => $shiftA->task->name,
+                            'soldierAName' => $soldierA->user->displayName,
+                            'shiftAStart' => $shiftA->start_date,
+                            'shiftAEnd' => $shiftA->end_date,
+                            'shiftBName' => $shiftB->task->name,
+                            'soldierBName' => $soldierB->user->displayName,
+                            'shiftBStart' => $shiftB->start_date,
+                            'shiftBEnd' => $shiftB->end_date,
+                            'shiftsAssignment2Name' => auth()->user()->displayName,
+                        ]
+                    ),
+                    [],
+                    $shiftsAssignment
+                )
+            );
+    }
+
+    protected function commanderDenyExchange($soldierAId, $soldierBId, $shiftAId, $shiftBId)
+    {
+        $soldierA = Soldier::find($soldierAId);
+        $soldierB = Soldier::find($soldierBId);
+        $shiftA = Shift::find($shiftAId);
+        $shiftB = Shift::find($shiftBId);
+        if ($soldierA->team->commander->id !== $soldierB->id) {
+            $this->sendNotification(
+                __('Deny exchange shift request'),
+                __(
+                    'Commander notification of deny exchanging shifts for the first soldier',
+                    [
+                        'soldierAName' => $soldierA->user->displayName,
+                        'shiftAName' => $shiftA->task->name,
+                        'shiftAStart' => $shiftA->start_date,
+                        'shiftAEnd' => $shiftA->end_date,
+                        'soldierBName' => $soldierB->user->displayName,
+                        'shiftBName' => $shiftB->task->name,
+                        'shiftBStart' => $shiftB->start_date,
+                        'shiftBEnd' => $shiftB->end_date,
+                        'commanderName' => $soldierA->team->commander->user->displayName,
+                    ]
+                ),
+                [],
+                $soldierA->user
+            );
+            $this->sendNotification(
+                __('Deny exchange shift request'),
+                __(
+                    'Commander notification of deny exchanging shifts for the second soldier',
+                    [
+                        'soldierBName' => $soldierB->user->displayName,
+                        'soldierAName' => $soldierA->user->displayName,
                         'shiftBName' => $shiftB->task->name,
                         'shiftBStart' => $shiftB->start_date,
                         'shiftBEnd' => $shiftB->end_date,
                         'shiftAName' => $shiftA->task->name,
                         'shiftAStart' => $shiftA->start_date,
                         'shiftAEnd' => $shiftA->end_date,
-                        'commanderName' => $requestingSoldier->team->commander->user->displayName,
+                        'commanderName' => $soldierA->team->commander->user->displayName,
                     ]
                 ),
                 [],
-                $rejectingSoldier->user
+                $soldierB->user
             );
         } else {
             $this->sendNotification(
                 __('Deny exchange shift request'),
                 __(
-                    'Commander notification of rejection exchange shift request for the requesting soldier',
+                    'Commander notification of deny exchanging shifts for the first soldier',
                     [
-                        'requestingSoldierName' => $requestingSoldier->user->displayName,
+                        'soldierAName' => $soldierA->user->displayName,
                         'shiftAName' => $shiftA->task->name,
                         'shiftAStart' => $shiftA->start_date,
                         'shiftAEnd' => $shiftA->end_date,
-                        'rejectingSoldierName' => $rejectingSoldier->user->displayName,
+                        'soldierBName' => $soldierB->user->displayName,
                         'shiftBName' => $shiftB->task->name,
                         'shiftBStart' => $shiftB->start_date,
                         'shiftBEnd' => $shiftB->end_date,
-                        'commanderName' => $requestingSoldier->team->commander->user->displayName,
+                        'commanderName' => $soldierA->team->commander->user->displayName,
                     ]
                 ),
                 [],
-                $requestingSoldier->user
+                $soldierA->user
             );
         }
     }
 
-    protected function soldierDenyExchange($requestingSoldier, $rejectingSoldier, $shiftA, $shiftB)
+    protected function soldierDenyExchange($soldierAId, $soldierBId, $shiftAId, $shiftBId)
     {
-        $requestingSoldier = Soldier::find($requestingSoldier);
-        $rejectingSoldier = Soldier::find($rejectingSoldier);
-        $shiftA = Shift::find($shiftA);
-        $shiftB = Shift::find($shiftB);
+        $soldierA = Soldier::find($soldierAId);
+        $soldierB = Soldier::find($soldierBId);
+        $shiftA = Shift::find($shiftAId);
+        $shiftB = Shift::find($shiftBId);
         $this->sendNotification(
             __('Deny exchange shift request'),
             __(
-                'Soldier notification of rejection exchange shift request',
+                'Soldier notification of deny exchange shift request',
                 [
-                    'requestingSoldierName' => $requestingSoldier->user->displayName,
+                    'soldierAName' => $soldierA->user->displayName,
                     'shiftBName' => $shiftB->task->name,
                     'shiftBStart' => $shiftB->start_date,
                     'shiftBEnd' => $shiftB->end_date,
                     'shiftAName' => $shiftA->task->name,
                     'shiftAStart' => $shiftA->start_date,
                     'shiftAEnd' => $shiftA->end_date,
-                    'rejectingSoldierName' => $rejectingSoldier->user->displayName,
+                    'soldierBName' => $soldierB->user->displayName,
                 ]
             ),
             [],
-            $requestingSoldier->user
+            $soldierA->user
         );
     }
 
     #[On('confirmChange')]
-    public function confirmChange($approverRole, $shift, $soldierId)
+    public function confirmChange($approverRole, $shiftId, $soldierId, $requesterId)
     {
-        $this->confirmChangeByRole($approverRole, $shift, $soldierId);
+        $this->confirmChangeByRole($approverRole, $shiftId, $soldierId, $requesterId);
     }
 
-    protected function confirmChangeByRole($approverRole, $shift, $soldierId)
+    protected function confirmChangeByRole($approverRole, $shiftId, $soldierId, $requesterId)
     {
-        $approverRole ?
-            $this->commanderConfirmChange($shift, $soldierId) :
-            $this->soldierConfirmChange($shift, $soldierId);
+        match ($approverRole) {
+            'shifts-assignment' => $this->shiftAssignmentConfirmChange($shiftId, $soldierId, $requesterId),
+            'team-commander', 'department-commander' => $this->commanderConfirmChange($shiftId, $soldierId),
+            'soldier' => $this->soldierConfirmChange($shiftId, $soldierId)
+        };
     }
 
-    protected function commanderConfirmChange($shift, $soldierId)
+    protected function shiftAssignmentConfirmChange($shiftId, $soldierId, $requesterId)
     {
-        $shift = Shift::find($shift);
-        $requestingSoldier = Soldier::find($shift->soldier_id);
-        $approvingSoldier = Soldier::find($soldierId);
-        Shift::where('id', $shift->id)->update(['soldier_id' => $soldierId]);
         $this->dispatch('filament-fullcalendar--refresh');
-        if ($requestingSoldier->team->commander->id !== $approvingSoldier->id) {
-            $this->sendNotification(
-                __('Approve change shift request'),
-                __(
-                    'Commander notification of approving change shift request for the requesting soldier',
-                    [
-                        'requestingSoldierName' => $requestingSoldier->user->displayName,
-                        'shiftName' => $shift->task->name,
-                        'shiftStart' => $shift->start_date,
-                        'shiftEnd' => $shift->end_date,
-                        'commanderName' => $requestingSoldier->team->commander->user->displayName,
-                    ]
-                ),
-                [],
-                $requestingSoldier->user
+        $shift = Shift::find($shiftId);
+        $soldierA = Soldier::find($shift->soldier_id);
+        $soldierB = Soldier::find($soldierId);
+        $this->deleteNonRelevantNotifications($shiftId.'-'.$shift->soldier_id.'-'.$soldierId);
+        Shift::where('id', $shiftId)->update(['soldier_id' => $soldierId]);
+        $this->sendNotification(
+            __('Change shift'),
+            __(
+                'Shifts assignment notification of changing shifts for first soldier',
+                [
+                    'soldierName' => $soldierA->user->displayName,
+                    'shiftName' => $shift->task->name,
+                    'shiftStart' => $shift->start_date,
+                    'shiftEnd' => $shift->end_date,
+                    'shiftsAssignmentName' => auth()->user()->displayName,
+                ]
+            ),
+            [],
+            $soldierA->user
+        );
+        $this->sendNotification(
+            __('Change shift'),
+            __(
+                'Shifts assignment notification of changing shifts for second soldier',
+                [
+                    'soldierName' => $soldierB->user->displayName,
+                    'shiftName' => $shift->task->name,
+                    'shiftStart' => $shift->start_date,
+                    'shiftEnd' => $shift->end_date,
+                    'shiftsAssignmentName' => auth()->user()->displayName,
+                ]
+            ),
+            [],
+            $soldierB->user
+        );
+        $this->sendNotification(
+            __('Change shift'),
+            __(
+                'Shifts assignment notification of changing shifts for commander',
+                [
+                    'commanderName' => User::find($requesterId)->displayName,
+                    'shiftName' => $shift->task->name,
+                    'soldierAName' => $soldierA->user->displayName,
+                    'shiftStart' => $shift->start_date,
+                    'shiftEnd' => $shift->end_date,
+                    'soldierBName' => $soldierB->user->displayName,
+                    'shiftsAssignmentName' => auth()->user()->displayName,
+                ]
+            ),
+            [],
+            User::find($requesterId)
+        );
+        $this->getShiftsAssignments()
+            ->filter(fn ($shiftsAssignment) => $shiftsAssignment->id !== auth()->user()->id)
+            ->map(
+                fn ($shiftsAssignment) => $this->sendNotification(
+                    __('Change shift'),
+                    __(
+                        'Shifts assignment notification of changing shifts for shifts assignment',
+                        [
+                            'shiftsAssignmentName' => $shiftsAssignment->displayName,
+                            'shiftName' => $shift->task->name,
+                            'soldierAName' => $soldierA->user->displayName,
+                            'shiftStart' => $shift->start_date,
+                            'shiftEnd' => $shift->end_date,
+                            'soldierBName' => $soldierB->user->displayName,
+                            'shiftsAssignment2Name' => auth()->user()->displayName,
+                        ]
+                    ),
+                    [],
+                    $shiftsAssignment
+                )
             );
-            $this->sendNotification(
-                __('Approve change shift request'),
-                __(
-                    'Commander notification of approving change shift request for the approving soldier',
-                    [
-                        'approvingSoldierName' => $approvingSoldier->user->displayName,
-                        'requestingSoldierName' => $requestingSoldier->user->displayName,
-                        'shiftName' => $shift->task->name,
-                        'shiftStart' => $shift->start_date,
-                        'shiftEnd' => $shift->end_date,
-                        'commanderName' => $requestingSoldier->team->commander->user->displayName,
-                    ]
-                ),
-                [],
-                $approvingSoldier->user
-            );
-        } else {
-            $this->sendNotification(
-                __('Approve change shift request'),
-                __(
-                    'Commander notification of approving change shift request for the requesting soldier',
-                    [
-                        'requestingSoldierName' => $requestingSoldier->user->displayName,
-                        'shiftName' => $shift->task->name,
-                        'shiftStart' => $shift->start_date,
-                        'shiftEnd' => $shift->end_date,
-                        'commanderName' => $requestingSoldier->team->commander->user->displayName,
-                    ]
-                ),
-                [],
-                $requestingSoldier->user
-            );
-        }
     }
 
-    protected function soldierConfirmChange($shift, $soldierId)
+    protected function commanderConfirmChange($shiftId, $soldierId)
     {
-        $shift = Shift::find($shift);
-        $requestingSoldier = Soldier::find($shift->soldier_id);
-        $approvingSoldier = Soldier::find($soldierId);
+        $shift = Shift::find($shiftId);
+        $this->getShiftsAssignments()
+            ->map(
+                fn ($shiftsAssignment) => $this->sendNotification(
+                    __('Request for shift change'),
+                    __(
+                        'Request for shift change from shifts assignments',
+                        [
+                            'shiftsAssignmentName' => $shiftsAssignment->displayName,
+                            'shiftName' => $shift->task->name,
+                            'soldierAName' => Soldier::find($shift->soldier_id)->user->displayName,
+                            'shiftStart' => $shift->start_date,
+                            'shiftEnd' => $shift->end_date,
+                            'soldierBName' => Soldier::find($soldierId)->user->displayName,
+                        ]
+                    ),
+                    [
+                        NotificationAction::make('confirm')
+                            ->label(__('Confirm'))
+                            ->color('success')
+                            ->icon('heroicon-s-hand-thumb-up')
+                            ->button()
+                            ->dispatch('confirmChange', [
+                                'approverRole' => 'shifts-assignment',
+                                'shiftId' => $shift->id,
+                                'soldierId' => $soldierId,
+                                'requesterId' => auth()->user()->id,
+                            ])
+                            ->close(),
+                        NotificationAction::make('deny')
+                            ->label(__('Deny'))
+                            ->color('danger')
+                            ->icon('heroicon-m-hand-thumb-down')
+                            ->button()
+                            ->dispatch('denyChange', [
+                                'rejectorRole' => 'shifts-assignment',
+                                'shiftId' => $shift->id,
+                                'soldierId' => $soldierId,
+                                'requesterId' => auth()->user()->id,
+                                'sendToSoldiers' => true,
+                            ])
+                            ->close(),
+                    ],
+                    $shiftsAssignment,
+                    $shift->id.'-'.$shift->soldier_id.'-'.$soldierId
+                )
+            );
+    }
 
-        $commander = $requestingSoldier->team->commander->user;
+    protected function soldierConfirmChange($shiftId, $soldierId)
+    {
+        $shift = Shift::find($shiftId);
+        $soldierA = Soldier::find($shift->soldier_id);
+        $soldierB = Soldier::find($soldierId);
+        $commander = $soldierA->team->commander->user;
         $this->sendNotification(
             __('Request for shift change'),
             __(
                 'Request for shift change from commander',
                 [
                     'commanderName' => $commander->displayName,
-                    'requestingSoldierName' => $requestingSoldier->user->displayName,
+                    'soldierAName' => $soldierA->user->displayName,
                     'shiftName' => $shift->task->name,
                     'shiftStart' => $shift->start_date,
                     'shiftEnd' => $shift->end_date,
-                    'approvingSoldierName' => $approvingSoldier->user->displayName,
+                    'soldierBName' => $soldierB->user->displayName,
                 ]
             ),
             [
@@ -356,9 +616,10 @@ class MyDatabaseNotifications extends DatabaseNotifications
                     ->icon('heroicon-s-hand-thumb-up')
                     ->button()
                     ->dispatch('confirmChange', [
-                        'approverRole' => 'commander',
-                        'shift' => $shift->id,
+                        'approverRole' => 'team-commander',
+                        'shiftId' => $shift->id,
                         'soldierId' => $soldierId,
+                        'requesterId' => auth()->user()->id,
                     ])
                     ->close(),
                 NotificationAction::make('deny')
@@ -367,9 +628,11 @@ class MyDatabaseNotifications extends DatabaseNotifications
                     ->icon('heroicon-m-hand-thumb-down')
                     ->button()
                     ->dispatch('denyChange', [
-                        'rejectorRole' => 'commander',
-                        'shift' => $shift->id,
+                        'rejectorRole' => 'team-commander',
+                        'shiftId' => $shift->id,
                         'soldierId' => $soldierId,
+                        'requesterId' => auth()->user()->id,
+                        'sendToSoldiers' => true,
                     ])
                     ->close(),
             ],
@@ -378,109 +641,202 @@ class MyDatabaseNotifications extends DatabaseNotifications
     }
 
     #[On('denyChange')]
-    public function denyChange($rejectorRole, $shift, $soldierId): void
+    public function denyChange($rejectorRole, $shiftId, $soldierId, $requesterId, $sendToSoldiers): void
     {
-        $this->denyChangeByRole($rejectorRole, $shift, $soldierId);
+        $this->denyChangeByRole($rejectorRole, $shiftId, $soldierId, $requesterId, $sendToSoldiers);
     }
 
-    protected function denyChangeByRole($rejectorRole, $shift, $soldierId)
+    protected function denyChangeByRole($rejectorRole, $shiftId, $soldierId, $requesterId, $sendToSoldiers)
     {
-        $rejectorRole ?
-            $this->commanderDenyChange($shift, $soldierId) :
-            $this->soldierDenyChange($shift, $soldierId);
+        match ($rejectorRole) {
+            'shifts-assignment' => $this->shiftAssignmentDenyChange($shiftId, $soldierId, $requesterId, $sendToSoldiers),
+            'team-commander', 'department-commander' => $this->commanderDenyChange($shiftId, $soldierId),
+            'soldier' => $this->soldierDenyChange($shiftId, $soldierId)
+        };
     }
 
-    protected function commanderDenyChange($shift, $soldierId)
+    protected function shiftAssignmentDenyChange($shiftId, $soldierId, $requesterId, $sendToSoldiers)
     {
-        $shift = Shift::find($shift);
-        $requestingSoldier = Soldier::find($shift->soldier_id);
-        $approvingSoldier = Soldier::find($soldierId);
-        if ($requestingSoldier->team->commander->id !== $approvingSoldier->id) {
+        $shift = Shift::find($shiftId);
+        $soldierA = Soldier::find($shift->soldier_id);
+        $soldierB = Soldier::find($soldierId);
+        $this->deleteNonRelevantNotifications($shiftId.'-'.$shift->soldier_id.'-'.$soldierId);
+        if ($sendToSoldiers) {
             $this->sendNotification(
                 __('Deny change shift request'),
                 __(
-                    'Commander notification of rejection change shift request for the requesting soldier',
+                    'Shifts assignment notification of deny changing shifts for first soldier',
                     [
-                        'requestingSoldierName' => $requestingSoldier->user->displayName,
+                        'soldierAName' => $soldierA->user->displayName,
                         'shiftName' => $shift->task->name,
                         'shiftStart' => $shift->start_date,
                         'shiftEnd' => $shift->end_date,
-                        'approvingSoldierName' => $approvingSoldier->user->displayName,
-                        'commanderName' => $requestingSoldier->team->commander->user->displayName,
+                        'soldierBName' => $soldierB->user->displayName,
+                        'shiftsAssignmentName' => auth()->user()->displayName,
                     ]
                 ),
                 [],
-                $requestingSoldier->user
+                $soldierA->user
             );
             $this->sendNotification(
                 __('Deny change shift request'),
                 __(
-                    'Commander notification of rejection change shift request for the approving soldier',
+                    'Shifts assignment notification of deny changing shifts for second soldier',
                     [
-                        'approvingSoldierName' => $approvingSoldier->user->displayName,
-                        'requestingSoldierName' => $requestingSoldier->user->displayName,
+                        'soldierBName' => $soldierB->user->displayName,
+                        'soldierAName' => $soldierA->user->displayName,
                         'shiftName' => $shift->task->name,
                         'shiftStart' => $shift->start_date,
                         'shiftEnd' => $shift->end_date,
-                        'commanderName' => $requestingSoldier->team->commander->user->displayName,
+                        'shiftsAssignmentName' => auth()->user()->displayName,
                     ]
                 ),
                 [],
-                $approvingSoldier->user
+                $soldierB->user
+            );
+        }
+        $this->sendNotification(
+            __('Deny change shift request'),
+            __(
+                'Shifts assignment notification of deny changing shifts for commander',
+                [
+                    'commanderName' => User::find($requesterId)->displayName,
+                    'shiftName' => $shift->task->name,
+                    'soldierAName' => $soldierA->user->displayName,
+                    'shiftStart' => $shift->start_date,
+                    'shiftEnd' => $shift->end_date,
+                    'soldierBName' => $soldierB->user->displayName,
+                    'shiftsAssignmentName' => auth()->user()->displayName,
+                ]
+            ),
+            [],
+            User::find($requesterId)
+        );
+        $this->getShiftsAssignments()
+            ->filter(fn ($shiftsAssignment) => $shiftsAssignment->id !== auth()->user()->id)
+            ->map(
+                fn ($shiftsAssignment) => $this->sendNotification(
+                    __('Deny change shift request'),
+                    __(
+                        'Shifts assignment notification of deny changing shifts for shifts assignment',
+                        [
+                            'shiftsAssignmentName' => $shiftsAssignment->displayName,
+                            'shiftName' => $shift->task->name,
+                            'soldierAName' => $soldierA->user->displayName,
+                            'shiftStart' => $shift->start_date,
+                            'shiftEnd' => $shift->end_date,
+                            'soldierBName' => $soldierB->user->displayName,
+                            'shiftsAssignment2Name' => auth()->user()->displayName,
+                        ]
+                    ),
+                    [],
+                    $shiftsAssignment
+                )
+            );
+    }
+
+    protected function commanderDenyChange($shiftId, $soldierId)
+    {
+        $shift = Shift::find($shiftId);
+        $soldierA = Soldier::find($shift->soldier_id);
+        $soldierB = Soldier::find($soldierId);
+        if ($soldierA->team->commander->id !== $soldierB->id) {
+            $this->sendNotification(
+                __('Deny change shift request'),
+                __(
+                    'Commander notification of deny changing shift request for the first soldier',
+                    [
+                        'soldierAName' => $soldierA->user->displayName,
+                        'shiftName' => $shift->task->name,
+                        'shiftStart' => $shift->start_date,
+                        'shiftEnd' => $shift->end_date,
+                        'soldierBName' => $soldierB->user->displayName,
+                        'commanderName' => $soldierA->team->commander->user->displayName,
+                    ]
+                ),
+                [],
+                $soldierA->user
+            );
+            $this->sendNotification(
+                __('Deny change shift request'),
+                __(
+                    'Commander notification of deny changing shift request for the second soldier',
+                    [
+                        'soldierBName' => $soldierB->user->displayName,
+                        'soldierAName' => $soldierA->user->displayName,
+                        'shiftName' => $shift->task->name,
+                        'shiftStart' => $shift->start_date,
+                        'shiftEnd' => $shift->end_date,
+                        'commanderName' => $soldierA->team->commander->user->displayName,
+                    ]
+                ),
+                [],
+                $soldierB->user
             );
         } else {
             $this->sendNotification(
                 __('Deny change shift request'),
                 __(
-                    'Commander notification of rejection change shift request for the requesting soldier',
+                    'Commander notification of deny changing shift request for the first soldier',
                     [
-                        'requestingSoldierName' => $requestingSoldier->user->displayName,
+                        'soldierAName' => $soldierA->user->displayName,
                         'shiftName' => $shift->task->name,
                         'shiftStart' => $shift->start_date,
                         'shiftEnd' => $shift->end_date,
-                        'approvingSoldierName' => $approvingSoldier->user->displayName,
-                        'commanderName' => $requestingSoldier->team->commander->user->displayName,
+                        'soldierBName' => $soldierB->user->displayName,
+                        'commanderName' => $soldierA->team->commander->user->displayName,
                     ]
                 ),
                 [],
-                $requestingSoldier->user
+                $soldierA->user
             );
         }
     }
 
-    protected function soldierDenyChange($shift, $soldierId)
+    protected function soldierDenyChange($shiftId, $soldierId)
     {
-        $shift = Shift::find($shift);
-        $requestingSoldier = Soldier::find($shift->soldier_id);
-        $rejectingSoldier = Soldier::find($soldierId);
+        $shift = Shift::find($shiftId);
+        $soldierA = Soldier::find($shift->soldier_id);
+        $soldierB = Soldier::find($soldierId);
         $this->sendNotification(
             __('Deny change shift request'),
             __(
-                'Soldier notification of rejection change shift request',
+                'Soldier notification of deny changing shift request',
                 [
-                    'requestingSoldierName' => $requestingSoldier->user->displayName,
+                    'soldierAName' => $soldierA->user->displayName,
                     'shiftName' => $shift->task->name,
                     'shiftStart' => $shift->start_date,
                     'shiftEnd' => $shift->end_date,
-                    'rejectingSoldierName' => $rejectingSoldier->user->displayName,
+                    'soldierBName' => $soldierB->user->displayName,
                 ]
             ),
             [],
-            $requestingSoldier->user
+            $soldierA->user
         );
     }
 
-    protected function sendNotification($title, $body, $actions, $user)
+    protected function deleteNonRelevantNotifications($commonKey)
     {
-        Notification::make()
+        \DB::table('notifications')
+            ->where('data->commonKey', $commonKey)
+            ->delete();
+    }
+
+    protected static function getShiftsAssignments()
+    {
+        return User::whereHas('roles', function ($query) {
+            $query->where('name', 'shifts-assignment');
+        })->get();
+    }
+
+    protected function sendNotification($title, $body, $actions, $user, $commonKey = null)
+    {
+        MyNotification::make()
+            ->commonKey($commonKey)
             ->title($title)
             ->persistent()
-            ->body(
-                $body
-            )
-            ->actions(
-                $actions
-            )
+            ->body($body)
+            ->actions($actions)
             ->sendToDatabase($user, true);
     }
 }

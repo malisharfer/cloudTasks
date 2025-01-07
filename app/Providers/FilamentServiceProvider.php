@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Filament\Auth\Login;
 use App\Filament\Widgets\CalendarWidget;
+use App\Filament\Widgets\ChartWidget;
 use App\Http\Middleware\SetLocale;
 use App\Resources\ProfileResource\Pages\ListProfiles;
 use Filament\Facades\Filament;
@@ -20,6 +21,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
 use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 
 class FilamentServiceProvider extends PanelProvider
@@ -61,6 +63,7 @@ class FilamentServiceProvider extends PanelProvider
                     ->locale(config('app.locale'))
                     ->plugins(['dayGrid', 'timeGrid'])
                     ->config([]),
+                FilamentApexChartsPlugin::make(),
             ])
             ->pages([
                 ListProfiles::class,
@@ -71,6 +74,7 @@ class FilamentServiceProvider extends PanelProvider
             ->viteTheme('resources/css/app.css')
             ->widgets([
                 CalendarWidget::class,
+                ChartWidget::class,
             ]);
     }
 

@@ -31,6 +31,7 @@ use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\ReplicateAction;
+use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\BooleanColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -77,7 +78,8 @@ class SoldierResource extends Resource
                         });
                     })
                     ->sortable(),
-                BooleanColumn::make('is_reservist')->label(__('Reservist')),
+                BooleanColumn::make('is_reservist')
+                    ->label(__('Reservist')),
                 BadgeColumn::make('gender')
                     ->label(__('Gender'))
                     ->formatStateUsing(fn ($state) => $state ? __('Male') : __('Female'))
@@ -86,7 +88,9 @@ class SoldierResource extends Resource
                     ->sortable(),
                 TextColumn::make('role')
                     ->label(__('Role'))
-                    ->visible(collect(auth()->user()->getRoleNames())->intersect(['manager', 'shifts-assignment', 'department-commander'])->isNotEmpty())
+                    ->visible(collect(auth()->user()->getRoleNames())
+                        ->intersect(['manager', 'shifts-assignment', 'department-commander'])
+                        ->isNotEmpty())
                     ->default(
                         function ($record) {
                             $roles = Soldier::find($record->id)->user->getRoleNames()->first();
@@ -108,15 +112,10 @@ class SoldierResource extends Resource
 
                         return $soldier->team ? $soldier->team->name : null;
                     }),
-                TextColumn::make('reserve_dates')->label(__('Reserve dates'))->date()->listWithLineBreaks()->limitList(1)->expandableLimitedList()->placeholder('---')->toggleable(true, true),
-                TextColumn::make('next_reserve_dates')->label(__('Next reserve dates'))->date()->listWithLineBreaks()->limitList(1)->expandableLimitedList()->placeholder('---')->toggleable(true, true),
-                TextColumn::make('enlist_date')->label(__('Enlist date'))->sortable()->date()->toggleable(),
-                TextColumn::make('course')->label(__('Course'))->toggleable(true, true),
-                BooleanColumn::make('has_exemption')->label(__('Exemption'))->toggleable(true, true),
-                TextColumn::make('max_shifts')->label(__('Max shifts'))->toggleable(true, true),
-                TextColumn::make('max_nights')->label(__('Max nights'))->toggleable(true, true),
-                TextColumn::make('max_weekends')->label(__('Max weekends'))->toggleable(true, true),
-                TextColumn::make('capacity')->label(__('Capacity'))->toggleable(true, true),
+                TextColumn::make('enlist_date')
+                    ->label(__('Enlist date'))
+                    ->sortable()
+                    ->date(),
                 TextColumn::make('capacity_hold')
                     ->default(function ($record) {
                         $soldierShifts = Shift::where('soldier_id', $record->id)->get();
@@ -126,12 +125,10 @@ class SoldierResource extends Resource
                         })->sum(fn (Shift $shift) => $shift->parallel_weight === null ? $shift->task->parallel_weight : $shift->parallel_weight);
                     })
                     ->label(__('Capacity hold'))
-                    ->numeric()
-                    ->toggleable(),
-                BooleanColumn::make('is_trainee')->label(__('Is trainee'))->toggleable(true, true),
-                BooleanColumn::make('is_mabat')->label(__('Is mabat'))->toggleable(true, true),
-                TextColumn::make('qualifications')->label(__('Qualifications'))->placeholder(__('No qualifications'))->toggleable(),
-                TextColumn::make('constraints_limit')->label(__('Constraints limit'))->toggleable(true, true),
+                    ->numeric(),
+                TextColumn::make('qualifications')
+                    ->label(__('Qualifications'))
+                    ->placeholder(__('No qualifications')),
             ])
             ->modifyQueryUsing(function (Builder $query) {
                 if (request()->input('team_id')) {
@@ -192,7 +189,7 @@ class SoldierResource extends Resource
                                 DatePicker::make('recruitment_from')
                                     ->label(__('From')),
                                 DatePicker::make('recruitment_until')
-                                    ->label(__('Until'))
+                                    ->label(__('To'))
                                     ->after('recruitment_from'),
                             ]),
                     ])
@@ -216,12 +213,15 @@ class SoldierResource extends Resource
                     ->button()
                     ->label(__('Filter'))
             )
+            ->recordAction(ViewAction::class)
+            ->recordUrl(null)
             ->actions([
                 ActionGroup::make([
                     EditAction::make(),
                     DeleteAction::make()
                         ->label(__('Delete'))
                         ->modalHeading(__('Delete').' '.self::getModelLabel()),
+                    ViewAction::make(),
                     Action::make('update reserve days')
                         ->label(__('Update reserve days'))
                         ->icon('heroicon-o-pencil')
@@ -302,6 +302,7 @@ class SoldierResource extends Resource
 
                         return request()->route()->getName() === 'filament.app.resources.soldiers.edit' && ! $isReplica;
                     })
+                    ->hiddenOn('view')
                     ->required(),
             ])->columns(3);
     }
