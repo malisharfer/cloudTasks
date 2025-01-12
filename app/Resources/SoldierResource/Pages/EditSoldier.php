@@ -2,13 +2,20 @@
 
 namespace App\Resources\SoldierResource\Pages;
 
+use App\Models\User;
 use App\Resources\SoldierResource;
 use Filament\Resources\Pages\EditRecord;
-use Illuminate\Support\Facades\Session;
 
 class EditSoldier extends EditRecord
 {
     protected static string $resource = SoldierResource::class;
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $data['shifts_assignment'] = in_array('shifts-assignment', User::where('userable_id', $this->record->id)->first()->getRoleNames()->toArray());
+
+        return $data;
+    }
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
@@ -28,7 +35,16 @@ class EditSoldier extends EditRecord
     protected function afterSave(): void
     {
         $user = $this->record->user;
-        $user->getRoleNames()->isEmpty() ? $user->assignRole('soldier') : null;
-        Session::put('is_replica', false);
+        if ($user->getRoleNames()->isEmpty()) {
+            $this->data['shifts_assignment'] == 1 ? $user->assignRole('soldier', 'shifts-assignment') : $user->assignRole('soldier');
+        } else {
+            $roles = $user->getRoleNames()->toArray();
+            if ($this->data['shifts_assignment'] == 1 && ! in_array('shifts-assignment', $roles)) {
+                $user->assignRole('shifts-assignment');
+            }
+            if ($this->data['shifts_assignment'] == 0 && in_array('shifts-assignment', $roles)) {
+                $user->removeRole('shifts-assignment');
+            }
+        }
     }
 }

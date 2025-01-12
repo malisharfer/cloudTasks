@@ -167,7 +167,7 @@ class Shift extends Model
                 ->put('me', __('Me'))
                 ->toArray();
         }
-        if (current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])) != 'manager' && current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])) != 'shifts-assignment') {
+        if (! in_array('manager', auth()->user()->getRoleNames()->toArray()) && ! in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())) {
             return collect($options)
                 ->put('my_soldiers', __('My Soldiers'))
                 ->toArray();
@@ -179,8 +179,7 @@ class Shift extends Model
     public static function exchangeAction(): Action
     {
         return Action::make('Exchange')
-            ->label(__('Exchange'))
-            ->icon('heroicon-s-arrow-path')
+            ->label(__('Exchange assignment'))
             ->cancelParentActions()
             ->closeModalByClickingAway(false)
             ->modalCancelAction(false)
@@ -240,12 +239,12 @@ class Shift extends Model
                         ->icon('heroicon-s-arrow-path')
                         ->color('primary')
                         ->disabled(fn (): bool => ! session()->get('selected_shift'))
-                        ->visible(fn (): bool => current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']))),
+                        ->visible(fn (): bool => auth()->user()->getRoleNames()->count() > 1),
                     $action->makeExtraModalAction(__('Request'), ['request' => true])
                         ->icon('heroicon-s-arrow-path')
                         ->disabled(fn (): bool => ! session()->get('selected_shift'))
                         ->color('primary')
-                        ->visible(fn (): bool => ! current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']))),
+                        ->visible(fn (): bool => ! auth()->user()->getRoleNames()->count() > 1),
                     $action->makeExtraModalAction(__('Cancel'), ['cancel' => true]),
                 ];
             })
@@ -424,7 +423,7 @@ class Shift extends Model
                     ->icon('heroicon-s-hand-thumb-up')
                     ->button()
                     ->dispatch('confirmExchange', [
-                        'approverRole' => current(array_diff(collect(Soldier::find($shift->soldier_id)->user->getRoleNames())->toArray(), ['soldier'])),
+                        'approverRole' => auth()->user()->getRoleNames()->count() > 1 ? Soldier::find($record->soldier_id)->user->getRoleNames()->toArray()[1] : 'soldier',
                         'soldierAId' => $record->soldier_id,
                         'soldierBId' => $shift->soldier_id,
                         'shiftAId' => $record->id,
@@ -438,7 +437,7 @@ class Shift extends Model
                     ->icon('heroicon-m-hand-thumb-down')
                     ->button()
                     ->dispatch('denyExchange', [
-                        'rejectorRole' => current(array_diff(collect(Soldier::find($shift->soldier_id)->user->getRoleNames())->toArray(), ['soldier'])),
+                        'rejectorRole' => auth()->user()->getRoleNames()->count() > 1 ? Soldier::find($record->soldier_id)->user->getRoleNames()->toArray()[1] : 'soldier',
                         'soldierAId' => $record->soldier_id,
                         'soldierBId' => $shift->soldier_id,
                         'shiftAId' => $record->id,
@@ -455,8 +454,7 @@ class Shift extends Model
     public static function changeAction(): Action
     {
         return Action::make('Change')
-            ->label(__('Change'))
-            ->icon('heroicon-o-arrow-uturn-up')
+            ->label(__('Change assignment'))
             ->cancelParentActions()
             ->closeModalByClickingAway(false)
             ->modalCancelAction(false)
@@ -490,7 +488,7 @@ class Shift extends Model
                                         ->inline()
                                         ->live()
                                         ->default(fn () => 'matching')
-                                        ->visible(fn (): bool => current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])))
+                                        ->visible(fn (): bool => auth()->user()->getRoleNames()->count() > 1)
                                         ->afterStateUpdated(function (callable $set) {
                                             $set('soldier', null);
                                             session()->put('selected_soldier', false);
@@ -528,12 +526,12 @@ class Shift extends Model
                             ->icon('heroicon-o-arrow-uturn-up')
                             ->color('primary')
                             ->disabled(fn (): bool => ! session()->get('selected_soldier'))
-                            ->visible(fn (): bool => current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']))),
+                            ->visible(fn (): bool => auth()->user()->getRoleNames()->count() > 1),
                         $action->makeExtraModalAction(__('Request'), ['request' => true])
                             ->icon('heroicon-o-arrow-uturn-up')
                             ->disabled(fn (): bool => ! session()->get('selected_soldier'))
                             ->color('primary')
-                            ->visible(fn (): bool => ! current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']))),
+                            ->visible(fn (): bool => ! auth()->user()->getRoleNames()->count() > 1),
                         $action->makeExtraModalAction(__('Cancel'), ['cancel' => true]),
                     ];
                 }
@@ -692,7 +690,7 @@ class Shift extends Model
                     ->icon('heroicon-s-hand-thumb-up')
                     ->button()
                     ->dispatch('confirmChange', [
-                        'approverRole' => current(array_diff(collect(Soldier::find($record->soldier_id)->user->getRoleNames())->toArray(), ['soldier'])),
+                        'approverRole' => auth()->user()->getRoleNames()->count() > 1 ? Soldier::find($record->soldier_id)->user->getRoleNames()->toArray()[1] : 'soldier',
                         'shiftId' => $record->id,
                         'soldierId' => $soldierId,
                         'requesterId' => null,
@@ -704,7 +702,7 @@ class Shift extends Model
                     ->icon('heroicon-m-hand-thumb-down')
                     ->button()
                     ->dispatch('denyChange', [
-                        'rejectorRole' => current(array_diff(collect(Soldier::find($record->soldier_id)->user->getRoleNames())->toArray(), ['soldier'])),
+                        'rejectorRole' => auth()->user()->getRoleNames()->count() > 1 ? Soldier::find($record->soldier_id)->user->getRoleNames()->toArray()[1] : 'soldier',
                         'shiftId' => $record->id,
                         'soldierId' => $soldierId,
                         'requesterId' => null,
@@ -740,7 +738,6 @@ class Shift extends Model
             ->iconButton()
             ->label(__('Filter'))
             ->icon('heroicon-o-funnel')
-            ->extraAttributes(['class' => 'fullcalendar'])
             ->form(function () use ($calendar) {
                 $shifts = $calendar->getEventsByRole();
                 $soldiersShifts = array_filter($shifts->toArray(), fn ($shift) => $shift['soldier_id'] !== null);
@@ -760,6 +757,7 @@ class Shift extends Model
                 ];
             })
             ->modalSubmitAction(false)
+            ->modalCancelAction(false)
             ->extraModalFooterActions(fn (Action $action): array => [
                 $action->makeModalSubmitAction('Filter', arguments: ['Filter' => true])->color('success')->label(__('Filter')),
                 $action->makeModalSubmitAction('Unassigned shifts', arguments: ['UnassignedShifts' => true])->color('primary')->label(__('Unassigned shifts')),
@@ -770,7 +768,8 @@ class Shift extends Model
                     Task::whereIn('id', $data['type'])
                         ->pluck('type')
                 )
-                    ->pluck('id');
+                    ->pluck('id')
+                    ->toArray();
                 if ($arguments['Filter'] ?? false) {
                     $calendar->filterData = $data;
                     $calendar->filter = ! ($data['soldier_id'] === [] && $data['type'] === []);

@@ -12,10 +12,11 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Get;
+use Filament\Notifications\Actions\Action as NotificationAction;
+use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\DB;
 
 class Constraint extends Model
 {
@@ -48,9 +49,15 @@ class Constraint extends Model
                 ->label(__('Constraint Name'))
                 ->reactive()
                 ->live()
+                ->hiddenOn('view')
                 ->inline()
                 ->options(fn (Get $get) => self::availableOptions($get('start_date'), $get('end_date')))
                 ->afterStateUpdated(fn (callable $set, $state, Get $get) => self::updateDates($set, $state, $get)),
+            ToggleButtons::make('constraint_type')
+                ->label(__('Constraint Name'))
+                ->inline()
+                ->visibleOn('view')
+                ->options(fn (Constraint $constraint) => [$constraint->constraint_type]),
             Hidden::make('start_date')
                 ->required(),
             Hidden::make('end_date')
@@ -70,6 +77,48 @@ class Constraint extends Model
         ];
     }
 
+    public static function requestConstraint($data)
+    {
+        $commander = Soldier::find(auth()->user()->userable_id)->team->commander->user;
+        Notification::make()
+            ->title(__('Do you approve the constraint request'))
+            ->body(
+                __('Shift details', [
+                    'name' => Soldier::find(auth()->user()->userable_id)->user->displayName,
+                    'startDate' => $data['start_date'],
+                    'endDate' => $data['end_date'],
+                    'type' => $data['constraint_type'],
+                ])
+            )
+            ->actions(
+                [
+                    NotificationAction::make(__('Confirm'))
+                        ->button()
+                        ->icon('heroicon-s-hand-thumb-up')
+                        ->color('success')
+                        ->dispatch('confirmConstraint', [
+                            'user' => auth()->user()->id,
+                            'constraintName' => $data['constraint_type'],
+                            'startDate' => $data['start_date'],
+                            'endDate' => $data['end_date'],
+                        ])
+                        ->close(),
+                    NotificationAction::make(__('Deny'))
+                        ->button()
+                        ->icon('heroicon-m-hand-thumb-down')
+                        ->color('danger')
+                        ->dispatch('denyConstraint', [
+                            'user' => auth()->user()->id,
+                            'constraintName' => $data['constraint_type'],
+                            'startDate' => $data['start_date'],
+                            'endDate' => $data['end_date'],
+                        ])
+                        ->close(),
+                ]
+            )
+            ->sendToDatabase($commander, true);
+    }
+
     private static function availableOptions($startDate, $endDate): array
     {
         $start_date = Carbon::parse($startDate);
@@ -87,16 +136,23 @@ class Constraint extends Model
             unset($options[ConstraintType::LOW_PRIORITY_NOT_WEEKEND->value]);
         }
         $usedCounts = self::getUsedCountsForCurrentMonth($startDate, $endDate);
-        $limits =Soldier::where('id', auth()->user()->userable_id)->pluck('constraints_limit')->first()
+        $limits = Soldier::where('id', auth()->user()->userable_id)->pluck('constraints_limit')->first()
         ? Soldier::where('id', auth()->user()->userable_id)->pluck('constraints_limit')->first()
         : ConstraintType::getLimit();
         $constraintsWithinLimit = [];
+
+        $queryConstraints = Constraint::where('soldier_id', auth()->user()->userable_id)
+            ->whereBetween('start_date', [$startDate, $endDate])
+            ->pluck('constraint_type')
+            ->toArray();
+
         foreach ($options as $constraint => $label) {
             $used = $usedCounts[$constraint] ?? 0;
             $limit = $limits[$constraint] ?? 0;
-
             if ($limit === 0 || $used < $limit) {
-                $constraintsWithinLimit[$constraint] = $label;
+                if (! in_array($constraint, $queryConstraints)) {
+                    $constraintsWithinLimit[$constraint] = $label;
+                }
             }
         }
 
@@ -189,8 +245,8 @@ class Constraint extends Model
         $translatedConstraint = __($this->constraint_type);
 
         return $this->soldier_id == auth()->user()->userable_id
-        ? $translatedConstraint
-        : $translatedConstraint.' '.$this->soldier_name;
+            ? $translatedConstraint
+            : $translatedConstraint.' '.$this->soldier_name;
     }
 
     public function getConstraintColorAttribute()
@@ -204,7 +260,6 @@ class Constraint extends Model
             ->iconButton()
             ->label(__('Filter'))
             ->icon('heroicon-o-funnel')
-            ->extraAttributes(['class' => 'fullcalendar'])
             ->form(function () use ($calendar) {
                 $constraints = $calendar->getEventsByRole();
                 $soldiersConstraints = array_filter($constraints->toArray(), fn ($constraint) => $constraint['soldier_id'] !== null);
@@ -212,12 +267,15 @@ class Constraint extends Model
                 return [
                     Select::make('soldier_id')
                         ->label(__('Soldier'))
-                        ->options(fn (): array => collect($soldiersConstraints)->mapWithKeys(fn ($constraint) => [$constraint['soldier_id'] => User::where('userable_id', $constraint['soldier_id'])
-                            ->first()?->displayName])->toArray())
+                        ->options(fn (): array => collect($soldiersConstraints)->mapWithKeys(fn ($constraint) => [
+                            $constraint['soldier_id'] => User::where('userable_id', $constraint['soldier_id'])
+                                ->first()?->displayName,
+                        ])->toArray())
                         ->multiple(),
                 ];
             })
             ->modalSubmitActionLabel(__('Filter'))
+            ->modalCancelAction(false)
             ->action(function (array $data) use ($calendar) {
                 $calendar->filterData = $data;
                 $calendar->filter = $data['soldier_id'] === [] ? false : true;

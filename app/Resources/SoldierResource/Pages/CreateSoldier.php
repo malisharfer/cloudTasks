@@ -2,6 +2,7 @@
 
 namespace App\Resources\SoldierResource\Pages;
 
+use App\Models\User;
 use App\Resources\SoldierResource;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Wizard\Step;
@@ -9,7 +10,6 @@ use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Resources\Pages\CreateRecord\Concerns\HasWizard;
-use Illuminate\Support\Facades\DB;
 
 class CreateSoldier extends CreateRecord
 {
@@ -19,8 +19,7 @@ class CreateSoldier extends CreateRecord
 
     public function beforeCreate()
     {
-        $userName = DB::table('users')
-            ->where('last_name', $this->data['user']['last_name'])
+        $userName = User::where('last_name', $this->data['user']['last_name'])
             ->where('first_name', $this->data['user']['first_name'])
             ->pluck('last_name', 'first_name');
 
@@ -40,7 +39,7 @@ class CreateSoldier extends CreateRecord
     protected function afterCreate()
     {
         $user = $this->record->user;
-        $this->data['shifts-assignment'] == 1 ? $user->assignRole('soldier', 'shifts-assignment') : $user->assignRole('soldier');
+        $this->data['shifts_assignment'] == 1 ? $user->assignRole('soldier', 'shifts-assignment') : $user->assignRole('soldier');
     }
 
     protected function getRedirectUrl(): string

@@ -3,16 +3,36 @@
 namespace App\Livewire;
 
 use App\Filament\Notifications\MyNotification;
+use App\Models\Constraint;
 use App\Models\Shift;
 use App\Models\Soldier;
 use App\Models\User;
 use App\Services\ChangeAssignment;
+use Filament\Facades\Filament;
 use Filament\Notifications\Actions\Action as NotificationAction;
 use Filament\Notifications\Livewire\DatabaseNotifications;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Model;
 use Livewire\Attributes\On;
 
 class MyDatabaseNotifications extends DatabaseNotifications
 {
+    public function getUser(): Model|Authenticatable|null
+    {
+        return Filament::auth()->user();
+    }
+
+    public function getPollingInterval(): ?string
+    {
+        return Filament::getDatabaseNotificationsPollingInterval();
+    }
+
+    public function getTrigger(): View
+    {
+        return view('filament-panels::components.topbar.database-notifications-trigger');
+    }
+
     #[On('confirmExchange')]
     public function confirmExchange($approverRole, $soldierAId, $soldierBId, $shiftAId, $shiftBId, $requesterId)
     {
@@ -827,6 +847,54 @@ class MyDatabaseNotifications extends DatabaseNotifications
         return User::whereHas('roles', function ($query) {
             $query->where('name', 'shifts-assignment');
         })->get();
+    }
+
+    #[On('confirmConstraint')]
+    public function confirmConstraint($user, $constraintName, $startDate, $endDate)
+    {
+        $this->confirmConstraintNotification($user, $constraintName, $startDate, $endDate);
+    }
+
+    protected function confirmConstraintNotification($user, $constraintName, $startDate, $endDate)
+    {
+        Constraint::create([
+            'constraint_type' => $constraintName,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'soldier_id' => User::find($user)->userable_id,
+        ]);
+        $this->sendNotification(
+            __('Constraint request approved'),
+            __('Commander approved create constraint', [
+                'name' => User::find($user)->displayName,
+                'constraintName' => $constraintName,
+                'startDate' => $startDate,
+                'endDate' => $endDate,
+            ]),
+            [],
+            User::find($user)
+        );
+    }
+
+    #[On('denyConstraint')]
+    public function denyConstraint($user, $constraintName, $startDate, $endDate)
+    {
+        $this->denyConstraintNotification($user, $constraintName, $startDate, $endDate);
+    }
+
+    protected function denyConstraintNotification($user, $constraintName, $startDate, $endDate)
+    {
+        $this->sendNotification(
+            __('Constraint request rejected'),
+            __('Commander deny create constraint', [
+                'name' => User::find($user)->displayName,
+                'constraintName' => $constraintName,
+                'startDate' => $startDate,
+                'endDate' => $endDate,
+            ]),
+            [],
+            User::find($user)
+        );
     }
 
     protected function sendNotification($title, $body, $actions, $user, $commonKey = null)

@@ -168,7 +168,7 @@ class NumberFilter extends Filter
                 $indicators = [];
 
                 if (! empty($data['range_between_from']) || ! empty($data['range_between_to'])) {
-                    $indicators[] = Indicator::make(__(':label '.__('Is between').' :fromValue '.__('And').' :toValue', [
+                    $indicators[] = Indicator::make(__('Range between', [
                         'label' => $this->getLabel(),
                         'fromValue' => $data['range_between_from'],
                         'toValue' => $data['range_between_to'],
@@ -178,7 +178,7 @@ class NumberFilter extends Filter
                 }
 
                 if (! empty($data['range_equal'])) {
-                    $indicators[] = Indicator::make(__(':label '.__('Is equal').' to :value', [
+                    $indicators[] = Indicator::make(__('Range equal', [
                         'label' => $this->getLabel(),
                         'value' => $data['range_equal'],
                     ]))
@@ -186,7 +186,7 @@ class NumberFilter extends Filter
                 }
 
                 if (! empty($data['range_not_equal'])) {
-                    $indicators[] = Indicator::make(__(':label '.__('Is not equal').' to :value', [
+                    $indicators[] = Indicator::make(__('Range not equal', [
                         'label' => $this->getLabel(),
                         'value' => $data['range_not_equal'],
                     ]))
@@ -194,7 +194,7 @@ class NumberFilter extends Filter
                 }
 
                 if (! empty($data['range_greater_than'])) {
-                    $indicators[] = Indicator::make(__(':label '.__('Is greater than').' :value', [
+                    $indicators[] = Indicator::make(__('Range greater than', [
                         'label' => $this->getLabel(),
                         'value' => $data['range_greater_than'],
                     ]))
@@ -202,7 +202,7 @@ class NumberFilter extends Filter
                 }
 
                 if (! empty($data['range_greater_than_equal'])) {
-                    $indicators[] = Indicator::make(__(':label '.__('Is greater than or equal').' :value', [
+                    $indicators[] = Indicator::make(__('Range greater than equal', [
                         'label' => $this->getLabel(),
                         'value' => $data['range_greater_than_equal'],
                     ]))
@@ -210,7 +210,7 @@ class NumberFilter extends Filter
                 }
 
                 if (! empty($data['range_less_than'])) {
-                    $indicators[] = Indicator::make(__(':label '.__('Is less than').' :value', [
+                    $indicators[] = Indicator::make(__('Range less than', [
                         'label' => $this->getLabel(),
                         'value' => $data['range_less_than'],
                     ]))
@@ -218,7 +218,7 @@ class NumberFilter extends Filter
                 }
 
                 if (! empty($data['range_less_than_equal'])) {
-                    $indicators[] = Indicator::make(__(':label '.__('Is less than or equal').' :value', [
+                    $indicators[] = Indicator::make(__('Range less than equal', [
                         'label' => $this->getLabel(),
                         'value' => $data['range_less_than_equal'],
                     ]))

@@ -25,9 +25,9 @@ class ChartWidget extends ApexChartWidget
             Radio::make('ChartType')
                 ->default('bar')
                 ->options([
-                    'line' => 'Line',
-                    'bar' => 'Col',
-                    'area' => 'Area',
+                    'line' => __('Line'),
+                    'bar' => __('Col'),
+                    'area' => __('Area'),
                 ])
                 ->inline(true)
                 ->label(__('Type')),
@@ -35,11 +35,11 @@ class ChartWidget extends ApexChartWidget
                 ->schema([
                     Toggle::make('ordersChartMarkers')
                         ->default(false)
-                        ->label('Markers'),
+                        ->label(__('Markers')),
 
                     Toggle::make('ordersChartGrid')
                         ->default(false)
-                        ->label('Grid'),
+                        ->label(__('Grid')),
                 ]),
             Select::make('data')
                 ->default('points')

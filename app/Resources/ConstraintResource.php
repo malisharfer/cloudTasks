@@ -34,7 +34,7 @@ class ConstraintResource extends Resource
 
     public static function canAccess(): bool
     {
-        return current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])) ? true : false;
+        return auth()->user()->getRoleNames()->count() > 1;
     }
 
     public static function canCreate(): bool

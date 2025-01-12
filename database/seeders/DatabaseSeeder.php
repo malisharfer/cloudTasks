@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
 
         // Soldiers
 
-        $user = User::factory()->create([
+        User::factory()->create([
             'first_name' => 'name',
             'last_name' => 'family',
             'password' => '1234567',
@@ -36,8 +36,19 @@ class DatabaseSeeder extends Seeder
                 'course' => fake()->numberBetween(0, 5),
                 'is_reservist' => false,
             ])->id,
-        ]);
-        $user->assignRole('manager');
+        ])->assignRole('manager');
+
+        User::factory()->create([
+            'first_name' => 'meshabetz mishmarot',
+            'userable_id' => Soldier::factory()->create([
+                'qualifications' => ['hatasa', 'tazpit', 'shmira'],
+                'capacity' => 6,
+                'max_weekends' => 6,
+                'max_shifts' => 7,
+                'max_nights' => 6,
+                'is_reservist' => false,
+            ])->id,
+        ])->assignRole(['soldier', 'shifts-assignment']);
 
         for ($i = 0; $i < 15; $i++) {
             $user = User::factory()->create([
@@ -51,7 +62,7 @@ class DatabaseSeeder extends Seeder
                     'course' => fake()->numberBetween(0, 5),
                     'is_reservist' => false,
                 ])->id,
-            ]);
+            ])->assignRole('soldier');
             $this->createConstraints($user->id);
         }
 
@@ -67,7 +78,7 @@ class DatabaseSeeder extends Seeder
                     'course' => fake()->numberBetween(0, 5),
                     'is_reservist' => false,
                 ])->id,
-            ]);
+            ])->assignRole('soldier');
             $this->createConstraints($user->id);
         }
 
@@ -83,7 +94,7 @@ class DatabaseSeeder extends Seeder
                     'course' => fake()->numberBetween(0, 5),
                     'is_reservist' => false,
                 ])->id,
-            ]);
+            ])->assignRole('soldier');
             $this->createConstraints($user->id);
         }
 
@@ -99,7 +110,7 @@ class DatabaseSeeder extends Seeder
                     'course' => fake()->numberBetween(0, 5),
                     'is_reservist' => false,
                 ])->id,
-            ]);
+            ])->assignRole('soldier');
             $this->createConstraints($user->id);
         }
 
@@ -115,7 +126,7 @@ class DatabaseSeeder extends Seeder
                     'course' => fake()->numberBetween(0, 5),
                     'is_reservist' => false,
                 ])->id,
-            ]);
+            ])->assignRole('soldier');
             $this->createConstraints($user->id);
         }
 
@@ -131,7 +142,7 @@ class DatabaseSeeder extends Seeder
                     'course' => fake()->numberBetween(0, 5),
                     'is_reservist' => false,
                 ])->id,
-            ]);
+            ])->assignRole('soldier');
             $this->createConstraints($user->id);
         }
 

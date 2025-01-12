@@ -11,6 +11,8 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Notifications\Actions as NotificationsService;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -59,6 +61,12 @@ class TeamResource extends Resource
                                 return [$user->userable_id => $user->displayName];
                             })
                         )
+                        ->live()
+                        ->afterStateUpdated(function ($state, Get $get, Set $set) {
+                            if (! empty($get('members')) && collect($get('members'))->contains($state)) {
+                                $set('members', collect($get('members'))->filter(fn ($member) => $member !== $state));
+                            }
+                        })
                         ->optionsLimit(Soldier::count())
                         ->searchable()
                         ->required(),
@@ -72,12 +80,15 @@ class TeamResource extends Resource
                     Select::make('members')
                         ->label(__('Members'))
                         ->options(
-                            fn () => Cache::remember('users', 30 * 60, function () {
+                            fn (Get $get) => Cache::remember('users', 30 * 60, function () {
                                 return User::all();
+                            })->filter(function ($user) use ($get): bool {
+                                return $user->userable_id !== (int) $get('commander_id');
                             })->mapWithKeys(function ($user) {
                                 return [$user->userable_id => $user->displayName];
                             })
                         )
+                        ->live()
                         ->optionsLimit(Soldier::count())
                         ->placeholder(__('Add a team member'))
                         ->multiple()
@@ -133,7 +144,7 @@ class TeamResource extends Resource
                                         ->filter(function ($user) use ($record) {
                                             $soldier_team_id = Soldier::where('id', $user->userable_id)->pluck('team_id');
 
-                                            return $soldier_team_id->first() !== $record->id;
+                                            return $soldier_team_id->first() !== $record->id && $record->commander_id !== $user->userable_id;
                                         })
                                         ->mapWithKeys(function ($user) {
                                             return [$user->userable_id => $user->displayName];

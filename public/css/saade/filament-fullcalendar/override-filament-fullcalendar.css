@@ -3,7 +3,7 @@
         overflow-x: auto;
     }
 
-    .fi-section-content-ctn:has(.fullcalendar) {
+    .fi-section-content-ctn:has(.filament-fullcalendar) {
         width: 650px;
     }
 
@@ -20,14 +20,33 @@
         line-height: 1.25rem;
         font-weight: 500;
     }
+
+    .fc-event-main .fc-event-time {
+        display: none;
+    }
+
+    .fc-event-title .fc-sticky {
+        display: none;
+    }
+}
+
+.dark .fc-day-past {
+    background-color: #201f1f;
+    color: #5d5c5c;
+    cursor: not-allowed;
+    --fc-highlight-color: #ae2828;
+}
+
+.dark .fc-day-sat{
+    background-color: #514a4a;
 }
 
 .fc-day-past {
     background-color:#ffffff ;
     color: #d0d0d0;
-    cursor: not-allowed;
     --fc-highlight-color: #ffffff;
 }
+
 .fc-day-sat{
     background-color: #f5f2f2;
 }

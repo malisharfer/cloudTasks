@@ -28,11 +28,6 @@ class AppServiceProvider extends ServiceProvider
         );
 
         FilamentView::registerRenderHook(
-            PanelsRenderHook::USER_MENU_BEFORE,
-            fn (): string => Blade::render('@livewire(\'my-database-notifications\')'),
-        );
-
-        FilamentView::registerRenderHook(
             PanelsRenderHook::SIDEBAR_FOOTER,
             fn (): string => Blade::render('picture'),
         );

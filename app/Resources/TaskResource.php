@@ -407,7 +407,7 @@ class TaskResource extends Resource
                 ->put('me', __('Me'))
                 ->toArray();
         }
-        if (current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])) !== 'manager' && current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])) !== 'shifts-assignment') {
+        if (! in_array('manager', auth()->user()->getRoleNames()->toArray()) && ! in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())) {
             return collect($options)
                 ->put('my_soldiers', __('My Soldiers'))
                 ->toArray();

@@ -53,7 +53,7 @@ class ProfileResource extends Resource
                             Select::make('qualifications')
                                 ->label(__('Qualifications'))
                                 ->placeholder(__('Select qualifications'))
-                                ->options(Task::all()->pluck('name', 'name')),
+                                ->options(Task::all()->pluck('type', 'type')),
                             DatePicker::make('enlist_date')
                                 ->label(__('Enlist date'))
                                 ->seconds(false),

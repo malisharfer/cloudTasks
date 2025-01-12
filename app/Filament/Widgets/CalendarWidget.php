@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\ConstraintType;
 use App\Exports\ShiftsExport;
 use App\Models\Constraint;
 use App\Models\Shift;
@@ -49,13 +50,9 @@ class CalendarWidget extends FullCalendarWidget
 
     public $startDate;
 
-    public $lastMonth;
-
     public function fetchEvents(array $fetchInfo): array
     {
         $this->currentMonth = Carbon::parse($fetchInfo['start'])->addDays(7)->year.'-'.Carbon::parse($fetchInfo['start'])->addDays(7)->month;
-
-        $this->headerActions();
 
         $events = $this->getEventsByRole();
 
@@ -113,7 +110,7 @@ class CalendarWidget extends FullCalendarWidget
         $role = current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']));
 
         return ($this->type === 'my_soldiers') ? match ($role) {
-            'manager','shifts-assignment' => $this->model::where('soldier_id', '!=', $current_user_id)
+            'manager', 'shifts-assignment' => $this->model::where('soldier_id', '!=', $current_user_id)
                 ->orWhereNull('soldier_id')
                 ->get(),
             'department-commander' => $this->model::where('soldier_id', '!=', $current_user_id)
@@ -148,10 +145,9 @@ class CalendarWidget extends FullCalendarWidget
     protected function headerActions(): array
     {
         $this->currentMonth ?? $this->currentMonth = Carbon::now()->year.'-'.Carbon::now()->month;
-        if ($this->lastFilterData != $this->filterData || $this->lastMonth !== $this->currentMonth) {
+        if ($this->lastFilterData != $this->filterData) {
             $this->refreshRecords();
             $this->lastFilterData = $this->filterData;
-            $this->lastMonth = $this->currentMonth;
         }
         $today = now()->startOfDay();
         $actions = [];
@@ -159,6 +155,22 @@ class CalendarWidget extends FullCalendarWidget
             if ($this->model === Constraint::class) {
                 return [
                     CreateAction::make()
+                        ->action(function (array $data) {
+                            if (
+                                ($data['constraint_type'] == ConstraintType::VACATION->value ||
+                                $data['constraint_type'] == ConstraintType::MEDICAL->value)
+                                && auth()->user()->getRoleNames()->count() === 1
+                            ) {
+                                Constraint::requestConstraint($data);
+                            } else {
+                                Constraint::create([
+                                    'constraint_type' => $data['constraint_type'],
+                                    'start_date' => $data['start_date'],
+                                    'end_date' => $data['end_date'],
+                                    'soldier_id' => auth()->user()->userable_id,
+                                ]);
+                            }
+                        })
                         ->mountUsing(function (Form $form, array $arguments) {
                             $form->fill([
                                 'start_date' => $arguments['start'] ?? null,
@@ -171,7 +183,7 @@ class CalendarWidget extends FullCalendarWidget
                             $startDate = Carbon::parse($arguments['start'] ?? null);
 
                             return $startDate->isBefore($today);
-                        })->extraAttributes(['class' => 'fullcalendar'])
+                        })
                         ->hidden($this->model === Shift::class && $this->type === 'my' && ! array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'shifts-assignment', 'department-commander', 'team-commander'])),
                 ];
             }
@@ -196,30 +208,29 @@ class CalendarWidget extends FullCalendarWidget
                                 ->action(fn () => $this->runEvents())
                                 ->label(__('Create shifts'))
                                 ->icon('heroicon-o-clipboard-document-check')
-                                ->visible(current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])) && Carbon::today()->startOfMonth() <= Carbon::parse($this->currentMonth))
-                                ->extraAttributes(['class' => 'fullcalendar']),
+                                ->visible(auth()->user()->getRoleNames()->count() > 1),
                             Action::make('Shifts assignment')
                                 ->action(fn () => $this->runAlgorithm())
                                 ->label(__('Shifts assignment'))
                                 ->icon('heroicon-o-play')
-                                ->visible(current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])) && Carbon::today()->startOfMonth() <= Carbon::parse($this->currentMonth))
-                                ->extraAttributes(['class' => 'fullcalendar']),
+                                ->visible(auth()->user()->getRoleNames()->count() > 1),
                             Action::make('Reset assignment')
                                 ->action(fn () => $this->resetShifts())
                                 ->label(__('Reset assignment'))
                                 ->icon('heroicon-o-arrow-path')
-                                ->visible(current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier'])) && Carbon::today()->startOfMonth() <= Carbon::parse($this->currentMonth))
-                                ->extraAttributes(['class' => 'fullcalendar']),
+                                ->visible(auth()->user()->getRoleNames()->count() > 1),
                         ]),
                     ];
                 }
             }
             if ($this->filter) {
-                return array_merge(self::activeFilters(), [
-                    self::resetFilters(),
-                    $this->model::getFilters($this)
-                        ->closeModalByClickingAway(false),
-                ]);
+                return array_merge(
+                    $actions ?? [],
+                    self::activeFilters(), [
+                        self::resetFilters(),
+                        $this->model::getFilters($this)
+                            ->closeModalByClickingAway(false),
+                    ]);
             }
 
             return array_merge(
@@ -269,8 +280,7 @@ class CalendarWidget extends FullCalendarWidget
                 $this->filter = false;
                 $this->filterData = [];
                 $this->refreshRecords();
-            })
-            ->extraAttributes(['class' => 'fullcalendar']);
+            });
     }
 
     protected function activeFilters()
@@ -281,12 +291,10 @@ class CalendarWidget extends FullCalendarWidget
             return Action::make($tag)
                 ->label(__($tag))
                 ->disabled()
-                ->badge()
-                ->extraAttributes(['class' => 'fullcalendar']);
+                ->badge();
         });
 
         return $tags->toArray();
-
     }
 
     public function getConfig(): array
@@ -307,7 +315,7 @@ class CalendarWidget extends FullCalendarWidget
             || ($this->model == Shift::class && $this->type == 'my' && array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'shifts-assignment', 'department-commander', 'team-commander']))
         ) {
             if ($this->model == Shift::class) {
-                return array_merge($basicActions, $changeAction);
+                return array_merge($changeAction, $basicActions);
             }
 
             return $basicActions;
@@ -333,6 +341,9 @@ class CalendarWidget extends FullCalendarWidget
                             'start_date' => $arguments['event']['start'] ?? $record->start_date,
                             'end_date' => $arguments['event']['end'] ?? $record->end_date,
                         ];
+                })
+                ->visible(function ($record) {
+                    return $record->start_date >= now();
                 })
                 ->modalCloseButton(false)
                 ->modalCancelAction(false)
@@ -372,6 +383,7 @@ class CalendarWidget extends FullCalendarWidget
                     ];
                 })
                 ->modalHeading(__('Edit').' '.$this->model::getTitle())
+                ->outlined()
                 ->action(function (array $data, array $arguments, Model $record): void {
                     $data = method_exists($this->model, 'setData') ? $data = $this->model::setData($record, $data) : $data;
                     if ($arguments['cancel'] ?? false) {
@@ -391,6 +403,7 @@ class CalendarWidget extends FullCalendarWidget
                     }
                 }),
             DeleteAction::make()
+                ->outlined()
                 ->label(__('Delete')),
         ];
     }
@@ -400,9 +413,11 @@ class CalendarWidget extends FullCalendarWidget
         return [
             Shift::exchangeAction()
                 ->visible(fn (): bool => $this->displayButton())
+                ->outlined()
                 ->cancelParentActions(),
             Shift::changeAction()
                 ->visible(fn (): bool => $this->displayButton())
+                ->outlined()
                 ->cancelParentActions(),
         ];
     }
