@@ -244,7 +244,7 @@ class Shift extends Model
                         ->icon('heroicon-s-arrow-path')
                         ->disabled(fn (): bool => ! session()->get('selected_shift'))
                         ->color('primary')
-                        ->visible(fn (): bool => ! auth()->user()->getRoleNames()->count() > 1),
+                        ->visible(fn (): bool => ! (auth()->user()->getRoleNames()->count() > 1)),
                     $action->makeExtraModalAction(__('Cancel'), ['cancel' => true]),
                 ];
             })
@@ -531,7 +531,7 @@ class Shift extends Model
                             ->icon('heroicon-o-arrow-uturn-up')
                             ->disabled(fn (): bool => ! session()->get('selected_soldier'))
                             ->color('primary')
-                            ->visible(fn (): bool => ! auth()->user()->getRoleNames()->count() > 1),
+                            ->visible(fn (): bool => ! (auth()->user()->getRoleNames()->count() > 1)),
                         $action->makeExtraModalAction(__('Cancel'), ['cancel' => true]),
                     ];
                 }
