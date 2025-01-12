@@ -36,8 +36,7 @@ class DatabaseSeeder extends Seeder
                 'course' => fake()->numberBetween(0, 5),
                 'is_reservist' => false,
             ])->id,
-        ])->assignRole('soldier')
-        ->assignRole('manager');
+        ])->assignRole(['soldier', 'manager']);
 
         User::factory()->create([
             'first_name' => 'meshabetz mishmarot',

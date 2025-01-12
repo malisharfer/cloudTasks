@@ -88,7 +88,9 @@ class SoldierResource extends Resource
                     ->default(
                         function ($record) {
                             $roles = Soldier::find($record->id)->user->getRoleNames();
-
+                            $roles->count() > 1 ? $roles->shift(1) : null;
+                            $roles->all();
+                            
                             return array_map(function ($role) {
                                 return match ($role) {
                                     'manager' => __('Manager'),
