@@ -167,7 +167,6 @@ class CalendarWidget extends FullCalendarWidget
                                     'constraint_type' => $data['constraint_type'],
                                     'start_date' => $data['start_date'],
                                     'end_date' => $data['end_date'],
-                                    'soldier_id' => auth()->user()->userable_id,
                                 ]);
                             }
                         })

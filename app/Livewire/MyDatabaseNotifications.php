@@ -857,12 +857,12 @@ class MyDatabaseNotifications extends DatabaseNotifications
 
     protected function confirmConstraintNotification($user, $constraintName, $startDate, $endDate)
     {
-        Constraint::create([
-            'constraint_type' => $constraintName,
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'soldier_id' => User::find($user)->userable_id,
-        ]);
+        $constraint = new Constraint;
+        $constraint->constraint_type = $constraintName;
+        $constraint->start_date = $startDate;
+        $constraint->end_date = $endDate;
+        $constraint->soldier_id = User::find($user)->userable_id;
+        $constraint->save();
         $this->sendNotification(
             __('Constraint request approved'),
             __('Commander approved create constraint', [
