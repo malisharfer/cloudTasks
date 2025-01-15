@@ -27,8 +27,9 @@
             '{{ asset('css/coolsam/flatpickr/flatpickr-css.css') }}'
         ]"
         ax-load-src="{{ asset('js/coolsam/flatpickr/components/flatpickr-component.js') }}"
-        >
+    >
         <x-filament::input.wrapper
+            :disabled="$isDisabled"
             :prefix-icon="$prefixIcon"
             class="fi-fo-text-input"
         >
@@ -36,6 +37,7 @@
                 :attributes="
                 \Filament\Support\prepare_inherited_attributes($getExtraInputAttributeBag())
                     ->merge([
+                        'disabled' => $isDisabled,
                         'id' => $id,
                         'x-ref' => 'picker',
                         'x-model' => 'state',

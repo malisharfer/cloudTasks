@@ -7,6 +7,7 @@ use App\Enums\RecurringType;
 use App\Filters\NumberFilter;
 use App\Models\Department;
 use App\Models\Shift;
+use App\Models\Soldier;
 use App\Models\Task;
 use App\Models\User;
 use App\Resources\TaskResource\Pages;
@@ -16,7 +17,6 @@ use Carbon\Carbon;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Fieldset;
-use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -84,19 +84,19 @@ class TaskResource extends Resource
             ->columns([
                 Split::make([
                     TextColumn::make('name')
-                        ->description(__('Name'), position: 'above')
+                        ->description(__('Name'), 'above')
                         ->size(TextColumnSize::Small),
                     TextColumn::make('type')
-                        ->description(__('Type'), position: 'above')
+                        ->description(__('Type'), 'above')
                         ->size(TextColumnSize::Small),
                     TextColumn::make('parallel_weight')
-                        ->description(__('Parallel weight'), position: 'above')
+                        ->description(__('Parallel weight'), 'above')
                         ->size(TextColumnSize::Small),
                 ])
                     ->extraAttributes(['style' => 'align-items: baseline;']),
                 Split::make([
                     TextColumn::make('department_name')
-                        ->description(__('Department'), position: 'above')
+                        ->description(__('Department'), 'above')
                         ->size(TextColumnSize::Small),
                     ColorColumn::make('color')
                         ->copyable()
@@ -106,25 +106,25 @@ class TaskResource extends Resource
                 Panel::make([
                     Stack::make([
                         TextColumn::make('start_hour')
-                            ->description(__('Start at'), position: 'above')
+                            ->description(__('Start at'), 'above')
                             ->size(TextColumnSize::Small)
                             ->extraAttributes(['style' => 'margin: 5px;']),
                         TextColumn::make('duration')
-                            ->description(__('Duration'), position: 'above')
+                            ->description(__('Duration'), 'above')
                             ->size(TextColumnSize::Small)
                             ->extraAttributes(['style' => 'margin: 5px;']),
                         TextColumn::make('is_alert')
-                            ->description(__('Alert'), position: 'above')
+                            ->description(__('Alert'), 'above')
                             ->extraAttributes(['style' => 'margin: 5px;'])
                             ->size(TextColumnSize::Small)
                             ->formatStateUsing(fn ($state) => $state ? __('Yes') : __('No')),
                         TextColumn::make('is_weekend')
-                            ->description(__('Is weekend'), position: 'above')
+                            ->description(__('Is weekend'), 'above')
                             ->size(TextColumnSize::Small)
                             ->extraAttributes(['style' => 'margin: 5px;'])
                             ->formatStateUsing(fn ($state) => $state ? __('Yes') : __('No')),
                         TextColumn::make('is_night')
-                            ->description(__('Is night'), position: 'above')
+                            ->description(__('Is night'), 'above')
                             ->size(TextColumnSize::Small)
                             ->extraAttributes(['style' => 'margin: 5px;'])
                             ->formatStateUsing(fn ($state) => $state ? __('Yes') : __('No')),
@@ -134,7 +134,7 @@ class TaskResource extends Resource
                         ->extraAttributes(['style' => 'display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: baseline; margin-bottom:10px']),
                     Stack::make([
                         TextColumn::make('recurring.type')
-                            ->description(__('Recurring type'), position: 'above')
+                            ->description(__('Recurring type'), 'above')
                             ->size(TextColumnSize::Small)
                             ->formatStateUsing(function ($state) {
                                 switch ($state) {
@@ -153,19 +153,19 @@ class TaskResource extends Resource
                                 }
                             }),
                         TextColumn::make('recurring.days_in_week')
-                            ->description(__('Days in week'), position: 'above')
+                            ->description(__('Days in week'), 'above')
                             ->size(TextColumnSize::Small)
                             ->extraAttributes(['style' => 'margin-left: 15px;']),
                         TextColumn::make('recurring.dates_in_month')
-                            ->description(__('Dates in month'), position: 'above')
+                            ->description(__('Dates in month'), 'above')
                             ->size(TextColumnSize::Small)
                             ->extraAttributes(['style' => 'margin-left: 15px;']),
                         TextColumn::make('recurring.start_date')
-                            ->description(__('Start date'), position: 'above')
+                            ->description(__('Start date'), 'above')
                             ->size(TextColumnSize::Small)
                             ->extraAttributes(['style' => 'margin-left: 15px;']),
                         TextColumn::make('recurring.end_date')
-                            ->description(__('End date'), position: 'above')
+                            ->description(__('End date'), 'above')
                             ->size(TextColumnSize::Small)
                             ->extraAttributes(['style' => 'margin-left: 15px;']),
                     ])
@@ -322,10 +322,10 @@ class TaskResource extends Resource
             Fieldset::make(__('Dates'))
                 ->schema([
                     DatePicker::make('recurring.start_date')
-                        ->label(label: __('Start date'))
+                        ->label(__('Start date'))
                         ->required(),
                     DatePicker::make('recurring.end_date')
-                        ->label(label: __('End date'))
+                        ->label(__('End date'))
                         ->after('recurring.start_date')
                         ->required(),
                 ])->visible(fn (Get $get): bool => $get('recurring.type') === 'Daily range'),
@@ -342,38 +342,42 @@ class TaskResource extends Resource
     public static function assignSoldier(): array
     {
         return [
+            Placeholder::make('')
+                ->content(fn ($record) => $record['recurring']['type'] === RecurringType::ONETIME->value ?
+                    __('This task is assigned to', ['soldierName' => Soldier::find(Shift::where('task_id', $record->id)->pluck('soldier_id')->first())->user->displayName]) : null)
+                ->extraAttributes(['style' => 'font-size: 15px'])
+                ->live()
+                ->hiddenOn('create')
+                ->visible(fn ($record) => $record['recurring']['type'] === RecurringType::ONETIME->value && Shift::where('task_id', $record->id)->pluck('soldier_id')->first() !== null),
             Fieldset::make(__('Soldier assignment'))
                 ->schema([
-                    Grid::make()
-                        ->schema([
-                            ToggleButtons::make('soldier_type')
-                                ->label(__('Soldier type'))
-                                ->reactive()
-                                ->live()
-                                ->inline()
-                                ->options(
-                                    fn (Get $get) => self::getOptions($get)
-                                )
-                                ->afterStateUpdated(fn (callable $set) => $set('soldier_id', null)),
-                            Select::make('soldier_id')
-                                ->label(__('Assign soldier'))
-                                ->options(
-                                    function (Get $get) {
-                                        return self::getSoldiers($get);
-                                    }
-                                )
-                                ->default(null)
-                                ->placeholder(fn (Get $get) => self::getSoldiers($get)->isEmpty() ? __('No suitable soldiers') : __('Select a soldier'))
-                                ->visible(
-                                    fn (Get $get): bool => $get('soldier_type')
-                                    && $get('soldier_type') != 'me'
-                                ),
-                            Placeholder::make('')
-                                ->content(__('Assigning the soldier to this shift is your sole responsibility!'))
-                                ->extraAttributes(['style' => 'color: red; font-family: Arial, Helvetica, sans-serif; font-size: 20px'])
-                                ->live()
-                                ->visible(fn (Get $get) => $get('soldier_type') === 'all'),
-                        ]),
+                    ToggleButtons::make('soldier_type')
+                        ->label(__('Soldier type'))
+                        ->reactive()
+                        ->live()
+                        ->inline()
+                        ->options(
+                            fn (Get $get) => self::getOptions($get)
+                        )
+                        ->afterStateUpdated(fn (callable $set) => $set('soldier_id', null)),
+                    Select::make('soldier_id')
+                        ->label(__('Assign soldier'))
+                        ->options(
+                            function (Get $get) {
+                                return self::getSoldiers($get);
+                            }
+                        )
+                        ->default(null)
+                        ->placeholder(fn (Get $get) => self::getSoldiers($get)->isEmpty() ? __('No suitable soldiers') : __('Select a soldier'))
+                        ->visible(
+                            fn (Get $get): bool => $get('soldier_type')
+                            && $get('soldier_type') != 'me'
+                        ),
+                    Placeholder::make('')
+                        ->content(__('Assigning the soldier to this shift is your sole responsibility!'))
+                        ->extraAttributes(['style' => 'color: red; font-family: Arial, Helvetica, sans-serif; font-size: 20px'])
+                        ->live()
+                        ->visible(fn (Get $get) => $get('soldier_type') === 'all'),
                 ]),
         ];
     }

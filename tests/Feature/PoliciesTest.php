@@ -10,10 +10,10 @@ it('allows admin to view soldiers', function () {
         ->assertStatus(200);
 });
 
-it('does not allow team commander to view teams', function () {
+it('allows team commander to see the teams under him', function () {
     $this
         ->seed(PermissionSeeder::class)
         ->asUser('team-commander')
         ->get('/teams')
-        ->assertStatus(403);
+        ->assertStatus(200);
 });

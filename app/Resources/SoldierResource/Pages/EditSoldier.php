@@ -12,7 +12,13 @@ class EditSoldier extends EditRecord
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
-        $data['shifts_assignment'] = User::where('userable_id', $this->record->id)?->first() ? in_array('shifts-assignment', User::where('userable_id', $this->record->id)->first()->getRoleNames()->toArray()) : false;
+        $data['shifts_assignment'] = User::where('userable_id', $this->record->id)?->first()
+        ? in_array('shifts-assignment', User::where('userable_id', $this->record->id)
+            ->first()
+            ->getRoleNames()
+            ->toArray())
+        : false;
+
         return $data;
     }
 

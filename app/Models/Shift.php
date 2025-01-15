@@ -70,12 +70,12 @@ class Shift extends Model
         return [
             Section::make([
                 Placeholder::make('')
-                    ->content(content: fn (Shift $shift) => $shift->task_name)
+                    ->content(fn (Shift $shift) => $shift->task_name)
                     ->inlineLabel(),
                 Grid::make()
                     ->schema([
                         ToggleButtons::make('soldier_type')
-                            ->label(__('Soldier'))
+                            ->label(__('Soldier type'))
                             ->reactive()
                             ->live()
                             ->inline()
@@ -84,7 +84,7 @@ class Shift extends Model
                             )
                             ->afterStateUpdated(fn (callable $set) => $set('soldier_id', null)),
                         Select::make('soldier_id')
-                            ->label(__('Soldier assignment'))
+                            ->label(__('Soldier'))
                             ->options(
                                 function (?Shift $shift, Get $get) {
                                     if ($get('soldier_type') === 'all') {
@@ -101,7 +101,13 @@ class Shift extends Model
                                 }
                             )
                             ->default(null)
-                            ->placeholder(__('Select a soldier'))
+                            ->placeholder(function (?Shift $shift, Get $get) {
+                                $manual_assignment = new ManualAssignment($shift, $get('soldier_type'));
+
+                                return ! $manual_assignment->getSoldiers() ?
+                                      __('No suitable soldiers') :
+                                  __('Select a soldier');
+                            })
                             ->visible(
                                 fn (Get $get): bool => $get('soldier_type') != null
                                 && $get('soldier_type') != 'me'
@@ -117,7 +123,7 @@ class Shift extends Model
                         && Carbon::parse($record->start_date)->isAfter(now())
                         && ! $record->soldier_id
                         && \Str::contains($_SERVER['HTTP_REFERER'], 'my-soldiers-shifts')
-                        && current(array: array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']))
+                        && current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']))
                     )
                     ->hiddenOn('view'),
                 Toggle::make('is_weekend')
@@ -251,7 +257,8 @@ class Shift extends Model
             ->action(function (array $data, array $arguments, Model $record, Component $livewire): void {
                 session()->put('selected_shift', false);
                 if ($arguments['exchange'] ?? false) {
-                    collect($arguments['role'])->contains('shifts-assignment') ?
+                    collect($arguments['role'])->contains('shifts-assignment')
+                    || collect($arguments['role'])->contains('manager') ?
                         self::shiftsAssignmentExchange($record, Shift::find($data['selected_shift'])) :
                         self::commanderExchange($record, Shift::find($data['selected_shift']));
                     $livewire->dispatch('filament-fullcalendar--refresh');
@@ -262,6 +269,13 @@ class Shift extends Model
                 }
                 if ($arguments['cancel'] ?? false) {
                     $livewire->dispatch('filament-fullcalendar--refresh');
+                }
+            })
+            ->hidden(function ($record) {
+                if ($record->soldier_id) {
+                    $changeAssignment = new ChangeAssignment($record);
+
+                    return $changeAssignment->getMatchingShifts()->isEmpty();
                 }
             });
     }
@@ -539,7 +553,8 @@ class Shift extends Model
             ->action(function (array $data, array $arguments, Model $record, Component $livewire): void {
                 session()->put('selected_soldier', false);
                 if ($arguments['change'] ?? false) {
-                    collect($arguments['role'])->contains('shifts-assignment') ?
+                    collect($arguments['role'])->contains('shifts-assignment')
+                    || collect($arguments['role'])->contains('manager') ?
                         self::shiftsAssignmentChange($record, $data['soldier']) :
                         self::commanderChange($record, $data['soldier']);
 
@@ -743,41 +758,48 @@ class Shift extends Model
                 $soldiersShifts = array_filter($shifts->toArray(), fn ($shift) => $shift['soldier_id'] !== null);
 
                 return [
+                    section::make([
+                        Toggle::make('unassigned_shifts')
+                            ->label(__('Unassigned shifts'))
+                            ->live()
+                            ->visible(fn (Get $get) => ! $get('reservists')),
+                        Toggle::make('reservists')
+                            ->label(__('Reservists'))
+                            ->live()
+                            ->visible(fn (Get $get) => ! $get('unassigned_shifts')),
+                    ])->columns(2),
                     Select::make('soldier_id')
                         ->label(__('Soldier'))
                         ->options(fn (): array => collect($soldiersShifts)->mapWithKeys(fn ($shift) => [
                             $shift['soldier_id'] => User::where('userable_id', $shift['soldier_id'])
                                 ->first()?->displayName,
                         ])->toArray())
-                        ->multiple(),
+                        ->multiple()
+                        ->hidden(fn (Get $get) => $get('unassigned_shifts') || $get('reservists')),
                     Select::make('type')
                         ->label(__('Type'))
                         ->options(Task::all()->pluck('type', 'id')->unique())
-                        ->multiple(),
+                        ->multiple()
+                        ->hidden(fn (Get $get) => $get('unassigned_shifts') || $get('reservists')),
                 ];
             })
-            ->modalSubmitAction(false)
             ->modalCancelAction(false)
-            ->extraModalFooterActions(fn (Action $action): array => [
-                $action->makeModalSubmitAction('Filter', arguments: ['Filter' => true])->color('success')->label(__('Filter')),
-                $action->makeModalSubmitAction('Unassigned shifts', arguments: ['UnassignedShifts' => true])->color('primary')->label(__('Unassigned shifts')),
-            ])
-            ->action(function (array $data, array $arguments) use ($calendar) {
-                $data['type'] = Task::whereIn(
-                    'type',
-                    Task::whereIn('id', $data['type'])
-                        ->pluck('type')
-                )
-                    ->pluck('id')
-                    ->toArray();
-                if ($arguments['Filter'] ?? false) {
-                    $calendar->filterData = $data;
-                    $calendar->filter = ! ($data['soldier_id'] === [] && $data['type'] === []);
-                    $calendar->refreshRecords();
-                }
-                if ($arguments['UnassignedShifts'] ?? false) {
-                    $calendar->filterData = 'UnassignedShifts';
+            ->modalSubmitActionLabel(__('Filter'))
+            ->action(function (array $data) use ($calendar) {
+                if (count($data) == 1) {
+                    $calendar->filterData = key($data) == 'unassigned_shifts' ? __('Unassigned shifts') : __('Reservists');
                     $calendar->filter = true;
+                    $calendar->refreshRecords();
+                } else {
+                    $data['type'] = Task::whereIn(
+                        'type',
+                        Task::whereIn('id', $data['type'])
+                            ->pluck('type')
+                    )
+                        ->pluck('id')
+                        ->toArray();
+                    $calendar->filterData = $data;
+                    $calendar->filter = ! (count($data) == 4 && ($data['soldier_id'] === [] && $data['type'] === []));
                     $calendar->refreshRecords();
                 }
             });
@@ -786,8 +808,10 @@ class Shift extends Model
     public static function filter($events, $filterData)
     {
         return $events
-            ->when($filterData === 'UnassignedShifts', fn ($query) => $query
+            ->when($filterData === __('Unassigned shifts'), fn ($query) => $query
                 ->where('soldier_id', null))
+            ->when($filterData === __('Reservists'), fn ($query) => $query
+                ->whereIn('soldier_id', Soldier::where('is_reservist', true)->pluck('id')->toArray()))
             ->when(! empty($filterData['soldier_id']), fn ($query) => $query
                 ->whereIn('soldier_id', $filterData['soldier_id']))
             ->when(! empty($filterData['type']), fn ($query) => $query
@@ -798,8 +822,8 @@ class Shift extends Model
     public static function activeFilters($calendar)
     {
         if ($calendar->filter) {
-            return $calendar->filterData === 'UnassignedShifts'
-                ? ['Unassigned shifts']
+            return gettype($calendar->filterData) == 'string'
+                ? $calendar->filterData
                 : collect($calendar->filterData['soldier_id'])
                     ->map(function ($soldier_id) {
                         return User::where('userable_id', $soldier_id)->first()->displayName ?? null;

@@ -42,7 +42,7 @@ class Constraint extends Model
     {
         return [
             Placeholder::make('')
-                ->content(content: fn (Constraint $constraint) => $constraint->soldier_name)
+                ->content(fn (Constraint $constraint) => $constraint->soldier_name)
                 ->inlineLabel(),
             ToggleButtons::make('constraint_type')
                 ->required()
@@ -62,6 +62,10 @@ class Constraint extends Model
                 ->required(),
             Hidden::make('end_date')
                 ->required(),
+            Placeholder::make('')
+                ->content(__('Please note! This constraint will only be approved for you after approval from the commander.'))
+                ->visible(fn (Get $get) => $get('constraint_type') == 'Vacation' || $get('constraint_type') == 'Medical')
+                ->extraAttributes(['style' => 'color: red; font-family: Arial, Helvetica, sans-serif; font-size: 20px']),
             Grid::make()
                 ->visible(fn ($get) => in_array($get('constraint_type'), ['Medical', 'Vacation', 'School', 'Not task', 'Low priority not task']))
                 ->schema([
@@ -137,8 +141,8 @@ class Constraint extends Model
         }
         $usedCounts = self::getUsedCountsForCurrentMonth($startDate, $endDate);
         $limits = Soldier::where('id', auth()->user()->userable_id)->pluck('constraints_limit')->first()
-        ? Soldier::where('id', auth()->user()->userable_id)->pluck('constraints_limit')->first()
-        : ConstraintType::getLimit();
+            ? Soldier::where('id', auth()->user()->userable_id)->pluck('constraints_limit')->first()
+            : ConstraintType::getLimit();
         $constraintsWithinLimit = [];
 
         $queryConstraints = Constraint::where('soldier_id', auth()->user()->userable_id)

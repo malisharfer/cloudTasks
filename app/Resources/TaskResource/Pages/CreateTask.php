@@ -3,7 +3,6 @@
 namespace App\Resources\TaskResource\Pages;
 
 use App\Models\Shift;
-use App\Models\Soldier;
 use App\Models\Task;
 use App\Resources\TaskResource;
 use App\Services\RecurringEvents;
@@ -33,8 +32,8 @@ class CreateTask extends CreateRecord
             return;
         }
         $shift_for_assignment = Shift::latest()->first();
-        $soldier = ($this->data['soldier_type'] == 'me') ? Soldier::find(auth()->user()->userable_id) : Soldier::find($this->data['soldier_id']);
-        $shift_for_assignment->soldier_id = $soldier->id;
+        $soldierId = ($this->data['soldier_type'] === 'me') ? auth()->user()->userable_id : $this->data['soldier_id'];
+        $shift_for_assignment->soldier_id = $soldierId;
         $shift_for_assignment->save();
     }
 
@@ -69,8 +68,8 @@ class CreateTask extends CreateRecord
                 ->schema([
                     Section::make()->schema(TaskResource::additionalDetails())->columns(),
                 ]),
-            Step::make(label: 'Assign_soldier')
-                ->label(__('Assign soldier'))
+            Step::make('Assign_soldier')
+                ->label(__('Soldier assignment'))
                 ->schema([
                     Section::make()->schema(TaskResource::assignSoldier())->columns(),
                 ])

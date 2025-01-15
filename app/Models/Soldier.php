@@ -29,6 +29,7 @@ class Soldier extends Model
         'is_mabat',
         'qualifications',
         'is_reservist',
+        'last_reserve_dates',
         'reserve_dates',
         'next_reserve_dates',
         'constraints_limit',
@@ -46,6 +47,7 @@ class Soldier extends Model
         'max_weekends' => Integer::class,
         'qualifications' => 'array',
         'is_reservist' => 'boolean',
+        'last_reserve_dates' => 'array',
         'reserve_dates' => 'array',
         'next_reserve_dates' => 'array',
         'constraints_limit' => 'array',
@@ -79,6 +81,16 @@ class Soldier extends Model
     public function constraints(): HasMany
     {
         return $this->hasMany(Constraint::class);
+    }
+
+    public function updateReserveDays()
+    {
+        Soldier::where('is_reservist', true)->get()->map(function ($soldier) {
+            $soldier['last_reserve_dates'] = array_merge($soldier['last_reserve_dates'], $soldier['reserve_dates']);
+            $soldier['reserve_dates'] = $soldier['next_reserve_dates'];
+            $soldier['next_reserve_dates'] = [];
+            $soldier->save();
+        });
     }
 
     public static function boot()

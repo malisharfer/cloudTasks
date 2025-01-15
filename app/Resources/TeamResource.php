@@ -185,7 +185,8 @@ class TeamResource extends Resource
             ->persistent()
             ->body(__('The commander you selected is already registered as a commander. His selection will leave his :type without a commander. Are you sure?'))
             ->actions([
-                NotificationsService\Action::make(__('View ').($teams->isNotEmpty() ? __('Team') : __('Department')))
+                NotificationsService\Action::make('view')
+                    ->label(__('View ').($teams->isNotEmpty() ? __('Team') : __('Department')))
                     ->button()
                     ->url(
                         fn () => $teams->isNotEmpty() ?
@@ -194,7 +195,7 @@ class TeamResource extends Resource
                     ),
                 NotificationsService\Action::make(__('Confirm'))
                     ->button()
-                    ->dispatch('confirmCreate', data: ['teams' => $teams, 'departments' => $departments]),
+                    ->dispatch('confirmCreate', ['teams' => $teams, 'departments' => $departments]),
                 NotificationsService\Action::make(__('Cancel'))
                     ->button()
                     ->close(),
@@ -232,6 +233,9 @@ class TeamResource extends Resource
     {
         if (auth()->user()->hasRole('manager') || auth()->user()->hasRole('shifts-assignment')) {
             return parent::getEloquentQuery();
+        }
+        if (auth()->user()->hasRole('team-commander')) {
+            return parent::getEloquentQuery()->where('commander_id', auth()->user()->userable_id);
         }
 
         return parent::getEloquentQuery()->where('department_id', Department::select('id')->where('commander_id', auth()->user()->userable_id));

@@ -22,7 +22,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Form;
-use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\ActionGroup;
@@ -53,7 +52,6 @@ class SoldierResource extends Resource
             ->schema([
                 Section::make()->schema([self::personalDetails()])->columns(),
                 Section::make()->schema(self::soldierDetails())->columns(),
-                Section::make()->schema(self::reserveDays())->columns()->visible(fn (Get $get) => $get('is_reservist')),
                 Section::make()->schema(self::constraints())->columns(),
                 Section::make()->schema(self::constraintsLimit())->columns(),
             ]);
@@ -90,7 +88,7 @@ class SoldierResource extends Resource
                             $roles = Soldier::find($record->id)->user->getRoleNames();
                             $roles->count() > 1 ? $roles->shift(1) : null;
                             $roles->all();
-                            
+
                             return array_map(function ($role) {
                                 return match ($role) {
                                     'manager' => __('Manager'),
@@ -105,7 +103,7 @@ class SoldierResource extends Resource
                     ),
                 TextColumn::make('teamSoldier')
                     ->label(__('Team'))
-                    ->visible(collect(auth()->user()->getRoleNames())->intersect(['manager', 'department-commander'])->isNotEmpty())
+                    ->visible(collect(auth()->user()->getRoleNames())->intersect(['manager', 'shifts-assignment', 'department-commander'])->isNotEmpty())
                     ->placeholder(__('Not associated'))
 
                     ->default(function ($record) {
@@ -235,6 +233,18 @@ class SoldierResource extends Resource
                         ->color('primary')
                         ->form(function ($record) {
                             return [
+                                Flatpickr::make('last_reserve_dates')
+                                    ->label(__('Last reserve dates'))
+                                    ->multiple()
+                                    ->default($record->last_reserve_dates)
+                                    ->minDate($record->enlist_date)
+                                    ->maxDate(now()->subMonth()->endOfMonth()),
+                                Flatpickr::make('reserve_dates')
+                                    ->label(__('Reserve dates'))
+                                    ->multiple()
+                                    ->default($record->reserve_dates)
+                                    ->minDate(now()->startOfMonth())
+                                    ->maxDate(now()->endOfMonth()),
                                 Flatpickr::make('next_reserve_dates')
                                     ->label(__('Next reserve dates'))
                                     ->multiple()
@@ -244,6 +254,8 @@ class SoldierResource extends Resource
                             ];
                         })
                         ->action(function (Soldier $record, array $data): void {
+                            $record->last_reserve_dates = $data['last_reserve_dates'];
+                            $record->reserve_dates = $data['reserve_dates'];
                             $record->next_reserve_dates = $data['next_reserve_dates'];
                             $record->save();
                         })
@@ -253,6 +265,10 @@ class SoldierResource extends Resource
                         ->icon('heroicon-o-document-duplicate')
                         ->color('success')
                         ->after(function (Soldier $replica): void {
+                            $replica['last_reserve_dates'] = [];
+                            $replica['reserve_dates'] = [];
+                            $replica['next_reserve_dates'] = [];
+                            $replica->save();
                             redirect()->route('filament.app.resources.soldiers.edit', ['record' => $replica->id]);
                         })
                         ->successNotification(null)
@@ -339,25 +355,12 @@ class SoldierResource extends Resource
                 ->required(),
             Section::make([
                 Toggle::make('is_reservist')
-                    ->label(__('Reservist'))
-                    ->live(),
+                    ->label(__('Reservist')),
                 Toggle::make('is_permanent')
                     ->label(__('Is permanent')),
                 Toggle::make('has_exemption')
                     ->label(__('Exemption')),
             ])->columns(3),
-        ];
-    }
-
-    public static function reserveDays(): array
-    {
-        return [
-            Flatpickr::make('reserve_dates')
-                ->label(__('Reserve dates'))
-                ->multiple()
-                ->minDate(today())
-                ->maxDate(today()->endOfMonth())
-                ->columnSpan('full'),
         ];
     }
 

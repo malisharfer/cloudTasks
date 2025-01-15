@@ -34,6 +34,6 @@ class AppServiceProvider extends ServiceProvider
 
         FilamentAsset::register([
             Css::make('custom-fullcalendar', asset('css/saade/filament-fullcalendar/override-filament-fullcalendar.css')),
-        ], package: 'saade/filament-fullcalendar');
+        ], 'saade/filament-fullcalendar');
     }
 }

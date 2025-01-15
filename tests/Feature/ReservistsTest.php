@@ -3,7 +3,6 @@
 
 use App\Models\Soldier;
 use App\Models\User;
-use App\Resources\SoldierResource\Pages\CreateSoldier;
 use App\Resources\SoldierResource\Pages\ListSoldiers;
 use Database\Seeders\PermissionSeeder;
 
@@ -20,12 +19,6 @@ it('hiding the update of reserve dates if the soldier is not a reserve', functio
     User::factory()->create(['userable_id' => $soldier->id]);
     livewire(ListSoldiers::class)
         ->assertTableActionHidden('update reserve days', $soldier);
-});
-
-it('hidden `reserve_dates` if not a reservist', function () {
-    livewire(CreateSoldier::class)
-        ->fillForm(['is_reservist' => false])
-        ->assertFormFieldIsHidden('reserve_dates');
 });
 
 it('can filter soldiers by `is_reservist`', function () {

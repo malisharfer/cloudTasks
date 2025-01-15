@@ -78,7 +78,7 @@ class DepartmentResource extends Resource
                     ->formatStateUsing(function ($state) {
                         return $state->last_name.' '.$state->first_name;
                     })
-                    ->label(__(key: 'Commander'))
+                    ->label(__('Commander'))
                     ->searchable()
                     ->sortable(),
             ])
@@ -125,7 +125,8 @@ class DepartmentResource extends Resource
             ? __('You did not choose a commander. With your approval, you leave the department without a commander. Are you sure?', ['type' => $type])
             : __('The commander you selected is already registered as a commander. His selection will leave his :type without a commander. Are you sure?', ['type' => $type]);
         $actions = array_filter([
-            ! $isCommanderNull ? NotificationsService\Action::make($teams->isNotEmpty() ? __('View team') : __('View department'))
+            ! $isCommanderNull ? NotificationsService\Action::make('view')
+                ->label(__('View ').($teams->isNotEmpty() ? __('Team') : __('Department')))
                 ->button()
                 ->url(
                     fn () => $teams->isNotEmpty()

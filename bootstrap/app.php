@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Soldier;
 use App\Services\Algorithm;
 use App\Services\DailyShiftNotification;
 use App\Services\RecurringEvents;
@@ -9,7 +10,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
-return Application::configure(basePath: dirname(__DIR__))
+return Application::configure(dirname(__DIR__))
     ->withRouting(
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
@@ -19,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->call(fn () => app(Algorithm::class)->run())->monthlyOn(20, '10:00');
         $schedule->call(fn () => app(ShiftAssignmentNotification::class)->sendNotification())->monthlyOn(1, '08:00');
         $schedule->call(fn () => app(DailyShiftNotification::class)->beforeShift())->dailyAt('06:00');
+        $schedule->call(fn () => app(Soldier::class)->updateReserveDays())->monthlyOn(1, '00:00');
     })
     ->withMiddleware(function (Middleware $middleware) {})
     ->withExceptions(function (Exceptions $exceptions) {})->create();

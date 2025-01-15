@@ -158,7 +158,7 @@ class CalendarWidget extends FullCalendarWidget
                         ->action(function (array $data) {
                             if (
                                 ($data['constraint_type'] == ConstraintType::VACATION->value ||
-                                $data['constraint_type'] == ConstraintType::MEDICAL->value)
+                                    $data['constraint_type'] == ConstraintType::MEDICAL->value)
                                 && auth()->user()->getRoleNames()->count() === 1
                             ) {
                                 Constraint::requestConstraint($data);
@@ -206,30 +206,31 @@ class CalendarWidget extends FullCalendarWidget
                             Action::make('Create shifts')
                                 ->action(fn () => $this->runEvents())
                                 ->label(__('Create shifts'))
-                                ->icon('heroicon-o-clipboard-document-check')
-                                ->visible(auth()->user()->getRoleNames()->count() > 1),
+                                ->icon('heroicon-o-clipboard-document-check'),
                             Action::make('Shifts assignment')
                                 ->action(fn () => $this->runAlgorithm())
                                 ->label(__('Shifts assignment'))
-                                ->icon('heroicon-o-play')
-                                ->visible(auth()->user()->getRoleNames()->count() > 1),
+                                ->icon('heroicon-o-play'),
                             Action::make('Reset assignment')
                                 ->action(fn () => $this->resetShifts())
                                 ->label(__('Reset assignment'))
-                                ->icon('heroicon-o-arrow-path')
-                                ->visible(auth()->user()->getRoleNames()->count() > 1),
-                        ]),
+                                ->icon('heroicon-o-arrow-path'),
+                        ])
+                            ->visible(in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())
+                                || in_array('manager', auth()->user()->getRoleNames()->toArray())),
                     ];
                 }
             }
             if ($this->filter) {
                 return array_merge(
                     $actions ?? [],
-                    self::activeFilters(), [
+                    self::activeFilters(),
+                    [
                         self::resetFilters(),
                         $this->model::getFilters($this)
                             ->closeModalByClickingAway(false),
-                    ]);
+                    ]
+                );
             }
 
             return array_merge(
@@ -341,8 +342,14 @@ class CalendarWidget extends FullCalendarWidget
                             'end_date' => $arguments['event']['end'] ?? $record->end_date,
                         ];
                 })
-                ->visible(function ($record) {
-                    return $record->start_date >= now();
+                ->visible(function ($arguments) {
+                    if (! empty($arguments['event']) && $arguments['event']['start'] < now()) {
+                        $this->refreshRecords();
+
+                        return false;
+                    }
+
+                    return true;
                 })
                 ->modalCloseButton(false)
                 ->modalCancelAction(false)

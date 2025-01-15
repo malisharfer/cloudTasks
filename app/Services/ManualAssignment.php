@@ -61,7 +61,7 @@ class ManualAssignment
         $this->soldiers = $this->soldiers
             ->filter(function ($user) {
                 $currentUserId = auth()->user()->userable_id;
-                $role = current(array: array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']));
+                $role = current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']));
                 $soldier = $this->getSoldierBy($user->userable_id);
 
                 return match ($role) {

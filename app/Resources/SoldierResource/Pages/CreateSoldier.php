@@ -6,7 +6,6 @@ use App\Models\User;
 use App\Resources\SoldierResource;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Wizard\Step;
-use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Resources\Pages\CreateRecord\Concerns\HasWizard;
@@ -57,12 +56,6 @@ class CreateSoldier extends CreateRecord
                 ->label(__('Soldier details'))
                 ->schema([
                     Section::make()->schema(SoldierResource::soldierDetails())->columns(),
-                ]),
-            Step::make('Reserve days')
-                ->label(__('Reserve dates'))
-                ->visible(fn (Get $get) => $get('is_reservist'))
-                ->schema([
-                    Section::make()->schema(SoldierResource::reserveDays())->columns(),
                 ]),
             Step::make('Additional settings')
                 ->label(__('Additional settings'))

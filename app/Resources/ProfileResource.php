@@ -48,16 +48,43 @@ class ProfileResource extends Resource
                             ->schema([
                                 TextInput::make('first_name')->label(__('First name'))->required(),
                                 TextInput::make('last_name')->label(__('Last name'))->required(),
+                                DatePicker::make('enlist_date')
+                                    ->label(__('Enlist date'))
+                                    ->seconds(false),
                             ]),
                         Section::make([
                             Select::make('qualifications')
                                 ->label(__('Qualifications'))
                                 ->placeholder(__('Select qualifications'))
                                 ->options(Task::all()->pluck('type', 'type')),
-                            DatePicker::make('enlist_date')
-                                ->label(__('Enlist date'))
-                                ->seconds(false),
-                        ])->columns(2),
+                            TextInput::make('capacity')
+                                ->numeric()
+                                ->step(0.25)
+                                ->minValue(0)
+                                ->label(__('Capacity'))
+                                ->required(),
+                            TextInput::make('max_shifts')
+                                ->label(__('Max shifts'))
+                                ->numeric()
+                                ->step(1)
+                                ->minValue(0)
+                                ->required()
+                                ->default(0),
+                            TextInput::make('max_nights')
+                                ->label(__('Max nights'))
+                                ->numeric()
+                                ->step(0.25)
+                                ->minValue(0)
+                                ->required()
+                                ->default(0),
+                            TextInput::make('max_weekends')
+                                ->label(__('Max weekends'))
+                                ->numeric()
+                                ->step(0.25)
+                                ->minValue(0)
+                                ->required()
+                                ->default(0),
+                        ])->columns(2)->visible(fn () => auth()->user()->getRoleNames()->count() > 1),
                         Section::make([
                             Toggle::make('is_permanent')->Label(__('Is permanent')),
                             Toggle::make('has_exemption')->label(__('Exemption')),
@@ -86,16 +113,16 @@ class ProfileResource extends Resource
                             ->label(__('Full name'))
                             ->formatStateUsing(function ($record) {
                                 return $record->user->last_name.' '.$record->user->first_name;
-                            })->weight(weight: FontWeight::SemiBold)->description(__('Full name'), position: 'above')->size(TextColumnSize::Large),
-                        TextColumn::make('enlist_date')->weight(weight: FontWeight::SemiBold)->description(__('Enlist date'), position: 'above')->size(TextColumnSize::Large)->date(),
-                        TextColumn::make('course')->weight(weight: FontWeight::SemiBold)->description(__('Course'), position: 'above')->size(TextColumnSize::Large),
-                        TextColumn::make('max_shifts')->weight(weight: FontWeight::SemiBold)->description(__('Max shifts'), position: 'above')->size(TextColumnSize::Large),
+                            })->weight(FontWeight::SemiBold)->description(__('Full name'), 'above')->size(TextColumnSize::Large),
+                        TextColumn::make('enlist_date')->weight(FontWeight::SemiBold)->description(__('Enlist date'), 'above')->size(TextColumnSize::Large)->date(),
+                        TextColumn::make('course')->weight(FontWeight::SemiBold)->description(__('Course'), 'above')->size(TextColumnSize::Large),
+                        TextColumn::make('max_shifts')->weight(FontWeight::SemiBold)->description(__('Max shifts'), 'above')->size(TextColumnSize::Large),
                     ]),
                     Stack::make([
 
-                        TextColumn::make('max_nights')->weight(weight: FontWeight::SemiBold)->description(__('Max nights'), position: 'above')->size(TextColumnSize::Large),
-                        TextColumn::make('max_weekends')->weight(weight: FontWeight::SemiBold)->description(__('Max weekends'), position: 'above')->size(TextColumnSize::Large),
-                        TextColumn::make('capacity')->weight(weight: FontWeight::SemiBold)->description(__('Capacity'), position: 'above')->size(TextColumnSize::Large),
+                        TextColumn::make('max_nights')->weight(FontWeight::SemiBold)->description(__('Max nights'), 'above')->size(TextColumnSize::Large),
+                        TextColumn::make('max_weekends')->weight(FontWeight::SemiBold)->description(__('Max weekends'), 'above')->size(TextColumnSize::Large),
+                        TextColumn::make('capacity')->weight(FontWeight::SemiBold)->description(__('Capacity'), 'above')->size(TextColumnSize::Large),
                         TextColumn::make('capacity_hold')
                             ->default(function () {
                                 $soldierShifts = Shift::where('soldier_id', auth()->user()->userable_id)->get();
@@ -104,10 +131,10 @@ class ProfileResource extends Resource
                                     return Carbon::parse($shift->start_date)->month == now()->month || Carbon::parse($shift->end_date)->month == now()->month;
                                 })->sum(fn (Shift $shift) => $shift->parallel_weight === null ? $shift->task->parallel_weight : $shift->parallel_weight);
                             })
-                            ->weight(weight: FontWeight::SemiBold)
-                            ->description(__('Capacity hold'), position: 'above')
+                            ->weight(FontWeight::SemiBold)
+                            ->description(__('Capacity hold'), 'above')
                             ->size(TextColumnSize::Large),
-                        TextColumn::make('qualifications')->weight(weight: FontWeight::SemiBold)->description(__('Qualifications'), position: 'above')->size(TextColumnSize::Large),
+                        TextColumn::make('qualifications')->weight(FontWeight::SemiBold)->description(__('Qualifications'), 'above')->size(TextColumnSize::Large),
                     ]),
                 ]),
             ])

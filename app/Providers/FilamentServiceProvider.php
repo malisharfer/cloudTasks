@@ -36,8 +36,8 @@ class FilamentServiceProvider extends PanelProvider
             ])
             ->databaseNotifications()
             ->databaseNotificationsPolling('60s')
-            ->discoverResources(in: app_path('Resources'), for: 'App\\Resources')
-            ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\\Filament\\Clusters')
+            ->discoverResources(app_path('Resources'), 'App\\Resources')
+            ->discoverClusters(app_path('Filament/Clusters'), 'App\\Filament\\Clusters')
             ->login(Login::class)
             ->middleware([
                 EncryptCookies::class,

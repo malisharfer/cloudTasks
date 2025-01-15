@@ -40,5 +40,7 @@
     "Range less than":":label is less than :value",
     "Range less than equal":":label is less than or equal :value",
     "Commander approved create constraint":"Hello <stronge>:name!</stronge><br>Your request to create a constraint <stronge>:constraintName</stronge><br>From <em>:startDate</em> to <em>:endDate</em><br>Has been approved!<br>Have a good day!",
-    "Commander deny create constraint":"Hello <stronge>:name!</stronge><br>Your request to create a constraint <stronge>:constraintName</stronge><br>From <em>:startDate</em> to <em>:endDate</em><br>Has been rejected!<br>Have a good day!"
+    "Commander deny create constraint":"Hello <stronge>:name!</stronge><br>Your request to create a constraint <stronge>:constraintName</stronge><br>From <em>:startDate</em> to <em>:endDate</em><br>Has been rejected!<br>Have a good day!",
+    "This task is assigned to":"This task is assigned to :soldierName"
+
 }
