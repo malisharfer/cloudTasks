@@ -64,7 +64,7 @@ class Constraint extends Model
                 ->required(),
             Placeholder::make('')
                 ->content(__('Please note! This constraint will only be approved for you after approval from the commander.'))
-                ->visible(fn (Get $get) => $get('constraint_type') == 'Vacation' || $get('constraint_type') == 'Medical')
+                ->visible((fn (Get $get) => $get('constraint_type') == 'Vacation' || $get('constraint_type') == 'Medical') && auth()->user()->getRoleNames()->count() == 1)
                 ->extraAttributes(['style' => 'color: red; font-family: Arial, Helvetica, sans-serif; font-size: 20px']),
             Grid::make()
                 ->visible(fn ($get) => in_array($get('constraint_type'), ['Medical', 'Vacation', 'School', 'Not task', 'Low priority not task']))

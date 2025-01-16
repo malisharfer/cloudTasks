@@ -453,7 +453,7 @@ class CalendarWidget extends FullCalendarWidget
             ->modalFooterActions(fn (FullCalendarWidget $livewire) => [
                 ...$livewire->getCachedModalActions(),
             ])
-            ->modalHeading(__('View').$this->model::getTitle());
+            ->modalHeading(__('View ').$this->model::getTitle());
     }
 
     public function eventDidMount(): string

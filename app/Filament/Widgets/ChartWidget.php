@@ -13,8 +13,6 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class ChartWidget extends ApexChartWidget
 {
-    protected static ?string $heading = 'Shifts Assigments';
-
     protected static ?int $sort = 3;
 
     protected static ?int $contentHeight = 500;

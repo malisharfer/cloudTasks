@@ -3,7 +3,7 @@
 namespace App\Resources\TaskResource\Pages;
 
 use App\Resources\TaskResource;
-use Filament\Actions;
+use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
 class ListTasks extends ListRecords
@@ -13,7 +13,7 @@ class ListTasks extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make()->label(__('New task')),
+            CreateAction::make()->label(__('New task')),
         ];
     }
 }

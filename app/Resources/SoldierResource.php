@@ -264,11 +264,12 @@ class SoldierResource extends Resource
                     ReplicateAction::make()
                         ->icon('heroicon-o-document-duplicate')
                         ->color('success')
-                        ->after(function (Soldier $replica): void {
+                        ->after(function (Soldier $replica, $record): void {
                             $replica['last_reserve_dates'] = [];
                             $replica['reserve_dates'] = [];
                             $replica['next_reserve_dates'] = [];
                             $replica->save();
+                            session()->put('shifts_assignment', User::where('userable_id', $record->id)->first()->getRoleNames()->contains('shifts-assignment'));
                             redirect()->route('filament.app.resources.soldiers.edit', ['record' => $replica->id]);
                         })
                         ->successNotification(null)

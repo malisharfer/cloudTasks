@@ -17,7 +17,7 @@ class EditSoldier extends EditRecord
             ->first()
             ->getRoleNames()
             ->toArray())
-        : false;
+        : session()->get('shifts_assignment');
 
         return $data;
     }

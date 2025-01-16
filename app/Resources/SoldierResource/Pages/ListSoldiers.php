@@ -3,7 +3,7 @@
 namespace App\Resources\SoldierResource\Pages;
 
 use App\Resources\SoldierResource;
-use Filament\Actions;
+use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
 class ListSoldiers extends ListRecords
@@ -13,7 +13,7 @@ class ListSoldiers extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            CreateAction::make(),
         ];
     }
 }
