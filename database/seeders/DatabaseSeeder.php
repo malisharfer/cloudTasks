@@ -35,6 +35,7 @@ class DatabaseSeeder extends Seeder
                 'max_nights' => 10,
                 'course' => fake()->numberBetween(0, 5),
                 'is_reservist' => false,
+                'constraints_limit' => ConstraintType::getLimit(),
             ])->id,
         ])->assignRole(['soldier', 'manager']);
 
@@ -47,6 +48,7 @@ class DatabaseSeeder extends Seeder
                 'max_shifts' => 7,
                 'max_nights' => 6,
                 'is_reservist' => false,
+                'constraints_limit' => ConstraintType::getLimit(),
             ])->id,
         ])->assignRole(['soldier', 'shifts-assignment']);
 
@@ -61,6 +63,7 @@ class DatabaseSeeder extends Seeder
                     'max_nights' => 5.5,
                     'course' => fake()->numberBetween(0, 5),
                     'is_reservist' => false,
+                    'constraints_limit' => ConstraintType::getLimit(),
                 ])->id,
             ])->assignRole('soldier');
             $this->createConstraints($user->id);
@@ -77,6 +80,7 @@ class DatabaseSeeder extends Seeder
                     'max_nights' => 6,
                     'course' => fake()->numberBetween(0, 5),
                     'is_reservist' => false,
+                    'constraints_limit' => ConstraintType::getLimit(),
                 ])->id,
             ])->assignRole('soldier');
             $this->createConstraints($user->id);
@@ -93,6 +97,7 @@ class DatabaseSeeder extends Seeder
                     'max_nights' => 5.5,
                     'course' => fake()->numberBetween(0, 5),
                     'is_reservist' => false,
+                    'constraints_limit' => ConstraintType::getLimit(),
                 ])->id,
             ])->assignRole('soldier');
             $this->createConstraints($user->id);
@@ -109,6 +114,7 @@ class DatabaseSeeder extends Seeder
                     'max_nights' => 5,
                     'course' => fake()->numberBetween(0, 5),
                     'is_reservist' => false,
+                    'constraints_limit' => ConstraintType::getLimit(),
                 ])->id,
             ])->assignRole('soldier');
             $this->createConstraints($user->id);
@@ -125,6 +131,7 @@ class DatabaseSeeder extends Seeder
                     'max_nights' => 0,
                     'course' => fake()->numberBetween(0, 5),
                     'is_reservist' => false,
+                    'constraints_limit' => ConstraintType::getLimit(),
                 ])->id,
             ])->assignRole('soldier');
             $this->createConstraints($user->id);
@@ -141,6 +148,7 @@ class DatabaseSeeder extends Seeder
                     'max_nights' => 10,
                     'course' => fake()->numberBetween(0, 5),
                     'is_reservist' => false,
+                    'constraints_limit' => ConstraintType::getLimit(),
                 ])->id,
             ])->assignRole('soldier');
             $this->createConstraints($user->id);

@@ -149,45 +149,16 @@ class CalendarWidget extends FullCalendarWidget
             $this->refreshRecords();
             $this->lastFilterData = $this->filterData;
         }
-        $today = now()->startOfDay();
         $actions = [];
         if ($this->type === 'my') {
             if ($this->model === Constraint::class) {
-                return [
-                    CreateAction::make()
-                        ->action(function (array $data) {
-                            if (
-                                ($data['constraint_type'] == ConstraintType::VACATION->value ||
-                                    $data['constraint_type'] == ConstraintType::MEDICAL->value)
-                                && auth()->user()->getRoleNames()->count() === 1
-                            ) {
-                                Constraint::requestConstraint($data);
-                            } else {
-                                Constraint::create([
-                                    'constraint_type' => $data['constraint_type'],
-                                    'start_date' => $data['start_date'],
-                                    'end_date' => $data['end_date'],
-                                ]);
-                            }
-                        })
-                        ->mountUsing(function (Form $form, array $arguments) {
-                            $form->fill([
-                                'start_date' => $arguments['start'] ?? null,
-                                'end_date' => $arguments['end'] ?? null,
-                            ]);
-                        })
-                        ->label($this->model::getTitle().' '.__('New'))
-                        ->modalHeading(__('Create').' '.$this->model::getTitle())
-                        ->disabled(function (array $arguments) use ($today) {
-                            $startDate = Carbon::parse($arguments['start'] ?? null);
-
-                            return $startDate->isBefore($today);
-                        })
-                        ->hidden($this->model === Shift::class && $this->type === 'my' && ! array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'shifts-assignment', 'department-commander', 'team-commander'])),
-                ];
+                return [$this->createConstraintAction()];
             }
         } else {
             if ($this->model !== Shift::class) {
+                if (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())) {
+                    return [$this->createConstraintAction()];
+                }
                 FilamentFullCalendarPlugin::get()->editable(false);
                 FilamentFullCalendarPlugin::get()->selectable(false);
             } else {
@@ -243,6 +214,42 @@ class CalendarWidget extends FullCalendarWidget
         }
 
         return [];
+    }
+
+    protected function createConstraintAction()
+    {
+        $today = now()->startOfDay();
+
+        return CreateAction::make()
+            ->action(function (array $data) {
+                if (
+                    ($data['constraint_type'] == ConstraintType::VACATION->value ||
+                        $data['constraint_type'] == ConstraintType::MEDICAL->value)
+                    && auth()->user()->getRoleNames()->count() === 1
+                ) {
+                    Constraint::requestConstraint($data);
+                } else {
+                    Constraint::create([
+                        'constraint_type' => $data['constraint_type'],
+                        'start_date' => $data['start_date'],
+                        'end_date' => $data['end_date'],
+                    ]);
+                }
+            })
+            ->mountUsing(function (Form $form, array $arguments) {
+                $form->fill([
+                    'start_date' => $arguments['start'] ?? null,
+                    'end_date' => $arguments['end'] ?? null,
+                ]);
+            })
+            ->label($this->model::getTitle().' '.__('New'))
+            ->modalHeading(__('Create').' '.$this->model::getTitle())
+            ->disabled(function (array $arguments) use ($today) {
+                $startDate = Carbon::parse($arguments['start'] ?? null);
+
+                return $startDate->isBefore($today);
+            })
+            ->hidden($this->model === Shift::class && $this->type === 'my' && ! array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'shifts-assignment', 'department-commander', 'team-commander']));
     }
 
     protected function resetShifts()
@@ -311,6 +318,7 @@ class CalendarWidget extends FullCalendarWidget
 
         if (
             ($this->model == Constraint::class && $this->type == 'my')
+            || ($this->model == Constraint::class && $this->type == 'my_soldiers' && in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray()))
             || ($this->model == Shift::class && $this->type == 'my_soldiers')
             || ($this->model == Shift::class && $this->type == 'my' && array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'shifts-assignment', 'department-commander', 'team-commander']))
         ) {
@@ -323,8 +331,10 @@ class CalendarWidget extends FullCalendarWidget
         if ($this->model == Shift::class && $this->type == 'my') {
             return $changeAction;
         }
-        FilamentFullCalendarPlugin::get()->editable(false);
-        FilamentFullCalendarPlugin::get()->selectable(false);
+        if (! (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray()))) {
+            FilamentFullCalendarPlugin::get()->editable(false);
+            FilamentFullCalendarPlugin::get()->selectable(false);
+        }
 
         return [];
     }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ConstraintType;
+use Cache;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
@@ -44,6 +45,19 @@ class Constraint extends Model
             Placeholder::make('')
                 ->content(fn (Constraint $constraint) => $constraint->soldier_name)
                 ->inlineLabel(),
+            Select::make('soldier_id')
+                ->label(__('Soldier'))
+                ->hiddenOn('view')
+                ->visible(fn () => in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())
+                && \Str::contains($_SERVER['HTTP_REFERER'], 'my-soldiers-constraint'))
+                ->options(fn () => Cache::remember('users', 30 * 60, function () {
+                    return User::all();
+                })
+                    ->mapWithKeys(function ($user) {
+                        return [$user->userable_id => $user->displayName];
+                    }))
+                ->afterStateUpdated(fn ($state) => session()->put('soldier_id', $state))
+                ->required(),
             ToggleButtons::make('constraint_type')
                 ->required()
                 ->label(__('Constraint Name'))
@@ -53,7 +67,7 @@ class Constraint extends Model
                 ->inline()
                 ->options(fn (Get $get) => self::availableOptions($get('start_date'), $get('end_date')))
                 ->afterStateUpdated(fn (callable $set, $state, Get $get) => self::updateDates($set, $state, $get)),
-            ToggleButtons::make('constraint_type')
+            ToggleButtons::make('constraint_type_view')
                 ->label(__('Constraint Name'))
                 ->inline()
                 ->visibleOn('view')
@@ -64,7 +78,9 @@ class Constraint extends Model
                 ->required(),
             Placeholder::make('')
                 ->content(__('Please note! This constraint will only be approved for you after approval from the commander.'))
-                ->visible((fn (Get $get) => $get('constraint_type') == 'Vacation' || $get('constraint_type') == 'Medical') && auth()->user()->getRoleNames()->count() == 1)
+                ->visible(fn (Get $get) => ($get('constraint_type') === ConstraintType::VACATION->value || $get('constraint_type') === ConstraintType::MEDICAL->value)
+                    && auth()->user()->getRoleNames()->count() === 1)
+                ->hiddenOn('view')
                 ->extraAttributes(['style' => 'color: red; font-family: Arial, Helvetica, sans-serif; font-size: 20px']),
             Grid::make()
                 ->visible(fn ($get) => in_array($get('constraint_type'), ['Medical', 'Vacation', 'School', 'Not task', 'Low priority not task']))
@@ -123,6 +139,11 @@ class Constraint extends Model
             ->sendToDatabase($commander, true);
     }
 
+    public static function getAvailableOptions($startDate, $endDate): array
+    {
+        return static::availableOptions($startDate, $endDate);
+    }
+
     private static function availableOptions($startDate, $endDate): array
     {
         $start_date = Carbon::parse($startDate);
@@ -139,34 +160,29 @@ class Constraint extends Model
             unset($options[ConstraintType::NOT_WEEKEND->value]);
             unset($options[ConstraintType::LOW_PRIORITY_NOT_WEEKEND->value]);
         }
-        $usedCounts = self::getUsedCountsForCurrentMonth($startDate, $endDate);
-        $limits = Soldier::where('id', auth()->user()->userable_id)->pluck('constraints_limit')->first()
-            ? Soldier::where('id', auth()->user()->userable_id)->pluck('constraints_limit')->first()
-            : ConstraintType::getLimit();
-        $constraintsWithinLimit = [];
+        if (! (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray()))) {
+            $usedCounts = self::getUsedCountsForCurrentMonth($startDate, $endDate);
+            $limits = Soldier::where('id', auth()->user()->userable_id)->pluck('constraints_limit')->first() ?: ConstraintType::getLimit();
+            $constraintsWithinLimit = [];
+            $queryConstraints = Constraint::where('soldier_id', auth()->user()->userable_id)
+                ->whereBetween('start_date', [$startDate, $endDate])
+                ->pluck('constraint_type')
+                ->toArray();
 
-        $queryConstraints = Constraint::where('soldier_id', auth()->user()->userable_id)
-            ->whereBetween('start_date', [$startDate, $endDate])
-            ->pluck('constraint_type')
-            ->toArray();
-
-        foreach ($options as $constraint => $label) {
-            $used = $usedCounts[$constraint] ?? 0;
-            $limit = $limits[$constraint] ?? 0;
-            if ($limit === 0 || $used < $limit) {
-                if (! in_array($constraint, $queryConstraints)) {
-                    $constraintsWithinLimit[$constraint] = $label;
+            foreach ($options as $constraint => $label) {
+                $used = $usedCounts[$constraint] ?? 0;
+                $limit = $limits[$constraint] ?? 0;
+                if ($limit === 0 || $used < $limit) {
+                    if (! in_array($constraint, $queryConstraints)) {
+                        $constraintsWithinLimit[$constraint] = $label;
+                    }
                 }
             }
+
+            return $constraintsWithinLimit;
         }
 
-        return $constraintsWithinLimit;
-
-    }
-
-    public static function getAvailableOptions($startDate, $endDate): array
-    {
-        return static::availableOptions($startDate, $endDate);
+        return $options;
     }
 
     private static function getUsedCountsForCurrentMonth($startDate, $endDate): array
@@ -223,15 +239,24 @@ class Constraint extends Model
     protected static function booted()
     {
         static::creating(function ($constraint) {
-            $constraint->soldier_id = $constraint->soldier_id ?: ($constraint->getCurrentUserSoldier() ? $constraint->getCurrentUserSoldier()->id : null);
+            $constraint->soldier_id = $constraint->soldier_id ?: ($constraint->getCurrentUserSoldier() ?: null);
+            session()->put('soldier_id', null);
+        });
+
+        static::updating(function ($constraint) {
+            $constraint->soldier_id = $constraint->soldier_id ?: ($constraint->getCurrentUserSoldier() ?: null);
+            session()->put('soldier_id', null);
         });
     }
 
-    private function getCurrentUserSoldier(): ?Soldier
+    private function getCurrentUserSoldier()
     {
+        if (session()->get('soldier_id')) {
+            return session()->get('soldier_id');
+        }
         $user = auth()->user();
         if ($user && $user->userable instanceof Soldier) {
-            return $user->userable;
+            return $user->userable_id;
         }
 
         return null;
