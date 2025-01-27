@@ -20,6 +20,7 @@ use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
+use Log;
 use Maatwebsite\Excel\Facades\Excel;
 use Saade\FilamentFullCalendar\Actions\CreateAction;
 use Saade\FilamentFullCalendar\Actions\DeleteAction;
@@ -161,6 +162,7 @@ class CalendarWidget extends FullCalendarWidget
                 if (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())) {
                     return [$this->createConstraintAction()];
                 }
+                \Log::info(json_encode('if line 165'));
                 FilamentFullCalendarPlugin::get()->editable(false);
                 FilamentFullCalendarPlugin::get()->selectable(false);
             } else {
@@ -337,6 +339,7 @@ class CalendarWidget extends FullCalendarWidget
             return $changeAction;
         }
         if (! (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray()))) {
+            \Log::info(json_encode('if 3line 341'));
             FilamentFullCalendarPlugin::get()->editable(false);
             FilamentFullCalendarPlugin::get()->selectable(false);
         }
