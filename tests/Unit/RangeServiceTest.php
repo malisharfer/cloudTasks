@@ -57,7 +57,7 @@ it('should return the night spaces', function () {
     $range = new Range('2024-11-07 22:00:00', '2024-11-08 05:00:00');
     $result = $range->getNightSpaces();
     $expect = [
-        new Range('2024-11-06 20:00:00', '2024-11-07 22:00:00'),
+        new Range('2024-11-06 00:00:00', '2024-11-07 22:00:00'),
         new Range('2024-11-08 05:00:00', '2024-11-09 08:00:00'),
     ];
     expect(count($result))->toBe(count($expect));
@@ -70,7 +70,7 @@ it('should return the night spaces', function () {
 it('should return the day before night', function () {
     $range = new Range('2024-11-07 22:00:00', '2024-11-08 05:00:00');
     $result = $range->getDayBeforeNight();
-    $expect = new Range('2024-11-06 20:00:00', '2024-11-07 22:00:00');
+    $expect = new Range('2024-11-06 00:00:00', '2024-11-07 22:00:00');
     expect($result->start)->toEqual($expect->start);
     expect($result->end)->toEqual($expect->end);
 });

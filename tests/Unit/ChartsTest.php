@@ -26,6 +26,7 @@ it('should organize chart data correctly', function () {
         'end_date' => now()->addMonth()->addHour(),
         'task_id' => Task::factory()->create([
             'type' => 'run',
+            'in_parallel' => false,
         ])->id,
     ]);
 
@@ -48,6 +49,7 @@ it('should organize chart data correctly', function () {
         'end_date' => now()->addMonth()->addHours(2),
         'task_id' => Task::factory()->create([
             'type' => 'run',
+            'in_parallel' => false,
         ])->id,
     ]);
 

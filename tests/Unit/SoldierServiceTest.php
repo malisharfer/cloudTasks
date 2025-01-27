@@ -2,7 +2,10 @@
 
 use App\Enums\Availability;
 use App\Enums\Priority;
+use App\Models\Shift as ShiftModel;
+use App\Models\Task;
 use App\Services\Constraint;
+use App\Services\Helpers;
 use App\Services\MaxData;
 use App\Services\Range;
 use App\Services\Shift;
@@ -22,43 +25,62 @@ it('should return false if the soldier cant take the shift', function () {
 });
 
 it('should return true if the soldier available by maxes', function () {
-    $reflection = new ReflectionClass(Soldier::class);
-    $method = $reflection->getMethod('isAvailableByMaxes');
-    $method->setAccessible(true);
     $soldier = new Soldier(1, new MaxData(2.75), new MaxData(12), new MaxData(5), new MaxData(3), ['Run'], []);
     $shift = new Shift(1, 'Run', Carbon::create(2024, 5, 14, 17), Carbon::create(2024, 5, 14, 18), 1, false, false);
-    expect($method->invoke($soldier, $shift))->toBeTrue();
+    $soldier->isAvailableByMaxes($shift);
+    expect($soldier->isAvailableByMaxes($shift))->toBeTrue();
 });
 
 it('should return false if the soldier is not available by maxes', function () {
-    $reflection = new ReflectionClass(Soldier::class);
-    $method = $reflection->getMethod('isAvailableByMaxes');
-    $method->setAccessible(true);
     $soldier = new Soldier(1, new MaxData(2.75), new MaxData(12), new MaxData(0), new MaxData(3), ['Run'], []);
     $shift = new Shift(1, 'Run', Carbon::create(2024, 5, 14, 17), Carbon::create(2024, 5, 14, 21), 1, true, false);
-    expect($method->invoke($soldier, $shift))->toBeFalse();
+    expect($soldier->isAvailableByMaxes($shift))->toBeFalse();
 });
 
 it('should return true if the soldier is available by shifts', function () {
-    $reflection = new ReflectionClass(Soldier::class);
-    $method = $reflection->getMethod('isAvailableByShifts');
-    $method->setAccessible(true);
     $shift = new Shift(1, 'Run', Carbon::create(2024, 5, 14, 19), Carbon::create(2024, 5, 14, 21), 1, true, false);
     $soldier = new Soldier(1, new MaxData(2.75), new MaxData(12), new MaxData(0), new MaxData(3), ['Run'], []);
     $soldier->assign($shift, []);
-    $range = new Range(Carbon::create(2024, 5, 14, 16), Carbon::create(2024, 5, 14, 18));
-    expect($method->invoke($soldier, $range))->toBeTrue();
+    $shift = new Shift(1, 'go', Carbon::create(2024, 5, 14, 16), Carbon::create(2024, 5, 14, 18), 0, false, false);
+    expect($soldier->isAvailableByShifts($shift, false))->toBeTrue();
 });
 
 it('should return false if the soldier is not available by shifts', function () {
-    $reflection = new ReflectionClass(Soldier::class);
-    $method = $reflection->getMethod('isAvailableByShifts');
-    $method->setAccessible(true);
     $shift = new Shift(1, 'Run', Carbon::create(2024, 5, 14, 17), Carbon::create(2024, 5, 14, 21), 1, true, false);
     $soldier = new Soldier(1, new MaxData(2.75), new MaxData(12), new MaxData(0), new MaxData(3), ['Run'], []);
     $soldier->assign($shift, []);
-    $range = new Range(Carbon::create(2024, 5, 14, 16), Carbon::create(2024, 5, 14, 18));
-    expect($method->invoke($soldier, $range))->toBeFalse();
+    $shift = new Shift(1, 'go', Carbon::create(2024, 5, 14, 16), Carbon::create(2024, 5, 14, 18), 0, false, false);
+    expect($soldier->isAvailableByShifts($shift, false))->toBeFalse();
+});
+
+it('should return true if the soldier is available by spaces', function () {
+    $shifts = [new Shift(2, '', '2025-01-05', '2025-01-06', 0, false, false)];
+    $spaces = [new Range('2025-01-02', '2025-01-03')];
+    $soldier = new Soldier(1, new MaxData(2.75), new MaxData(12), new MaxData(5), new MaxData(3), [], [], $shifts, []);
+    expect($soldier->isAvailableBySpaces($spaces))->toBeTrue();
+});
+
+it('should return false if the soldier is not available by spaces', function () {
+    $spaces = [new Range('2025-01-04', '2025-01-07')];
+    $shifts = [new Shift(2, 'run', '2025-01-05', '2025-01-06', 0, false, false)];
+    $soldier = new Soldier(1, new MaxData(2.75), new MaxData(12), new MaxData(5), new MaxData(3), [], [], $shifts, []);
+    expect($soldier->isAvailableBySpaces($spaces))->toBeFalse();
+});
+
+it('should return true if the soldier is available by concurrents shifts', function () {
+    $shift = ShiftModel::factory()->create(['start_date' => '2025-01-08', 'end_date' => '2025-01-09', 'task_id' => Task::factory()->create(['type' => 'sing', 'in_parallel' => true, 'concurrent_tasks' => ['run']])->id]);
+    $concurrentsShifts = [Helpers::buildShift($shift)];
+    $shift = new Shift(2, 'run', '2025-01-08', '2025-01-09', 0, false, false);
+    $soldier = new Soldier(1, new MaxData(2.75), new MaxData(12), new MaxData(5), new MaxData(3), [], [], [], $concurrentsShifts);
+    expect($soldier->isAvailableByConcurrentsShifts($shift))->toBeTrue();
+});
+
+it('should return false if the soldier is not available by concurrents shifts', function () {
+    $shift = ShiftModel::factory()->create(['start_date' => '2025-01-08', 'end_date' => '2025-01-09', 'task_id' => Task::factory()->create(['type' => 'sing', 'in_parallel' => true, 'concurrent_tasks' => ['run']])->id]);
+    $concurrentsShifts = [Helpers::buildShift($shift)];
+    $shift = new Shift(2, 'go', '2025-01-08', '2025-01-09', 0, false, false);
+    $soldier = new Soldier(1, new MaxData(2.75), new MaxData(12), new MaxData(5), new MaxData(3), [], [], [], $concurrentsShifts);
+    expect($soldier->isAvailableByConcurrentsShifts($shift))->toBeFalse();
 });
 
 it('should return better not availability if the soldier is not available by constraint in low priority', function () {

@@ -133,6 +133,26 @@ class TaskResource extends Resource
                         ->space(2)
                         ->extraAttributes(['style' => 'display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: baseline; margin-bottom:10px']),
                     Stack::make([
+                        TextColumn::make('in_parallel')
+                            ->description(__('In parallel'), 'above')
+                            ->size(TextColumnSize::Small)
+                            ->extraAttributes(['style' => 'margin: 5px;'])
+                            ->formatStateUsing(fn ($state) => $state ? __('Yes') : __('No')),
+                        TextColumn::make('concurrent_tasks')
+                            ->description(__('Concurrent tasks'), 'above')
+                            ->size(TextColumnSize::Small)
+                            ->extraAttributes(['style' => 'margin-left: 15px;']),
+                    ])
+                        ->space(2)
+                        ->extraAttributes([
+                            'style' => 'display: flex;
+                                flex-direction: row;
+                                flex-wrap: wrap;
+                                justify-content: center;
+                                align-items: baseline;
+                                padding: 10px;',
+                        ]),
+                    Stack::make([
                         TextColumn::make('recurring.type')
                             ->description(__('Recurring type'), 'above')
                             ->size(TextColumnSize::Small)
@@ -391,6 +411,16 @@ class TaskResource extends Resource
                 ->label(__('Is weekend')),
             Toggle::make('is_night')
                 ->label(__('Is night')),
+            Toggle::make('in_parallel')
+                ->live()
+                ->label(__('In parallel')),
+            Select::make('concurrent_tasks')
+                ->label(__('Concurrent tasks'))
+                ->multiple()
+                ->placeholder(fn () => Task::count() > 0 ? __('Select concurrent tasks') : __('No tasks'))
+                ->options(Task::all()->pluck('type', 'type'))
+                ->visible(fn (Get $get) => $get('in_parallel'))
+                ->required(),
         ];
     }
 
@@ -452,6 +482,7 @@ class TaskResource extends Resource
         $task->type = $get('type');
         $task->is_night = $get('is_night');
         $task->is_weekend = $get('is_weekend');
+        $task->in_parallel = $get('in_parallel');
         $shift = new Shift;
         $shift->id = null;
         $shift->task = $task;

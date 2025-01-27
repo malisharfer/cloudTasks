@@ -16,6 +16,7 @@ it('should assign shift to soldier', function () {
         'type' => 'Clean',
         'duration' => 1,
         'parallel_weight' => 0.25,
+        'in_parallel' => false,
         'recurring' => collect(['type' => RecurringType::CUSTOM, 'dates_in_month' => [6]]),
     ]);
 

@@ -10,7 +10,7 @@ it('should return only unassigned shifts', function () {
     $reflection = new ReflectionClass(Algorithm::class);
     $method = $reflection->getMethod('getShiftWithTasks');
     $method->setAccessible(true);
-    $task = Task::factory()->create();
+    $task = Task::factory()->create(['in_parallel' => false]);
     Shift::factory()->count(3)->create(['task_id' => $task->id]);
     expect($method->invoke(new Algorithm))->toBeEmpty();
 });
@@ -19,7 +19,7 @@ it('should return shifts with their task details', function () {
     $reflection = new ReflectionClass(Algorithm::class);
     $method = $reflection->getMethod('getShiftWithTasks');
     $method->setAccessible(true);
-    $task = Task::factory()->create();
+    $task = Task::factory()->create(['in_parallel' => false]);
     Shift::factory()->count(3)->create([
         'task_id' => $task->id,
         'soldier_id' => null,

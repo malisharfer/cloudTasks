@@ -28,6 +28,8 @@ return new class extends Migration
             $table->json('reserve_dates')->nullable();
             $table->json('next_reserve_dates')->nullable();
             $table->json('constraints_limit')->nullable();
+            $table->boolean('not_thursday_evening')->default(false);
+            $table->boolean('not_sunday_morning')->default(false);
             $table->timestamps();
         });
     }

@@ -12,6 +12,7 @@ enum ConstraintType: string implements HasLabel
     case LOW_PRIORITY_NOT_TASK = 'Low priority not task';
     case NOT_EVENING = 'Not evening';
     case NOT_THURSDAY_EVENING = 'Not Thursday evening';
+    case NOT_SUNDAY_MORNING = 'Not Sunday morning';
     case VACATION = 'Vacation';
     case MEDICAL = 'Medical';
     case SCHOOL = 'School';
@@ -28,6 +29,7 @@ enum ConstraintType: string implements HasLabel
             self::VACATION => __('Vacation'),
             self::MEDICAL => __('Medical'),
             self::SCHOOL => __('School'),
+            self::NOT_SUNDAY_MORNING => __('Not Sunday morning'),
         };
     }
 
@@ -40,6 +42,7 @@ enum ConstraintType: string implements HasLabel
             self::LOW_PRIORITY_NOT_TASK->value => 2,
             self::NOT_EVENING->value => 1,
             self::NOT_THURSDAY_EVENING->value => 1,
+            self::NOT_SUNDAY_MORNING->value => 4,
             self::VACATION->value => 1,
             self::MEDICAL->value => 1,
             self::SCHOOL->value => 1,
@@ -55,6 +58,7 @@ enum ConstraintType: string implements HasLabel
             self::LOW_PRIORITY_NOT_TASK->value => 3,
             self::NOT_EVENING->value => 4,
             self::NOT_THURSDAY_EVENING->value => 1,
+            self::NOT_SUNDAY_MORNING->value => 1,
             self::VACATION->value => 0,
             self::MEDICAL->value => 0,
             self::SCHOOL->value => 4,
@@ -70,6 +74,7 @@ enum ConstraintType: string implements HasLabel
             self::LOW_PRIORITY_NOT_TASK => '#baffc9',
             self::NOT_EVENING => '#ffd4e5',
             self::NOT_THURSDAY_EVENING => '#ffdfba',
+            self::NOT_SUNDAY_MORNING => '#ffdfba',
             self::VACATION => '#bae1ff',
             self::MEDICAL => '#f2d7fb',
             self::SCHOOL => '#f9a7a7',

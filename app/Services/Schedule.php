@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Enums\Availability;
-use App\Models\Shift as ShiftModel;
 
 class Schedule
 {
@@ -17,8 +16,6 @@ class Schedule
 
     public $assignments;
 
-    public $unAssignments;
-
     public $SHIFT_DUMBBELLS;
 
     public $SOLDIER_DUMBBELLS;
@@ -30,7 +27,6 @@ class Schedule
         $this->shiftsData = collect([]);
         $this->soldiersDict = collect([]);
         $this->assignments = collect([]);
-        $this->unAssignments = collect([]);
         $this->SHIFT_DUMBBELLS = collect([
             'POINTS_RATIO' => 0.29,
             'SHIFTS_RATIO' => 0.39,
@@ -54,7 +50,7 @@ class Schedule
         $this->initShiftsData();
         $this->initSoldiersData();
         $this->assignShifts();
-        $this->updateDB();
+        Helpers::updateShiftTable($this->assignments);
     }
 
     protected function initShiftsData(): void
@@ -200,12 +196,7 @@ class Schedule
     protected function assignShifts()
     {
         $sortedShifts = $this->getSortedShiftsList();
-        collect($sortedShifts)->map(function (ShiftData $shift) {
-            $success = $this->assignShift($shift);
-            if (! $success) {
-                $this->unAssignments->push($shift->shift);
-            }
-        });
+        collect($sortedShifts)->map(fn (ShiftData $shift) => $this->assignShift($shift));
     }
 
     protected function getSortedShiftsList()
@@ -213,17 +204,15 @@ class Schedule
         return $this->shiftsData->sortByDesc('weight');
     }
 
-    protected function assignShift(ShiftData $shiftData): bool
+    protected function assignShift(ShiftData $shiftData)
     {
         $soldiers = $this->getPotentialSoldiersData($shiftData);
         foreach ($soldiers as $soldier) {
             $success = $this->tryAssign($soldier, $shiftData->shift);
             if ($success) {
-                return true;
+                return;
             }
         }
-
-        return false;
     }
 
     protected function getPotentialSoldiersData(ShiftData $shiftData)
@@ -289,10 +278,5 @@ class Schedule
         }
 
         return false;
-    }
-
-    protected function updateDB()
-    {
-        collect($this->assignments)->map(fn (Assignment $assignment) => ShiftModel::where('id', $assignment->shiftId)->update(['soldier_id' => $assignment->soldierId]));
     }
 }

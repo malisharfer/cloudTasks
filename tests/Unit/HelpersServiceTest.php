@@ -5,6 +5,7 @@ use App\Models\Constraint;
 use App\Models\Shift;
 use App\Models\Soldier;
 use App\Models\Task;
+use App\Services\Assignment;
 use App\Services\Helpers;
 use App\Services\MaxData;
 use App\Services\Range;
@@ -73,7 +74,7 @@ it('should return the capacity hold of soldiers paramaters', function () {
 });
 
 it('should return shifts spaces', function () {
-    $shifts = Shift::factory()->count(3)->create(['is_weekend' => false, 'task_id' => Task::factory()->create(['is_night' => true])->id]);
+    $shifts = Shift::factory()->count(3)->create(['is_weekend' => false, 'task_id' => Task::factory()->create(['is_night' => true, 'in_parallel' => false])->id]);
     $shifts = $shifts->map(fn ($shift) => Helpers::buildShift($shift));
     expect(Helpers::addShiftsSpaces($shifts))->toHaveCount(6);
 });
@@ -82,10 +83,13 @@ it('should return soldiers shifts', function () {
     $soldier = Soldier::factory()->create();
     $shifts = Shift::factory()->count(3)->create([
         'soldier_id' => $soldier->id,
+        'task_id' => Task::factory()->create([
+            'in_parallel' => false,
+        ])->id,
         'start_date' => now()->isLastOfMonth() ? now()->subDays(6)->startOfSecond() : now()->addHours(7)->startOfSecond(),
         'end_date' => now()->isLastOfMonth() ? now()->subDays(5)->startOfSecond() : now()->addHours(8)->startOfSecond()]);
     $result = $shifts->map(fn ($shift) => Helpers::buildShift($shift));
-    expect(Helpers::getSoldiersShifts($soldier->id, new Range(now()->startOfMonth(), now()->endOfMonth())))->toEqual($result);
+    expect(Helpers::getSoldiersShifts($soldier->id, new Range(now()->startOfMonth(), now()->endOfMonth()), false))->toEqual($result);
 });
 
 it('should return soldiers constraints', function () {
@@ -98,4 +102,15 @@ it('should return soldiers constraints', function () {
     ]);
     $range = new Range(now()->startOfMonth(), now()->endOfMonth());
     expect(Helpers::getConstraintBy($soldier->id, $range))->toHaveCount(4);
+});
+
+it('should update shifts table', function () {
+    $soldier = Soldier::factory()->create();
+    $shift = Shift::factory()->create(['soldier_id' => 22]);
+    $assignments = collect([new Assignment($shift->id, $soldier->id)]);
+    Helpers::updateShiftTable($assignments);
+    $this->assertDatabaseHas(Shift::class, [
+        'id' => $shift->id,
+        'soldier_id' => $soldier->id,
+    ]);
 });

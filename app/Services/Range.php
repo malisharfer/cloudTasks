@@ -26,41 +26,6 @@ class Range
         return $this->start->isBefore($other->end) && $other->start->isBefore($this->end);
     }
 
-    public function isWeekend(): bool
-    {
-        return (
-            ($this->start->dayOfWeek == 4 && $this->start->hour >= 20)
-            || $this->start->dayOfWeek == 5
-            || $this->start->dayOfWeek == 6
-            || ($this->start->dayOfWeek == 0 && $this->start->hour < 8)
-        )
-            ||
-            (
-                ($this->end->dayOfWeek == 4 && $this->end->hour >= 20)
-                || $this->end->dayOfWeek == 5
-                || $this->end->dayOfWeek == 6
-                || ($this->end->dayOfWeek == 0 && $this->end->hour < 8)
-            )
-            ||
-            $this->start->diffInDays($this->end) > 5;
-    }
-
-    public function isNight(): bool
-    {
-        return $this->isWeekend() ?
-            false :
-            (
-                ($this->start->day == $this->end->day)
-                && (
-                    ($this->start->hour >= 00 && $this->start->hour < 8)
-                    || $this->start->hour >= 20
-                    || $this->end->hour > 20
-                )
-            )
-            ||
-            $this->start->day < $this->end->day;
-    }
-
     public function isSameMonth(Range $other): bool
     {
         return $this->isConflict($other);
@@ -97,7 +62,7 @@ class Range
 
     public function getDayBeforeNight(): Range
     {
-        return new Range($this->start->copy()->subDay()->setTime(20, 0, 0), $this->start);
+        return new Range($this->start->copy()->subDay()->setTime(00, 0, 0), $this->start);
     }
 
     public function getDayAfterNight(): Range

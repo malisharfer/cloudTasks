@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Enums\Availability;
 use App\Enums\Priority;
+use App\Models\Shift as ShiftModel;
+use App\Models\Task;
 
 class Soldier
 {
@@ -23,7 +25,9 @@ class Soldier
 
     public $shifts;
 
-    public function __construct($id, MaxData $maxPoints, MaxData $maxShifts, MaxData $maxNights, MaxData $maxWeekends, $qualifications, $constraints, $shifts = [])
+    public $concurrentsShifts;
+
+    public function __construct($id, MaxData $maxPoints, MaxData $maxShifts, MaxData $maxNights, MaxData $maxWeekends, $qualifications, $constraints, $shifts = [], $concurrentsShifts = [])
     {
         $this->id = $id;
         $this->pointsMaxData = $maxPoints;
@@ -33,6 +37,7 @@ class Soldier
         $this->qualifications = collect($qualifications);
         $this->constraints = collect($constraints);
         $this->shifts = collect($shifts);
+        $this->concurrentsShifts = collect($concurrentsShifts);
     }
 
     public function isQualified(string $taskType): bool
@@ -43,7 +48,7 @@ class Soldier
     public function isAbleTake(Shift $shift, $spaces): bool
     {
         return $this->isAvailableByMaxes($shift)
-            && $this->isAvailableByShifts($shift->range)
+            && $this->isAvailableByShifts($shift, false)
             && $this->isAvailableBySpaces($spaces);
     }
 
@@ -57,11 +62,17 @@ class Soldier
             && $this->shiftsMaxData->remaining() >= 1;
     }
 
-    public function isAvailableByShifts(Range $range): bool
+    public function isAvailableByShifts(Shift $shift, bool $inParallel): bool
     {
-        return ! $this->shifts->contains(function ($shift) use ($range) {
-            return $shift->range->isConflict($range);
-        });
+        return $inParallel ?
+            ! $this->shifts->contains(function (Shift $soldierShift) use ($shift): bool {
+                $tasksInParallel = Task::find(ShiftModel::find($shift->id)->task_id)->concurrent_tasks;
+
+                return $soldierShift->range->isConflict($shift->range) && ! collect($tasksInParallel)->contains($shift->taskType);
+            }) :
+            ! $this->shifts->contains(function (Shift $soldierShift) use ($shift) {
+                return $soldierShift->range->isConflict($shift->range);
+            });
     }
 
     public function isAvailableBySpaces($spaces): bool
@@ -75,6 +86,15 @@ class Soldier
         }
 
         return true;
+    }
+
+    public function isAvailableByConcurrentsShifts(Shift $shift)
+    {
+        return ! $this->concurrentsShifts->contains(function (Shift $concurrentsShift) use ($shift): bool {
+            $tasksInParallel = Task::find(ShiftModel::find($concurrentsShift->id)->task_id)->concurrent_tasks;
+
+            return $concurrentsShift->range->isConflict($shift->range) && ! collect($tasksInParallel)->contains($shift->taskType);
+        });
     }
 
     public function isAvailableByConstraints(Range $range): Availability
@@ -113,6 +133,6 @@ class Soldier
 
     protected function addSpaces($spaces)
     {
-        collect($spaces)->map(fn ($space) => $this->shifts->push(new Shift(0, 'space', $space->start, $space->end, 0, false, false)));
+        collect($spaces)->map(fn ($space) => $this->shifts->push(new Shift(0, '', $space->start, $space->end, 0, false, false)));
     }
 }

@@ -19,7 +19,7 @@ it('should return the day before and after if the shift is at night', function (
     $result = $shift->getShiftSpaces([]);
 
     $expected = [
-        new Range(Carbon::parse('2024-12-16 20:00:00'), Carbon::parse('2024-12-17 22:30:00')),
+        new Range(Carbon::parse('2024-12-16 00:00:00'), Carbon::parse('2024-12-17 22:30:00')),
         new Range(Carbon::parse('2024-12-18 06:00:00'), Carbon::parse('2024-12-19 08:00:00')),
     ];
 

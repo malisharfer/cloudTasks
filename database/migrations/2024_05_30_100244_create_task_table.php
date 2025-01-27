@@ -19,6 +19,8 @@ return new class extends Migration
             $table->boolean('is_alert');
             $table->boolean('is_weekend');
             $table->boolean('is_night');
+            $table->boolean('in_parallel')->default(false);
+            $table->json('concurrent_tasks')->nullable();
             $table->string('department_name')->nullable();
             $table->json('recurring');
             $table->timestamps();

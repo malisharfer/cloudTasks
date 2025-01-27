@@ -33,6 +33,8 @@ class Soldier extends Model
         'reserve_dates',
         'next_reserve_dates',
         'constraints_limit',
+        'not_thursday_evening',
+        'not_sunday_morning',
     ];
 
     protected $casts = [
@@ -42,6 +44,8 @@ class Soldier extends Model
         'has_exemption' => 'boolean',
         'is_trainee' => 'boolean',
         'is_mabat' => 'boolean',
+        'not_thursday_evening' => 'boolean',
+        'not_sunday_morning' => 'boolean',
         'capacity' => Integer::class,
         'max_nights' => Integer::class,
         'max_weekends' => Integer::class,

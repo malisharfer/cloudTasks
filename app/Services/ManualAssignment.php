@@ -103,13 +103,15 @@ class ManualAssignment
                 function (User $user) {
                     $soldier = $this->getSoldierBy($user->userable_id);
                     $constraints = $this->getConstraints($soldier);
-                    $soldiersShifts = $this->getSoldiersShifts($soldier->id);
+                    $soldiersShifts = $this->getSoldiersShifts($soldier->id, false);
 
                     $soldiersShifts->push(...Helpers::addShiftsSpaces($soldiersShifts));
 
                     $capacityHold = Helpers::capacityHold($soldiersShifts);
 
-                    return Helpers::buildSoldier($soldier, $constraints, $soldiersShifts, $capacityHold);
+                    $concurrentsShifts = $this->getSoldiersShifts($soldier->id, true);
+
+                    return Helpers::buildSoldier($soldier, $constraints, $soldiersShifts, $capacityHold, $concurrentsShifts);
                 }
             );
     }
@@ -123,7 +125,7 @@ class ManualAssignment
     {
         $me = Soldier::find(auth()->user()->userable_id);
         $constraints = $this->getConstraints($me);
-        $myShifts = $this->getSoldiersShifts($me->id);
+        $myShifts = $this->getSoldiersShifts($me->id, false);
 
         $myShifts->push(...Helpers::addShiftsSpaces($myShifts));
 
@@ -134,7 +136,7 @@ class ManualAssignment
         return $soldier->isQualified($this->shift->taskType)
             && $soldier->isAvailableByMaxes($this->shift)
             && $soldier->isAvailableByConstraints($this->shift->range) != Availability::NO
-            && $soldier->isAvailableByShifts($this->shift->range)
+            && $soldier->isAvailableByShifts($this->shift, false)
             && $soldier->isAvailableBySpaces($this->shift->getShiftSpaces($soldier->shifts));
     }
 
@@ -143,9 +145,9 @@ class ManualAssignment
         return $this->soldierType != 'reserves' ? Helpers::getConstraintBy($soldier->id, new Range($this->shift->range->start->copy()->startOfMonth(), $this->shift->range->end->copy()->endOfMonth())) : collect([]);
     }
 
-    protected function getSoldiersShifts($soldierId)
+    protected function getSoldiersShifts($soldierId, $inParallel)
     {
-        return Helpers::getSoldiersShifts($soldierId, new Range($this->shift->range->start->copy()->startOfMonth(), $this->shift->range->end->copy()->endOfMonth()));
+        return Helpers::getSoldiersShifts($soldierId, new Range($this->shift->range->start->copy()->startOfMonth(), $this->shift->range->end->copy()->endOfMonth()), $inParallel);
     }
 
     protected function getAvailableSoldiers()
@@ -154,13 +156,23 @@ class ManualAssignment
             fn (SoldierService $soldier) => $soldier->isQualified($this->shift->taskType)
             && $soldier->isAvailableByMaxes($this->shift)
             && $soldier->isAvailableByConstraints($this->shift->range) != Availability::NO
-            && $soldier->isAvailableByShifts($this->shift->range)
+            && $soldier->isAvailableByShifts($this->shift, Shift::find($this->shift->id)->task?->in_parallel)
             && $soldier->isAvailableBySpaces($this->shift->getShiftSpaces($soldier->shifts))
         );
 
+        $soldiersWithConcurrentsShifts = collect([]);
+        $availableSoldiers->map(function (SoldierService $soldier) use ($soldiersWithConcurrentsShifts) {
+            if (! $soldier->isAvailableByConcurrentsShifts($this->shift)) {
+                $soldiersWithConcurrentsShifts->push($soldier->id);
+            }
+        });
+
         return $availableSoldiers->mapWithKeys(
-            function (SoldierService $soldier) {
+            function (SoldierService $soldier) use ($soldiersWithConcurrentsShifts) {
                 $user = User::where('userable_id', '=', $soldier->id)->first();
+                if ($soldiersWithConcurrentsShifts->contains($soldier->id)) {
+                    return [$user->userable_id => $user->displayName.' 📌'];
+                }
 
                 return [$user->userable_id => $user->displayName];
             }

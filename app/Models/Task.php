@@ -22,6 +22,8 @@ class Task extends Model
         'is_alert',
         'is_weekend',
         'is_night',
+        'in_parallel',
+        'concurrent_tasks',
         'department_name',
         'recurring',
     ];
@@ -31,6 +33,8 @@ class Task extends Model
         'is_weekend' => 'boolean',
         'is_night' => 'boolean',
         'parallel_weight' => Integer::class,
+        'in_parallel' => 'boolean',
+        'concurrent_tasks' => 'array',
         'recurring' => 'array',
         'duration' => Integer::class,
     ];

@@ -413,6 +413,12 @@ class SoldierResource extends Resource
                 ->label(__('Constraints limit'))
                 ->schema([
                     Group::make([
+                        Toggle::make('not_thursday_evening')
+                            ->label(__('Not Thursday evening constraint')),
+                        Toggle::make('not_sunday_morning')
+                            ->label(__('Not Sunday morning constraint')),
+                    ])->columns(2),
+                    Group::make([
                         TextInput::make('Not weekend')
                             ->label(__('Not weekend'))
                             ->numeric()

@@ -25,7 +25,7 @@ class Helpers
         );
     }
 
-    public static function buildSoldier($soldier, $constraints, $shifts, array $capacityHold): SoldierService
+    public static function buildSoldier($soldier, $constraints, $shifts, array $capacityHold, $concurrentsShifts = []): SoldierService
     {
         return new SoldierService(
             $soldier->id,
@@ -35,7 +35,8 @@ class Helpers
             new MaxData($soldier->max_weekends, $capacityHold['sumWeekends'] ?? 0),
             $soldier->qualifications,
             $constraints,
-            $shifts
+            $shifts,
+            $concurrentsShifts
         );
     }
 
@@ -87,22 +88,22 @@ class Helpers
         collect($shifts)->map(function (ShiftService $shift) use ($shifts, &$allSpaces) {
             $spaces = $shift->isWeekend || $shift->isNight ? $shift->getShiftSpaces($shifts) : null;
             if (! empty($spaces)) {
-                collect($spaces)->map(fn (Range $space) => $allSpaces->push(new ShiftService(0, 'space', $space->start, $space->end, 0, false, false)));
+                collect($spaces)->map(fn (Range $space) => $allSpaces->push(new ShiftService(0, '', $space->start, $space->end, 0, false, false)));
             }
         });
 
         return $allSpaces;
     }
 
-    public static function getSoldiersShifts($soldierId, $newRange)
+    public static function getSoldiersShifts($soldierId, $newRange, $inParallel)
     {
         return Shift::where('soldier_id', $soldierId)
             ->get()
             ->filter(
-                function (Shift $shift) use ($newRange): bool {
+                function (Shift $shift) use ($newRange, $inParallel): bool {
                     $range = new Range($shift->start_date, $shift->end_date);
 
-                    return $range->isSameMonth($newRange);
+                    return $range->isSameMonth($newRange) && $shift->task->in_parallel === $inParallel;
                 }
             )
             ->map(fn (Shift $shift): ShiftService => self::buildShift($shift));
@@ -114,5 +115,10 @@ class Helpers
             ->get();
 
         return self::buildConstraints($constraint, $newRange);
+    }
+
+    public static function updateShiftTable($assignments)
+    {
+        collect($assignments)->map(fn (Assignment $assignment) => Shift::where('id', $assignment->shiftId)->update(['soldier_id' => $assignment->soldierId]));
     }
 }

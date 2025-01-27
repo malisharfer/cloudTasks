@@ -174,7 +174,7 @@ class CalendarWidget extends FullCalendarWidget
                                 ->icon('heroicon-o-clipboard-document-check'),
                             Action::make('Shifts assignment')
                                 ->action(fn () => $this->runAlgorithm())
-                                ->label(__('Shifts assignment'))
+                                ->label(__('Shifts assignment and Parallel shifts'))
                                 ->icon('heroicon-o-play'),
                             Action::make('Reset assignment')
                                 ->action(fn () => $this->resetShifts())

@@ -5,7 +5,9 @@ namespace App\Models;
 use App\Casts\Integer;
 use App\Filament\Notifications\MyNotification;
 use App\Services\ChangeAssignment;
+use App\Services\Helpers;
 use App\Services\ManualAssignment;
+use App\Services\Range;
 use Cache;
 use Carbon\Carbon;
 use Filament\Actions\Action;
@@ -101,13 +103,7 @@ class Shift extends Model
                                 }
                             )
                             ->default(null)
-                            ->placeholder(function (?Shift $shift, Get $get) {
-                                $manual_assignment = new ManualAssignment($shift, $get('soldier_type'));
-
-                                return ! $manual_assignment->getSoldiers() ?
-                                      __('No suitable soldiers') :
-                                  __('Select a soldier');
-                            })
+                            ->placeholder(fn (?Shift $shift, Get $get) => self::soldierIdPlaceholder($get('soldier_type'), $shift))
                             ->visible(
                                 fn (Get $get): bool => $get('soldier_type') != null
                                 && $get('soldier_type') != 'me'
@@ -142,6 +138,21 @@ class Shift extends Model
                     ->required(),
             ]),
         ];
+    }
+
+    protected static function soldierIdPlaceholder($soldierType, $shift)
+    {
+        if ($soldierType === 'all') {
+            return Cache::remember('users', 30 * 60, function () {
+                return User::all();
+            })->count() > 0 ? __('Select a soldier') : __('No suitable soldiers');
+        }
+        $manual_assignment = new ManualAssignment($shift, $soldierType);
+
+        return
+         ! $manual_assignment->getSoldiers() ?
+              __('No suitable soldiers') :
+          __('Select a soldier');
     }
 
     public static function afterSave($shift, $record)
@@ -197,20 +208,20 @@ class Shift extends Model
                     $changeAssignment = new ChangeAssignment($record);
                     $sections = $changeAssignment->getMatchingShifts()
                         ->map(
-                            function ($shifts, $soldierId) {
+                            function ($shifts, $soldierId) use ($record) {
                                 return Section::make()
                                     ->id($soldierId)
-                                    ->description(__('Exchange with').' '.Soldier::find($soldierId)->user->displayName)
+                                    ->description(self::description($soldierId, $record))
                                     ->schema(
                                         $shifts->map(
-                                            function ($shift) {
+                                            function ($shift) use ($record) {
                                                 return Section::make()
                                                     ->id($shift->id)
                                                     ->schema([
                                                         Radio::make('selected_shift')
                                                             ->label(__(''))
                                                             ->options([
-                                                                $shift->id => __('Task').': '.Task::find($shift->task_id)->name.' '.__('Time').': '.__('From').' '.$shift->start_date.' '.__('To').' '.$shift->end_date,
+                                                                $shift->id => self::getOption($shift, $record),
                                                             ])
                                                             ->default(null)
                                                             ->afterStateUpdated(fn () => session()->put('selected_shift', true))
@@ -278,6 +289,30 @@ class Shift extends Model
                     return $changeAssignment->getMatchingShifts()->isEmpty();
                 }
             });
+    }
+
+    protected static function description($soldierId, $shift)
+    {
+        $soldier = Soldier::find($soldierId);
+        $concurrentsShifts = Helpers::getSoldiersShifts($soldierId, new Range($shift->start_date->copy()->startOfMonth(), $shift->end_date->copy()->endOfMonth()), true);
+        $soldier = Helpers::buildSoldier($soldier, [], [], [], $concurrentsShifts);
+        $shift = Helpers::buildShift($shift);
+
+        return $soldier->isAvailableByConcurrentsShifts($shift) ?
+            __('Exchange with').' '.Soldier::find($soldierId)->user->displayName :
+            __('Exchange with').' '.Soldier::find($soldierId)->user->displayName.' ('.__('The soldier is assigned a shift during the task').')';
+    }
+
+    protected static function getOption($shift, $record)
+    {
+        $soldier = Soldier::find($record->soldier_id);
+        $concurrentsShifts = Helpers::getSoldiersShifts($soldier->id, new Range($record->start_date->copy()->startOfMonth(), $record->end_date->copy()->endOfMonth()), true);
+        $soldier = Helpers::buildSoldier($soldier, [], [], [], $concurrentsShifts);
+        $shift = Helpers::buildShift($shift);
+
+        return $soldier->isAvailableByConcurrentsShifts($shift) ?
+        __('Task').': '.Task::find(Shift::find($shift->id)->task_id)->name.'. '.__('Time').': '.__('From').' '.$shift->range->start.' '.__('To').' '.$shift->range->end :
+        '📌 '.__('Task').': '.Task::find(Shift::find($shift->id)->task_id)->name.'. '.__('Time').': '.__('From').' '.$shift->range->start.' '.__('To').' '.$shift->range->end;
     }
 
     protected static function shiftsAssignmentExchange($record, $shift)

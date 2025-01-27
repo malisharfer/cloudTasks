@@ -164,6 +164,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'tichnun',
             'is_weekend' => false,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#b54b4b',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -178,6 +179,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'tichnun',
             'is_weekend' => false,
             'is_night' => true,
+            'in_parallel' => false,
             'color' => '#b54b4b',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -192,6 +194,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'tichnun',
             'is_weekend' => true,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#b54b4b',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -206,6 +209,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'tichnun',
             'is_weekend' => true,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#b54b4b',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -221,6 +225,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'bakara',
             'is_weekend' => false,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#4bb5ac',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -235,6 +240,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'bakara',
             'is_weekend' => false,
             'is_night' => true,
+            'in_parallel' => false,
             'color' => '#4bb5ac',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -249,6 +255,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'bakara',
             'is_weekend' => true,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#4bb5ac',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -264,6 +271,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'pikud',
             'is_weekend' => false,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#4bb569',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -278,6 +286,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'pikud',
             'is_weekend' => false,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#4bb569',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -292,6 +301,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'pikud',
             'is_weekend' => true,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#4bb569',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -306,6 +316,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'pikud',
             'is_weekend' => true,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#4bb569',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -320,6 +331,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'pikud',
             'is_weekend' => false,
             'is_night' => true,
+            'in_parallel' => false,
             'color' => '#4bb569',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -335,6 +347,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'minhal',
             'is_weekend' => false,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#c5d649',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -350,6 +363,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'hatasa',
             'is_weekend' => false,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#d649b5',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -364,6 +378,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'hatasa',
             'is_weekend' => false,
             'is_night' => true,
+            'in_parallel' => false,
             'color' => '#d649b5',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -378,6 +393,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'hatasa',
             'is_weekend' => true,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#d649b5',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -392,6 +408,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'hatasa',
             'is_weekend' => true,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#d649b5',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -407,6 +424,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'shmira',
             'is_weekend' => false,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#ee8559',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -421,6 +439,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'shmira',
             'is_weekend' => false,
             'is_night' => true,
+            'in_parallel' => false,
             'color' => '#ee8559',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -435,6 +454,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'shmira',
             'is_weekend' => true,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#ee8559',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -449,6 +469,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'shmira',
             'is_weekend' => true,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#ee8559',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -464,6 +485,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'pianuach',
             'is_weekend' => false,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#3574fb',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -478,6 +500,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'pianuach',
             'is_weekend' => false,
             'is_night' => true,
+            'in_parallel' => false,
             'color' => '#3574fb',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -492,6 +515,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'pianuach',
             'is_weekend' => true,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#3574fb',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -506,6 +530,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'pianuach',
             'is_weekend' => true,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#3574fb',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -521,6 +546,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'nivut',
             'is_weekend' => false,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#ed8d8d8b',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -535,6 +561,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'nivut',
             'is_weekend' => false,
             'is_night' => true,
+            'in_parallel' => false,
             'color' => '#ed8d8d8b',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -549,6 +576,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'nivut',
             'is_weekend' => true,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#ed8d8d8b',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -563,6 +591,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'nivut',
             'is_weekend' => true,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#ed8d8d8b',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -578,6 +607,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'tazpit',
             'is_weekend' => false,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#77ff23',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -592,6 +622,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'tazpit',
             'is_weekend' => false,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#77ff23',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -606,6 +637,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'tazpit',
             'is_weekend' => false,
             'is_night' => true,
+            'in_parallel' => false,
             'color' => '#77ff23',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -620,6 +652,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'tazpit',
             'is_weekend' => true,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#77ff23',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -634,6 +667,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'tazpit',
             'is_weekend' => true,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#77ff23',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
@@ -649,6 +683,7 @@ class DatabaseSeeder extends Seeder
             'type' => 'bdikat ziud',
             'is_weekend' => false,
             'is_night' => false,
+            'in_parallel' => false,
             'color' => '#a7b2c3',
             'recurring' => collect([
                 'type' => RecurringType::WEEKLY,
