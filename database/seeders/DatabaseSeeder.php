@@ -39,18 +39,18 @@ class DatabaseSeeder extends Seeder
             ])->id,
         ])->assignRole(['soldier', 'manager']);
 
-        User::factory()->create([
-            'first_name' => 'meshabetz mishmarot',
-            'userable_id' => Soldier::factory()->create([
-                'qualifications' => ['hatasa', 'tazpit', 'shmira'],
-                'capacity' => 6,
-                'max_weekends' => 6,
-                'max_shifts' => 7,
-                'max_nights' => 6,
-                'is_reservist' => false,
-                'constraints_limit' => ConstraintType::getLimit(),
-            ])->id,
-        ])->assignRole(['soldier', 'shifts-assignment']);
+        // User::factory()->create([
+        //     'first_name' => 'meshabetz mishmarot',
+        //     'userable_id' => Soldier::factory()->create([
+        //         'qualifications' => ['hatasa', 'tazpit', 'shmira'],
+        //         'capacity' => 6,
+        //         'max_weekends' => 6,
+        //         'max_shifts' => 7,
+        //         'max_nights' => 6,
+        //         'is_reservist' => false,
+        //         'constraints_limit' => ConstraintType::getLimit(),
+        //     ])->id,
+        // ])->assignRole(['soldier', 'shifts-assignment']);
 
     //     for ($i = 0; $i < 15; $i++) {
     //         $user = User::factory()->create([
