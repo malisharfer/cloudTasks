@@ -153,6 +153,8 @@ class CalendarWidget extends FullCalendarWidget
         if ($this->type === 'my') {
             if ($this->model === Constraint::class) {
                 return [$this->createConstraintAction()];
+            } else {
+                return [$this->downloadAssignmentsAction()];
             }
         } else {
             if ($this->model !== Shift::class) {
@@ -165,15 +167,7 @@ class CalendarWidget extends FullCalendarWidget
                 if (Task::exists()) {
                     $actions = [
                         ActionGroup::make([
-                            Action::make('Download')
-                                ->label(__('Download to excel'))
-                                ->icon('heroicon-o-arrow-down-tray')
-                                ->action(function () {
-                                    return Excel::download(new ShiftsExport($this->getEventsByRole(), $this->currentMonth), __('File name', [
-                                        'name' => auth()->user()->displayName,
-                                        'month' => $this->currentMonth,
-                                    ]).'.xlsx');
-                                }),
+                            $this->downloadAssignmentsAction(),
                             Action::make('Create shifts')
                                 ->action(fn () => $this->runEvents())
                                 ->label(__('Create shifts'))
@@ -212,8 +206,6 @@ class CalendarWidget extends FullCalendarWidget
                 ]
             );
         }
-
-        return [];
     }
 
     protected function createConstraintAction()
@@ -250,6 +242,19 @@ class CalendarWidget extends FullCalendarWidget
                 return $startDate->isBefore($today);
             })
             ->hidden($this->model === Shift::class && $this->type === 'my' && ! array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'shifts-assignment', 'department-commander', 'team-commander']));
+    }
+
+    protected function downloadAssignmentsAction()
+    {
+        return Action::make('Download')
+            ->label(__('Download to excel'))
+            ->icon('heroicon-o-arrow-down-tray')
+            ->action(function () {
+                return Excel::download(new ShiftsExport($this->currentMonth), __('File name', [
+                    'name' => auth()->user()->displayName,
+                    'month' => $this->currentMonth,
+                ]).'.xlsx');
+            });
     }
 
     protected function resetShifts()

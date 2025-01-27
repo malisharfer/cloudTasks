@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Models\Shift;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -19,25 +20,27 @@ class ShiftsExport implements FromCollection, ShouldAutoSize, WithHeadings, With
 
     protected $month;
 
-    public function __construct($query, $month)
+    public function __construct($month)
     {
-        $this->query = $query;
+        $this->query = Shift::whereNotNull('soldier_id')
+            ->whereBetween('start_date', [Carbon::parse($this->month)->startOfMonth(), Carbon::parse($this->month)->endOfMonth()])
+            ->get();
         $this->month = $month;
     }
 
     public function collection()
     {
         return $this->query
-            ->whereBetween('start_date', [Carbon::parse($this->month)->startOfMonth(), Carbon::parse($this->month)->endOfMonth()])
             ->sortBy('start_date')
             ->map(function ($shift) {
                 $task = Task::find($shift->task_id);
 
                 return [
+                    __('Shift name') => $task->name,
+                    __('Shift type') => $task->type,
+                    __('Soldier') => User::where('userable_id', $shift->soldier_id)->first()?->displayName ?? __('Unknown'),
                     __('Start date') => $shift->start_date,
                     __('End date') => $shift->end_date,
-                    __('Soldier') => User::where('userable_id', $shift->soldier_id)->first()?->displayName ?? __('Unknown'),
-                    __('Shift name') => $task->name,
                     __('Is night') => $task->is_night ? __('Yes') : __('No'),
                     __('Is weekend') => $task->is_weekend ? __('Yes') : __('No'),
                 ];
@@ -47,10 +50,11 @@ class ShiftsExport implements FromCollection, ShouldAutoSize, WithHeadings, With
     public function headings(): array
     {
         return [
+            __('Shift name'),
+            __('Shift type'),
+            __('Soldier'),
             __('Start date'),
             __('End date'),
-            __('Soldier'),
-            __('Shift name'),
             __('Is night'),
             __('Is weekend'),
         ];
