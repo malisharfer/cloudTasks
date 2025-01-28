@@ -339,12 +339,11 @@ class CalendarWidget extends FullCalendarWidget
             return $basicActions;
         }
         if ($this->model == Shift::class && $this->type == 'my') {
-            return $changeAction;
+            return array_merge($changeAction, $basicActions);
         }
-        // if (! (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray()))) {
-        //     FilamentFullCalendarPlugin::get()->editable(false);
-        //     FilamentFullCalendarPlugin::get()->selectable(false);
-        // }
+        if (! (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray()))) {
+            return $basicActions;
+        }
 
         return [];
     }
@@ -363,7 +362,11 @@ class CalendarWidget extends FullCalendarWidget
                         ];
                 })
                 ->visible(function ($arguments) {
-                    if (! empty($arguments['event']) && $arguments['event']['start'] < now()) {
+                    if (
+                        (! empty($arguments['event']) && $arguments['event']['start'] < now())
+                        || ($this->model === Shift::class && auth()->user()->getRoleNames()->count() === 1)
+                        || ($this->model === Constraint::class && $this->type ==='my_soldiers' && ! (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())))
+                    ) {
                         $this->refreshRecords();
 
                         return false;
@@ -430,6 +433,17 @@ class CalendarWidget extends FullCalendarWidget
                 }),
             DeleteAction::make()
                 ->outlined()
+                ->visible(function ($arguments) {
+                    if (
+                        ! empty($arguments['event'])
+                        || ($this->model === Shift::class && auth()->user()->getRoleNames()->count() === 1)
+                        || ($this->model === Constraint::class && $this->type ==='my_soldiers' && ! (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())))
+                    ) {
+                        return false;
+                    }
+
+                    return true;
+                })
                 ->label(__('Delete')),
         ];
     }
