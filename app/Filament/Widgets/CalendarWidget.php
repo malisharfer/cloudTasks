@@ -164,10 +164,10 @@ class CalendarWidget extends FullCalendarWidget
                 if (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())) {
                     return [$this->createConstraintAction()];
                 }
-                else{
-                    FilamentFullCalendarPlugin::get()->editable(false);
-                    FilamentFullCalendarPlugin::get()->selectable(false);
-                }
+                // else{
+                //     FilamentFullCalendarPlugin::get()->editable(false);
+                //     FilamentFullCalendarPlugin::get()->selectable(false);
+                // }
             } else {
                 if (Task::exists()) {
                     $actions = [
@@ -341,10 +341,10 @@ class CalendarWidget extends FullCalendarWidget
         if ($this->model == Shift::class && $this->type == 'my') {
             return $changeAction;
         }
-        if (! (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray()))) {
-            FilamentFullCalendarPlugin::get()->editable(false);
-            FilamentFullCalendarPlugin::get()->selectable(false);
-        }
+        // if (! (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray()))) {
+        //     FilamentFullCalendarPlugin::get()->editable(false);
+        //     FilamentFullCalendarPlugin::get()->selectable(false);
+        // }
 
         return [];
     }
