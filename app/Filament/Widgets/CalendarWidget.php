@@ -53,6 +53,8 @@ class CalendarWidget extends FullCalendarWidget
 
     public function fetchEvents(array $fetchInfo): array
     {
+        FilamentFullCalendarPlugin::get()->editable(true);
+                FilamentFullCalendarPlugin::get()->selectable(true);
         $this->currentMonth = Carbon::parse($fetchInfo['start'])->addDays(7)->year.'-'.Carbon::parse($fetchInfo['start'])->addDays(7)->month;
 
         $events = $this->getEventsByRole();
