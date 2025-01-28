@@ -163,8 +163,8 @@ class CalendarWidget extends FullCalendarWidget
                     return [$this->createConstraintAction()];
                 }
                 \Log::info(json_encode('if line 165'));
-                FilamentFullCalendarPlugin::get()->editable(false);
-                FilamentFullCalendarPlugin::get()->selectable(false);
+                // FilamentFullCalendarPlugin::get()->editable(false);
+                // FilamentFullCalendarPlugin::get()->selectable(false);
             } else {
                 if (Task::exists()) {
                     $actions = [
@@ -340,8 +340,8 @@ class CalendarWidget extends FullCalendarWidget
         }
         if (! (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray()))) {
             \Log::info(json_encode('if 3line 341'));
-            FilamentFullCalendarPlugin::get()->editable(false);
-            FilamentFullCalendarPlugin::get()->selectable(false);
+            // FilamentFullCalendarPlugin::get()->editable(false);
+            // FilamentFullCalendarPlugin::get()->selectable(false);
         }
 
         return [];
