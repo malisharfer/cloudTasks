@@ -51,7 +51,7 @@ class CalendarWidget extends FullCalendarWidget
 
     public function fetchEvents(array $fetchInfo): array
     {
-        $this->currentMonth = Carbon::parse($fetchInfo['start'])->addDays(7)->year . '-' . Carbon::parse($fetchInfo['start'])->addDays(7)->month;
+        $this->currentMonth = Carbon::parse($fetchInfo['start'])->addDays(7)->year.'-'.Carbon::parse($fetchInfo['start'])->addDays(7)->month;
 
         $events = $this->getEventsByRole();
 
@@ -116,18 +116,18 @@ class CalendarWidget extends FullCalendarWidget
                 ->orWhereNull('soldier_id')
                 ->get()
                 ->filter(function (Model $object) use ($current_user_id) {
-                        $soldier = Soldier::where('id', '=', $object->soldier_id)->first();
+                    $soldier = Soldier::where('id', '=', $object->soldier_id)->first();
 
-                        return !$soldier || $soldier?->team?->department?->commander_id == $current_user_id;
-                    }),
+                    return ! $soldier || $soldier?->team?->department?->commander_id == $current_user_id;
+                }),
             'team-commander' => $this->model::where('soldier_id', '!=', $current_user_id)
                 ->orWhereNull('soldier_id')
                 ->get()
                 ->filter(function (Model $object) use ($current_user_id) {
-                        $soldier = Soldier::where('id', '=', $object->soldier_id)->first();
+                    $soldier = Soldier::where('id', '=', $object->soldier_id)->first();
 
-                        return !$soldier || $soldier?->team?->commander_id == $current_user_id;
-                    }),
+                    return ! $soldier || $soldier?->team?->commander_id == $current_user_id;
+                }),
         } : $this->model::where('soldier_id', '=', $current_user_id)->get();
     }
 
@@ -143,7 +143,7 @@ class CalendarWidget extends FullCalendarWidget
 
     protected function headerActions(): array
     {
-        $this->currentMonth ?? $this->currentMonth = Carbon::now()->year . '-' . Carbon::now()->month;
+        $this->currentMonth ?? $this->currentMonth = Carbon::now()->year.'-'.Carbon::now()->month;
         if ($this->lastFilterData != $this->filterData) {
             $this->refreshRecords();
             $this->lastFilterData = $this->filterData;
@@ -166,15 +166,15 @@ class CalendarWidget extends FullCalendarWidget
                         ActionGroup::make([
                             $this->downloadAssignmentsAction(),
                             Action::make('Create shifts')
-                                ->action(fn() => $this->runEvents())
+                                ->action(fn () => $this->runEvents())
                                 ->label(__('Create shifts'))
                                 ->icon('heroicon-o-clipboard-document-check'),
                             Action::make('Shifts assignment')
-                                ->action(fn() => $this->runAlgorithm())
+                                ->action(fn () => $this->runAlgorithm())
                                 ->label(__('Shifts assignment and Parallel shifts'))
                                 ->icon('heroicon-o-play'),
                             Action::make('Reset assignment')
-                                ->action(fn() => $this->resetShifts())
+                                ->action(fn () => $this->resetShifts())
                                 ->label(__('Reset assignment'))
                                 ->icon('heroicon-o-arrow-path'),
                         ])
@@ -231,14 +231,14 @@ class CalendarWidget extends FullCalendarWidget
                     'end_date' => $arguments['end'] ?? null,
                 ]);
             })
-            ->label($this->model::getTitle() . ' ' . __('New'))
-            ->modalHeading(__('Create') . ' ' . $this->model::getTitle())
+            ->label($this->model::getTitle().' '.__('New'))
+            ->modalHeading(__('Create').' '.$this->model::getTitle())
             ->disabled(function (array $arguments) use ($today) {
                 $startDate = Carbon::parse($arguments['start'] ?? null);
 
                 return $startDate->isBefore($today);
             })
-            ->hidden($this->model === Shift::class && $this->type === 'my' && !array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'shifts-assignment', 'department-commander', 'team-commander']));
+            ->hidden($this->model === Shift::class && $this->type === 'my' && ! array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'shifts-assignment', 'department-commander', 'team-commander']));
     }
 
     protected function downloadAssignmentsAction()
@@ -250,7 +250,7 @@ class CalendarWidget extends FullCalendarWidget
                 return Excel::download(new ShiftsExport($this->currentMonth), __('File name', [
                     'name' => auth()->user()->displayName,
                     'month' => $this->currentMonth,
-                ]) . '.xlsx');
+                ]).'.xlsx');
             });
     }
 
@@ -318,39 +318,11 @@ class CalendarWidget extends FullCalendarWidget
         $basicActions = $this->getBasicActions();
         $changeAction = $this->getChangeActions();
 
-        if (
-            $this->model == Shift::class && auth()->user()->getRoleNames()->count() === 1 ||
-            $this->model == Constraint::class && $this->type == 'my_soldiers' && !auth()->user()->getRoleNames()->contains('shifts-assignment') && !auth()->user()->getRoleNames()->contains('manager')
-        ) {
-            return [
-                EditAction::make()
-                    ->visible(function () {
-                        $this->refreshRecords();
-                        return false;
-                    })
-            ];
-        }
-        // if (
-        //     ($this->model == Shift::class && $this->type == 'my')
-        //     || ($this->model == Constraint::class && $this->type == 'my')
-        //     || ($this->model == Constraint::class && $this->type == 'my_soldiers' && in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray()))
-        //     || ($this->model == Shift::class && $this->type == 'my_soldiers')
-        //     // || ($this->model == Shift::class && $this->type == 'my' && array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'shifts-assignment', 'department-commander', 'team-commander']))
-        // ) {
         if ($this->model == Shift::class) {
             return array_merge($changeAction, $basicActions);
         }
 
         return $basicActions;
-        // }
-        // if ($this->model == Shift::class && $this->type == 'my') {
-        //     return array_merge($changeAction, $basicActions);
-        // }
-        // if (! (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray()))) {
-        //     return $basicActions;
-        // }
-
-        // return [];
     }
 
     protected function getBasicActions()
@@ -367,15 +339,9 @@ class CalendarWidget extends FullCalendarWidget
                         ];
                 })
                 ->visible(function ($arguments) {
-                    if (
-                        (!empty($arguments['event']) && $arguments['event']['start'] < now())
-                        // || ($this->model === Shift::class && auth()->user()->getRoleNames()->count() === 1)
-                        // || ($this->model === Constraint::class && $this->type === 'my_soldiers' && ! array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'shifts-assignment']))
-                    ) {
+                    if (! empty($arguments['event']) && $arguments['event']['start'] < now()) {
                         $this->refreshRecords();
 
-                        // $this->closeActionModal();
-                        // $this->viewAction();
                         return false;
                     }
 
@@ -395,7 +361,7 @@ class CalendarWidget extends FullCalendarWidget
                             )
                         ) : true
                     );
-                    if (!empty($arguments) && $this->model === Shift::class) {
+                    if (! empty($arguments) && $this->model === Shift::class) {
                         $oldDate = date('l', strtotime($this->mountedActionsArguments[0]['oldEvent']['start']));
                         $newDate = date('l', strtotime($this->mountedActionsData[0]['start_date']));
                         $startOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
@@ -413,12 +379,12 @@ class CalendarWidget extends FullCalendarWidget
                     return [
                         $action->makeExtraModalAction(__('Save'), ['save' => true])
                             ->color('primary')
-                            ->disabled(!$canSave),
+                            ->disabled(! $canSave),
                         $action->makeExtraModalAction(__('Cancel'), ['cancel' => true])
                             ->color('primary'),
                     ];
                 })
-                ->modalHeading(__('Edit') . ' ' . $this->model::getTitle())
+                ->modalHeading(__('Edit').' '.$this->model::getTitle())
                 ->outlined()
                 ->action(function (array $data, array $arguments, Model $record): void {
                     $data = method_exists($this->model, 'setData') ? $data = $this->model::setData($record, $data) : $data;
@@ -426,7 +392,7 @@ class CalendarWidget extends FullCalendarWidget
                         $this->refreshRecords();
                     }
                     if ($arguments['save'] ?? false) {
-                        $columns = Schema::getColumnListing(strtolower(class_basename($this->model)) . 's');
+                        $columns = Schema::getColumnListing(strtolower(class_basename($this->model)).'s');
                         $filteredData = array_intersect_key($data, array_flip($columns));
                         $record = $this->model::find($record['id']);
                         if ($record) {
@@ -440,17 +406,6 @@ class CalendarWidget extends FullCalendarWidget
                 }),
             DeleteAction::make()
                 ->outlined()
-                // ->visible(function ($arguments) {
-                //     if (
-                //         ! empty($arguments['event'])
-                //         || ($this->model === Shift::class && auth()->user()->getRoleNames()->count() === 1)
-                //         || ($this->model === Constraint::class && $this->type === 'my_soldiers' && ! array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'shifts-assignment']))
-                //     ) {
-                //         return false;
-                //     }
-
-                //     return true;
-                // })
                 ->label(__('Delete')),
         ];
     }
@@ -459,11 +414,11 @@ class CalendarWidget extends FullCalendarWidget
     {
         return [
             Shift::exchangeAction()
-                ->visible(fn(): bool => $this->displayButton())
+                ->visible(fn (): bool => $this->displayButton())
                 ->outlined()
                 ->cancelParentActions(),
             Shift::changeAction()
-                ->visible(fn(): bool => $this->displayButton())
+                ->visible(fn (): bool => $this->displayButton())
                 ->outlined()
                 ->cancelParentActions(),
         ];
@@ -471,12 +426,12 @@ class CalendarWidget extends FullCalendarWidget
 
     protected function displayButton(): bool
     {
-        $record = is_array($this->mountedActionsData) && !empty($this->mountedActionsData)
+        $record = is_array($this->mountedActionsData) && ! empty($this->mountedActionsData)
             ? (object) $this->mountedActionsData[0]
             : (object) $this->mountedActionsData;
         $range = new Range($record->start_date, $record->end_date);
 
-        return $record->soldier_id !== null && !$range->isPass();
+        return $record->soldier_id !== null && ! $range->isPass();
     }
 
     protected function viewAction(): Action
@@ -491,10 +446,21 @@ class CalendarWidget extends FullCalendarWidget
                         'end_date' => $arguments['event']['end'] ?? $record->end_date,
                     ];
             })
-            ->modalFooterActions(fn(FullCalendarWidget $livewire) => [
-                ...$livewire->getCachedModalActions(),
-            ])
-            ->modalHeading(__('View ') . $this->model::getTitle());
+            ->modalFooterActions(
+                function (ViewAction $action, FullCalendarWidget $livewire) {
+                    if (
+                        $this->model == Shift::class && auth()->user()->getRoleNames()->count() === 1 ||
+                        $this->model == Constraint::class && $this->type == 'my_soldiers' && ! auth()->user()->getRoleNames()->contains('shifts-assignment') && ! auth()->user()->getRoleNames()->contains('manager')
+                    ) {
+                        return [$action->getModalCancelAction()];
+                    }
+
+                    return [
+                        ...$livewire->getCachedModalActions(),
+                    ];
+                }
+            )
+            ->modalHeading(__('View ').$this->model::getTitle());
     }
 
     public function eventDidMount(): string
@@ -505,5 +471,30 @@ class CalendarWidget extends FullCalendarWidget
             el.setAttribute("x-data", "{ tooltip: `"+event.title+"` }");
         }
     JS;
+    }
+
+    public function onEventDrop(array $event, array $oldEvent, array $relatedEvents, array $delta, ?array $oldResource, ?array $newResource): bool
+    {
+        if (
+            $this->model == Shift::class && auth()->user()->getRoleNames()->count() === 1 ||
+            $this->model == Constraint::class && $this->type == 'my_soldiers' && ! auth()->user()->getRoleNames()->contains('shifts-assignment') && ! auth()->user()->getRoleNames()->contains('manager')
+        ) {
+            $this->refreshRecords();
+        } else {
+            if ($this->getModel()) {
+                $this->record = $this->resolveRecord($event['id']);
+            }
+            $this->mountAction('edit', [
+                'type' => 'drop',
+                'event' => $event,
+                'oldEvent' => $oldEvent,
+                'relatedEvents' => $relatedEvents,
+                'delta' => $delta,
+                'oldResource' => $oldResource,
+                'newResource' => $newResource,
+            ]);
+        }
+
+        return false;
     }
 }
