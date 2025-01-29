@@ -20,13 +20,11 @@ use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
-use Log;
 use Maatwebsite\Excel\Facades\Excel;
 use Saade\FilamentFullCalendar\Actions\CreateAction;
 use Saade\FilamentFullCalendar\Actions\DeleteAction;
 use Saade\FilamentFullCalendar\Actions\EditAction;
 use Saade\FilamentFullCalendar\Actions\ViewAction;
-use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
 
 class CalendarWidget extends FullCalendarWidget
@@ -53,8 +51,6 @@ class CalendarWidget extends FullCalendarWidget
 
     public function fetchEvents(array $fetchInfo): array
     {
-        FilamentFullCalendarPlugin::get()->editable(true);
-                FilamentFullCalendarPlugin::get()->selectable(true);
         $this->currentMonth = Carbon::parse($fetchInfo['start'])->addDays(7)->year.'-'.Carbon::parse($fetchInfo['start'])->addDays(7)->month;
 
         $events = $this->getEventsByRole();
@@ -164,10 +160,6 @@ class CalendarWidget extends FullCalendarWidget
                 if (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())) {
                     return [$this->createConstraintAction()];
                 }
-                // else{
-                //     FilamentFullCalendarPlugin::get()->editable(false);
-                //     FilamentFullCalendarPlugin::get()->selectable(false);
-                // }
             } else {
                 if (Task::exists()) {
                     $actions = [
@@ -327,25 +319,33 @@ class CalendarWidget extends FullCalendarWidget
         $changeAction = $this->getChangeActions();
 
         if (
-            ($this->model == Constraint::class && $this->type == 'my')
-            || ($this->model == Constraint::class && $this->type == 'my_soldiers' && in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray()))
-            || ($this->model == Shift::class && $this->type == 'my_soldiers')
-            || ($this->model == Shift::class && $this->type == 'my' && array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'shifts-assignment', 'department-commander', 'team-commander']))
+            $this->model == Shift::class && auth()->user()->getRoleNames()->count() === 1 ||
+            $this->model == Constraint::class && $this->type == 'my_soldiers' && ! array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'shifts-assignment'])
         ) {
-            if ($this->model == Shift::class) {
-                return array_merge($changeAction, $basicActions);
-            }
-
-            return $basicActions;
+            EditAction::make()
+                ->action(fn () => $this->refreshRecords());
         }
-        if ($this->model == Shift::class && $this->type == 'my') {
+        // if (
+        //     ($this->model == Shift::class && $this->type == 'my')
+        //     || ($this->model == Constraint::class && $this->type == 'my')
+        //     || ($this->model == Constraint::class && $this->type == 'my_soldiers' && in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray()))
+        //     || ($this->model == Shift::class && $this->type == 'my_soldiers')
+        //     // || ($this->model == Shift::class && $this->type == 'my' && array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'shifts-assignment', 'department-commander', 'team-commander']))
+        // ) {
+        if ($this->model == Shift::class) {
             return array_merge($changeAction, $basicActions);
         }
-        if (! (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray()))) {
-            return $basicActions;
-        }
 
-        return [];
+        return $basicActions;
+        // }
+        // if ($this->model == Shift::class && $this->type == 'my') {
+        //     return array_merge($changeAction, $basicActions);
+        // }
+        // if (! (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray()))) {
+        //     return $basicActions;
+        // }
+
+        // return [];
     }
 
     protected function getBasicActions()
@@ -364,11 +364,13 @@ class CalendarWidget extends FullCalendarWidget
                 ->visible(function ($arguments) {
                     if (
                         (! empty($arguments['event']) && $arguments['event']['start'] < now())
-                        || ($this->model === Shift::class && auth()->user()->getRoleNames()->count() === 1)
-                        || ($this->model === Constraint::class && $this->type ==='my_soldiers' && ! (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())))
+                        // || ($this->model === Shift::class && auth()->user()->getRoleNames()->count() === 1)
+                        // || ($this->model === Constraint::class && $this->type === 'my_soldiers' && ! array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'shifts-assignment']))
                     ) {
                         $this->refreshRecords();
 
+                        // $this->closeActionModal();
+                        // $this->viewAction();
                         return false;
                     }
 
@@ -433,17 +435,17 @@ class CalendarWidget extends FullCalendarWidget
                 }),
             DeleteAction::make()
                 ->outlined()
-                ->visible(function ($arguments) {
-                    if (
-                        ! empty($arguments['event'])
-                        || ($this->model === Shift::class && auth()->user()->getRoleNames()->count() === 1)
-                        || ($this->model === Constraint::class && $this->type ==='my_soldiers' && ! (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())))
-                    ) {
-                        return false;
-                    }
+                // ->visible(function ($arguments) {
+                //     if (
+                //         ! empty($arguments['event'])
+                //         || ($this->model === Shift::class && auth()->user()->getRoleNames()->count() === 1)
+                //         || ($this->model === Constraint::class && $this->type === 'my_soldiers' && ! array_intersect(auth()->user()->getRoleNames()->toArray(), ['manager', 'shifts-assignment']))
+                //     ) {
+                //         return false;
+                //     }
 
-                    return true;
-                })
+                //     return true;
+                // })
                 ->label(__('Delete')),
         ];
     }
