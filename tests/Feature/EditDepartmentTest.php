@@ -30,3 +30,17 @@ it('should assign department-commander role to the commander', function () {
 
     expect($commander->getRoleNames()->contains('department-commander'))->toBe(true);
 });
+
+it('should remove department-commander role to the commander', function () {
+    $commander = User::factory()->create();
+    $department = Department::factory()->create(['commander_id' => $commander->id]);
+    $commander->assignRole('department-commander');
+    livewire(EditDepartment::class, [
+        'record' => $department->id,
+    ])
+        ->set('data.commander_id', null)
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($commander->getRoleNames()->contains('department-commander'))->toBeFalse();
+});

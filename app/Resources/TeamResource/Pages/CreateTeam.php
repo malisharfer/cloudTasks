@@ -89,6 +89,7 @@ class CreateTeam extends CreateRecord
 
     protected function assignRoles()
     {
+        Soldier::where('id', $this->record->commander_id)->update(['team_id' => null]);
         $user = User::where('userable_id', $this->record->commander_id)->first();
         $user->assignRole('team-commander');
     }

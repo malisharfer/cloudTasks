@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Enums\Availability;
 use App\Models\Shift;
 use App\Models\Soldier;
-use App\Models\Task;
 use App\Services\Shift as ShiftService;
 use App\Services\Soldier as SoldierService;
 use Carbon\Carbon;
@@ -116,10 +115,8 @@ class ConcurrentTasks
 
     protected function isAvailableByShiftsAndSpaces($soldierShifts, ShiftService $shift): bool
     {
-        $tasksInParallel = Task::find(Shift::find($shift->id)->task_id)->concurrent_tasks;
-
-        return ! $soldierShifts->contains(function (ShiftService $soldierShift) use ($shift, $tasksInParallel): bool {
-            return $soldierShift->range->isConflict($shift->range) && ! collect($tasksInParallel)->contains($soldierShift->taskType);
+        return ! $soldierShifts->contains(function (ShiftService $soldierShift) use ($shift): bool {
+            return $soldierShift->range->isConflict($shift->range) && ! collect($shift->inParalelTasks)->contains($soldierShift->taskType);
         });
     }
 

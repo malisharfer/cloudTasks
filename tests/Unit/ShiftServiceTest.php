@@ -13,7 +13,9 @@ it('should return the day before and after if the shift is at night', function (
         '2024-12-18 06:00:00',
         0.25,
         true,
-        false
+        false,
+        false,
+        []
     );
 
     $result = $shift->getShiftSpaces([]);
@@ -39,7 +41,9 @@ it('should return the next sunday if the shift is at weekend', function () {
         '2024-11-09 09:00:00',
         0.25,
         false,
-        true
+        true,
+        false,
+        []
     );
 
     $result = $shift->getShiftSpaces([]);
@@ -60,7 +64,7 @@ it('should return the next sunday if the shift is full weekend', function () {
 
     $range = new Range('2024-11-08 16:30:00', '2024-11-09 22:00:00');
 
-    $shift = new Shift(1, 'test', '2024-11-08 16:30:00', '2024-11-09 22:00:00', 0.25, false, true);
+    $shift = new Shift(1, 'test', '2024-11-08 16:30:00', '2024-11-09 22:00:00', 0.25, false, true, false, []);
     $reflection = new ReflectionClass(Shift::class);
 
     $method = $reflection->getMethod('getWeekendSpaces');
@@ -87,7 +91,9 @@ it('should not return the next sunday if the shift is not full weekend', functio
         '2024-11-16 18:30:00',
         0.25,
         false,
-        true
+        true,
+        false,
+        []
     );
     $reflection = new ReflectionClass(Shift::class);
 
@@ -106,7 +112,9 @@ it('should return true if the weekend is full', function () {
         '2024-11-09 18:30:00',
         0.25,
         false,
-        true
+        true,
+        false,
+        []
     );
 
     $reflection = new ReflectionClass(Shift::class);
@@ -126,7 +134,9 @@ it('should return false if the weekend is not full', function () {
         '2024-11-16 18:30:00',
         0.25,
         false,
-        true
+        true,
+        false,
+        []
     );
     $reflection = new ReflectionClass(Shift::class);
 
@@ -146,7 +156,9 @@ it('should return true if the range includes the supplied day', function () {
         '2024-11-11 18:00:00',
         0.25,
         false,
-        true
+        true,
+        false,
+        []
     );
     $reflection = new ReflectionClass(Shift::class);
 
@@ -166,7 +178,9 @@ it('should return false if the range does not include the supplied day', functio
         '2024-11-11 18:00:00',
         0.25,
         false,
-        true
+        true,
+        false,
+        []
     );
     $reflection = new ReflectionClass(Shift::class);
 
@@ -185,7 +199,9 @@ it('should return true if the shift date is adjacent to the selected date', func
         '2024-11-09 18:30:00',
         0.25,
         false,
-        true
+        true,
+        false,
+        []
     )];
     $shift = new App\Services\Shift(
         1,
@@ -194,7 +210,9 @@ it('should return true if the shift date is adjacent to the selected date', func
         '2024-11-08 18:00:00',
         0.25,
         false,
-        true
+        true,
+        false,
+        []
     );
     $range = new Range('2024-11-08 16:30:00', '2024-11-08 18:00:00');
     $reflection = new ReflectionClass(Shift::class);
@@ -214,7 +232,9 @@ it('should return false if the shift date is not adjacent to the selected date',
         '2024-11-16 18:30:00',
         0.25,
         false,
-        true
+        true,
+        false,
+        []
     )];
     $range = new Range('2024-11-08 16:30:00', '2024-11-08 18:00:00');
     $shift = new App\Services\Shift(
@@ -224,7 +244,9 @@ it('should return false if the shift date is not adjacent to the selected date',
         '2024-11-08 18:00:00',
         0.25,
         false,
-        true
+        true,
+        false,
+        []
     );
     $reflection = new ReflectionClass(Shift::class);
 

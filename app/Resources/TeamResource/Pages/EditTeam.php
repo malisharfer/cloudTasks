@@ -3,6 +3,7 @@
 namespace App\Resources\TeamResource\Pages;
 
 use App\Models\Department;
+use App\Models\Soldier;
 use App\Models\Team;
 use App\Models\User;
 use App\Resources\TeamResource;
@@ -16,11 +17,13 @@ class EditTeam extends EditRecord
 
     protected function beforeSave(): void
     {
-        $teams = Team::where('commander_id', $this->data['commander_id'])->get();
-        $departments = Department::where('commander_id', $this->data['commander_id'])->get();
-        if ($teams->isNotEmpty() || $departments->isNotEmpty()) {
-            TeamResource::checkCommander($teams, $departments, $this->data);
-            $this->halt();
+        if ($this->data['commander_id'] !== $this->record->commander_id) {
+            $teams = Team::where('commander_id', $this->data['commander_id'])->get();
+            $departments = Department::where('commander_id', $this->data['commander_id'])->get();
+            if ($teams->isNotEmpty() || $departments->isNotEmpty()) {
+                TeamResource::checkCommander($teams, $departments, $this->data);
+                $this->halt();
+            }
         }
     }
 
@@ -67,6 +70,7 @@ class EditTeam extends EditRecord
 
     protected function assignRoles()
     {
+        Soldier::where('id', $this->record->commander_id)->update(['team_id' => null]);
         $user = User::where('userable_id', $this->record->commander_id)->first();
         $user->assignRole('team-commander');
     }

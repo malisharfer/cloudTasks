@@ -66,9 +66,7 @@ class Soldier
     {
         return $inParallel ?
             ! $this->shifts->contains(function (Shift $soldierShift) use ($shift): bool {
-                $tasksInParallel = Task::find(ShiftModel::find($shift->id)->task_id)->concurrent_tasks;
-
-                return $soldierShift->range->isConflict($shift->range) && ! collect($tasksInParallel)->contains($shift->taskType);
+                return $soldierShift->range->isConflict($shift->range) && ! collect($shift->inParalelTasks)->contains($shift->taskType);
             }) :
             ! $this->shifts->contains(function (Shift $soldierShift) use ($shift) {
                 return $soldierShift->range->isConflict($shift->range);
@@ -133,6 +131,6 @@ class Soldier
 
     protected function addSpaces($spaces)
     {
-        collect($spaces)->map(fn ($space) => $this->shifts->push(new Shift(0, '', $space->start, $space->end, 0, false, false)));
+        collect($spaces)->map(fn ($space) => $this->shifts->push(new Shift(0, '', $space->start, $space->end, 0, false, false, false, [])));
     }
 }

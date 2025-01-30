@@ -18,7 +18,11 @@ class Shift
 
     public $isWeekend;
 
-    public function __construct($id, string $taskType, $start, $end, float $points, bool $isNight, bool $isWeekend)
+    public $inParallel;
+
+    public $inParalelTasks;
+
+    public function __construct($id, string $taskType, $start, $end, float $points, bool $isNight, bool $isWeekend, $inParallel, $inParalelTasks)
     {
         $this->id = $id;
         $this->taskType = $taskType;
@@ -26,6 +30,8 @@ class Shift
         $this->points = $points;
         $this->isNight = $isNight;
         $this->isWeekend = $isWeekend;
+        $this->inParallel = $inParallel;
+        $this->inParalelTasks = $inParalelTasks;
     }
 
     public function getShiftSpaces($shifts)

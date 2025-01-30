@@ -3,6 +3,7 @@
 namespace App\Resources\DepartmentResource\Pages;
 
 use App\Models\Department;
+use App\Models\Soldier;
 use App\Models\Team;
 use App\Models\User;
 use App\Resources\DepartmentResource;
@@ -80,6 +81,7 @@ class CreateDepartment extends CreateRecord
 
     protected function assignRoles()
     {
+        Soldier::where('id', $this->record->commander_id)->update(['team_id' => null]);
         $user = User::where('userable_id', $this->record->commander_id)->first();
         $user?->assignRole('department-commander');
     }

@@ -22,6 +22,8 @@ class Helpers
             $shift->parallel_weight === null ? $shift->task->parallel_weight : $shift->parallel_weight,
             $shift->task->is_night,
             $shift->is_weekend !== null ? $shift->is_weekend : $shift->task->is_weekend,
+            $shift->task->in_parallel,
+            $shift->task->concurrent_tasks
         );
     }
 
@@ -88,7 +90,7 @@ class Helpers
         collect($shifts)->map(function (ShiftService $shift) use ($shifts, &$allSpaces) {
             $spaces = $shift->isWeekend || $shift->isNight ? $shift->getShiftSpaces($shifts) : null;
             if (! empty($spaces)) {
-                collect($spaces)->map(fn (Range $space) => $allSpaces->push(new ShiftService(0, '', $space->start, $space->end, 0, false, false)));
+                collect($spaces)->map(fn (Range $space) => $allSpaces->push(new ShiftService(0, '', $space->start, $space->end, 0, false, false, false, [])));
             }
         });
 

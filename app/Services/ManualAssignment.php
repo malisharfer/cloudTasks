@@ -73,10 +73,8 @@ class ManualAssignment
             });
     }
 
-    protected function filterDepartment($name)
+    protected function filterDepartment($departmentName)
     {
-        $departmentName = $name ?: Shift::find($this->shift->id)->task?->department_name;
-
         $this->soldiers = $this->soldiers
             ->filter(function ($user) use ($departmentName) {
                 $soldier = Soldier::where('id', '=', $user->userable_id)->first();
@@ -136,7 +134,7 @@ class ManualAssignment
         return $soldier->isQualified($this->shift->taskType)
             && $soldier->isAvailableByMaxes($this->shift)
             && $soldier->isAvailableByConstraints($this->shift->range) != Availability::NO
-            && $soldier->isAvailableByShifts($this->shift, false)
+            && $soldier->isAvailableByShifts($this->shift, $this->shift->inParallel)
             && $soldier->isAvailableBySpaces($this->shift->getShiftSpaces($soldier->shifts));
     }
 
@@ -156,7 +154,7 @@ class ManualAssignment
             fn (SoldierService $soldier) => $soldier->isQualified($this->shift->taskType)
             && $soldier->isAvailableByMaxes($this->shift)
             && $soldier->isAvailableByConstraints($this->shift->range) != Availability::NO
-            && $soldier->isAvailableByShifts($this->shift, Shift::find($this->shift->id)->task?->in_parallel)
+            && $soldier->isAvailableByShifts($this->shift, $this->shift->inParallel)
             && $soldier->isAvailableBySpaces($this->shift->getShiftSpaces($soldier->shifts))
         );
 

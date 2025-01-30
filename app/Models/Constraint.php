@@ -139,6 +139,48 @@ class Constraint extends Model
             ->sendToDatabase($commander, true);
     }
 
+    public static function RequestEditConstraint($data)
+    {
+        $commander = Soldier::find(auth()->user()->userable_id)->team->commander->user;
+        Notification::make()
+            ->title(__('Do you approve the request to edit the constraint?'))
+            ->body(
+                __('Shift details edit', [
+                    'name' => Soldier::find(auth()->user()->userable_id)->user->displayName,
+                    'startDate' => $data['record']['start_date']->format('Y-m-d H:i:s'),
+                    'endDate' => $data['record']['end_date']->format('Y-m-d H:i:s'),
+                    'ToStartDate' => $data['data']['start_date'],
+                    'ToEndDate' => $data['data']['end_date'],
+                    'type' => $data['data']['constraint_type'],
+                ])
+            )
+            ->actions(
+                [
+                    NotificationAction::make(__('Confirm'))
+                        ->button()
+                        ->icon('heroicon-s-hand-thumb-up')
+                        ->color('success')
+                        ->dispatch('confirmConstraintEdit', [
+                            'user' => auth()->user()->id,
+                            'data' => $data,
+                        ])
+                        ->close(),
+                    NotificationAction::make(__('Deny'))
+                        ->button()
+                        ->icon('heroicon-m-hand-thumb-down')
+                        ->color('danger')
+                        ->dispatch('denyConstraintEdit', [
+                            'user' => auth()->user()->id,
+                            'constraintName' => $data['data']['constraint_type'],
+                            'startDate' => $data['data']['start_date'],
+                            'endDate' => $data['data']['end_date'],
+                        ])
+                        ->close(),
+                ]
+            )
+            ->sendToDatabase($commander, true);
+    }
+
     public static function getAvailableOptions($startDate, $endDate): array
     {
         return static::availableOptions($startDate, $endDate);

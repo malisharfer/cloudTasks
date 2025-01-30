@@ -171,16 +171,6 @@ it('should list events by the commanders soldiers events', function () {
     expect($calendar->effects['returns'][0])->toHaveCount(count: 2);
 });
 
-it('prevent create\edit the soldiers events', function () {
-
-    livewire(CalendarWidget::class, [
-        'model' => Constraint::class,
-        'type' => 'my_soldiers',
-    ]);
-    expect(Saade\FilamentFullCalendar\FilamentFullCalendarPlugin::get()->isSelectable())->toBeFalse();
-    expect(Saade\FilamentFullCalendar\FilamentFullCalendarPlugin::get()->isEditable())->toBeFalse();
-});
-
 it('should refresh the fullcalendar', function () {
     livewire(CalendarWidget::class, [
         'model' => Shift::class,

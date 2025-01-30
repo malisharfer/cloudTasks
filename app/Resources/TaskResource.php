@@ -287,7 +287,8 @@ class TaskResource extends Resource
                 ->label(__('Department'))
                 ->options(Department::all()->mapWithKeys(function ($department) {
                     return [$department->name => $department->name];
-                })),
+                }))
+                ->live(),
             TextInput::make('type')
                 ->label(__('Type'))
                 ->required(),
@@ -392,7 +393,8 @@ class TaskResource extends Resource
                         ->visible(
                             fn (Get $get): bool => $get('soldier_type')
                             && $get('soldier_type') != 'me'
-                        ),
+                        )
+                        ->live(),
                     Placeholder::make('')
                         ->content(__('Assigning the soldier to this shift is your sole responsibility!'))
                         ->extraAttributes(['style' => 'color: red; font-family: Arial, Helvetica, sans-serif; font-size: 20px'])
@@ -483,6 +485,7 @@ class TaskResource extends Resource
         $task->is_night = $get('is_night');
         $task->is_weekend = $get('is_weekend');
         $task->in_parallel = $get('in_parallel');
+        $task->concurrent_tasks = $get('concurrent_tasks') ?? [];
         $shift = new Shift;
         $shift->id = null;
         $shift->task = $task;

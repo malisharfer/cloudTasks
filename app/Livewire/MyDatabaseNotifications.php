@@ -14,6 +14,7 @@ use Filament\Notifications\Livewire\DatabaseNotifications;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Attributes\On;
 
 class MyDatabaseNotifications extends DatabaseNotifications
@@ -887,6 +888,60 @@ class MyDatabaseNotifications extends DatabaseNotifications
         $this->sendNotification(
             __('Constraint request rejected'),
             __('Commander deny create constraint', [
+                'name' => User::find($user)->displayName,
+                'constraintName' => $constraintName,
+                'startDate' => $startDate,
+                'endDate' => $endDate,
+            ]),
+            [],
+            User::find($user)
+        );
+    }
+
+    #[On('confirmConstraintEdit')]
+    public function confirmConstraintEdit($user, $data)
+    {
+        $this->confirmConstraintEditNotification($user, $data);
+    }
+
+    protected function confirmConstraintEditNotification($user, $data)
+    {
+        $columns = Schema::getColumnListing(strtolower(class_basename($data['model'])).'s');
+        $filteredData = array_intersect_key($data['data'], array_flip($columns));
+        $record = $data['model']::find($data['record']['id']);
+
+        if ($record) {
+            collect($filteredData)->map(function ($value, $key) use ($record) {
+                $record->{$key} = $value;
+            });
+            $record->save();
+        }
+        $this->sendNotification(
+            __('Your request to edit the constraint has been approved'),
+            __('Commander approved edit constraint', [
+                'name' => User::find($user)->displayName,
+                'constraintName' => $data['data']['constraint_type'],
+                'startDate' => $data['record']['start_date'],
+                'endDate' => $data['record']['end_date'],
+                'ToStartDate' => $data['data']['start_date'],
+                'ToEndDate' => $data['data']['end_date'],
+            ]),
+            [],
+            User::find($user)
+        );
+    }
+
+    #[On('denyConstraintEdit')]
+    public function denyConstraintEdit($user, $constraintName, $startDate, $endDate)
+    {
+        $this->denyConstraintEditNotification($user, $constraintName, $startDate, $endDate);
+    }
+
+    protected function denyConstraintEditNotification($user, $constraintName, $startDate, $endDate)
+    {
+        $this->sendNotification(
+            __('Your request to edit the constraint has been rejected'),
+            __('Commander deny edit constraint', [
                 'name' => User::find($user)->displayName,
                 'constraintName' => $constraintName,
                 'startDate' => $startDate,

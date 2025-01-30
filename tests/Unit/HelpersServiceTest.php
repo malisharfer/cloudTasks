@@ -22,6 +22,8 @@ it('should return object of shift service type', function () {
         $shift->parallel_weight,
         $shift->task->is_night,
         $shift->is_weekend,
+        $shift->task->in_parallel,
+        $shift->task->concurrent_tasks
     );
     expect(Helpers::buildShift($shift))->toBeInstanceOf(App\Services\Shift::class);
     expect(Helpers::buildShift($shift))->toEqual($shiftService);

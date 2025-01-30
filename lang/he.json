@@ -192,7 +192,6 @@
     "Personal Information": "נתונים אישיים",
     "Personal number": "מספר אישי",
     "Points":"נקודות",
-    "points":"נקודות",
     "Qualifications": "הסמכות",
     "Recurring": "חזרתיות",
     "Recurring type": "סוג חזרתיות",
@@ -300,5 +299,9 @@
     "Concurrent tasks":"משימות במקביל",
     "Select concurrent tasks":"בחר משימות",
     "No tasks":"אין משימות",
-    "The soldier is assigned a shift during the task":"לחייל מוקצית תורנות בזמן המשמרת"
+    "The soldier is assigned a shift during the task":"לחייל מוקצית תורנות בזמן המשמרת",
+    "Shift details edit":"החייל <strong>:name</strong> מבקש את האישור שלך לערוך את האילוץ <strong>:type</strong> שלו ולהזיז אותו ל: <br> מ <em>:startDate</em> עד <em>:endDate</em>.<br> ל <em>:ToStartDate</em> עד <em>:ToEndDate</em>.<br> האם אתה מאשר?",
+    "Commander approved edit constraint": "שלום  <strong>:name!</strong><br> בקשתך לעריכת האילוץ <strong>:constraintName</strong><br> להזיזו מהתאריך: <em>:startDate</em> עד <em>:endDate</em> לתאריך: <em>:ToStartDate</em> עד <em>:ToEndDate</em> <br> אושרה! <br><strong>האילוץ עודכן בהצלחה !</strong><br>המשך יום טוב!",
+    "Commander deny edit constraint":"שלום  <strong>:name!</strong><br>בקשתך להזזת האילוץ <strong>:constraintName</strong><br> מ: <em>:startDate</em> עד <em>:endDate</em><br> נדחתה! <br>המשך יום טוב!"
+
 }

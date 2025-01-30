@@ -41,6 +41,8 @@
     "Range less than equal":":label is less than or equal :value",
     "Commander approved create constraint":"Hello <stronge>:name!</stronge><br>Your request to create a constraint <stronge>:constraintName</stronge><br>From <em>:startDate</em> to <em>:endDate</em><br>Has been approved!<br>Have a good day!",
     "Commander deny create constraint":"Hello <stronge>:name!</stronge><br>Your request to create a constraint <stronge>:constraintName</stronge><br>From <em>:startDate</em> to <em>:endDate</em><br>Has been rejected!<br>Have a good day!",
-    "This task is assigned to":"This task is assigned to :soldierName"
-
+    "This task is assigned to":"This task is assigned to :soldierName",
+    "Shift details edit":"Soldier <strong>:name</strong> requests your permission to edit the <strong>:type</strong> constraint and move it: <br> from <em>:startDate</em> to <em>:endDate</em>.<br> to <em>:ToStartDate</em> to <em>:ToEndDate</em>.<br> Do you approve?",
+    "Commander approved edit constraint": "Hello <strong>:name!</strong><br>Your request to edit constraint <strong>:constraintName</strong><br> to move from date: <em>:startDate</em> to <em>:endDate</em> to date: <em>:ToStartDate</em> to <em>:ToEndDate</em> <br> has been approved! <br><strong>The change has been updated successfully!</strong><br>Have a nice day!",
+    "Commander deny edit constraint":"Hello <strong>:name!</strong><br>Your request to move constraint <strong>:constraintName</strong><br> from: <em>:startDate</em> to <em>:endDate</em><br> has been rejected! <br>Have a nice day!"
 }

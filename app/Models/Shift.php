@@ -214,7 +214,7 @@ class Shift extends Model
                                     ->description(self::description($soldierId, $record))
                                     ->schema(
                                         $shifts->map(
-                                            function ($shift) use ($record) {
+                                            function (Shift $shift) use ($record) {
                                                 return Section::make()
                                                     ->id($shift->id)
                                                     ->schema([

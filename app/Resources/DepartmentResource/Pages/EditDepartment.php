@@ -3,6 +3,7 @@
 namespace App\Resources\DepartmentResource\Pages;
 
 use App\Models\Department;
+use App\Models\Soldier;
 use App\Models\Team;
 use App\Models\User;
 use App\Resources\DepartmentResource;
@@ -16,11 +17,17 @@ class EditDepartment extends EditRecord
 
     protected function beforeSave(): void
     {
-        $teams = Team::where('commander_id', $this->data['commander_id'])->get();
-        $departments = Department::where('commander_id', $this->data['commander_id'])->get();
-        if ($teams->isNotEmpty() || $departments->isNotEmpty()) {
-            DepartmentResource::checkCommander($teams, $departments, $this->data);
-            $this->halt();
+        if ($this->data['commander_id'] !== $this->record->commander_id) {
+            if (! $this->data['commander_id']) {
+                $user = User::where('userable_id', $this->record->commander_id)->first();
+                $user->removeRole('department-commander');
+            }
+            $teams = Team::where('commander_id', $this->data['commander_id'])->get();
+            $departments = Department::where('commander_id', $this->data['commander_id'])->get();
+            if ($teams->isNotEmpty() || $departments->isNotEmpty()) {
+                DepartmentResource::checkCommander($teams, $departments, $this->data);
+                $this->halt();
+            }
         }
     }
 
@@ -67,6 +74,7 @@ class EditDepartment extends EditRecord
 
     protected function assignRoles()
     {
+        Soldier::where('id', $this->record->commander_id)->update(['team_id' => null]);
         $user = User::where('userable_id', $this->record->commander_id)->first();
         $user?->assignRole('department-commander');
     }

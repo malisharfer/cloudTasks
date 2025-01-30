@@ -392,9 +392,27 @@ class CalendarWidget extends FullCalendarWidget
                         $this->refreshRecords();
                     }
                     if ($arguments['save'] ?? false) {
+                        if ($this->model == Constraint::class) {
+                            if (
+                                ($this->mountedActionsData[0]['constraint_type'] == ConstraintType::VACATION->value) ||
+                                ($this->mountedActionsData[0]['constraint_type'] == ConstraintType::MEDICAL->value) &&
+                                (auth()->user()->getRoleNames()->count() === 1)
+                            ) {
+                                $dataToEdit = [
+                                    'record' => $this->model::find($record['id']),
+                                    'data' => $data,
+                                    'model' => $this->model,
+                                ];
+
+                                Constraint::RequestEditConstraint($dataToEdit);
+
+                                return;
+                            }
+                        }
                         $columns = Schema::getColumnListing(strtolower(class_basename($this->model)).'s');
                         $filteredData = array_intersect_key($data, array_flip($columns));
                         $record = $this->model::find($record['id']);
+
                         if ($record) {
                             collect($filteredData)->map(function ($value, $key) use ($record) {
                                 $record->{$key} = $value;
@@ -449,8 +467,8 @@ class CalendarWidget extends FullCalendarWidget
             ->modalFooterActions(
                 function (ViewAction $action, FullCalendarWidget $livewire) {
                     if (
-                        $this->model == Shift::class && auth()->user()->getRoleNames()->count() === 1 ||
-                        $this->model == Constraint::class && $this->type == 'my_soldiers' && ! auth()->user()->getRoleNames()->contains('shifts-assignment') && ! auth()->user()->getRoleNames()->contains('manager')
+                        ($this->model == Shift::class && auth()->user()->getRoleNames()->count() === 1) ||
+                        ($this->model == Constraint::class && $this->type == 'my_soldiers' && ! auth()->user()->getRoleNames()->contains('shifts-assignment') && ! auth()->user()->getRoleNames()->contains('manager'))
                     ) {
                         return [$action->getModalCancelAction()];
                     }
@@ -476,8 +494,8 @@ class CalendarWidget extends FullCalendarWidget
     public function onEventDrop(array $event, array $oldEvent, array $relatedEvents, array $delta, ?array $oldResource, ?array $newResource): bool
     {
         if (
-            $this->model == Shift::class && auth()->user()->getRoleNames()->count() === 1 ||
-            $this->model == Constraint::class && $this->type == 'my_soldiers' && ! auth()->user()->getRoleNames()->contains('shifts-assignment') && ! auth()->user()->getRoleNames()->contains('manager')
+            ($this->model == Shift::class && $this->type == 'my' && auth()->user()->getRoleNames()->count() === 1) ||
+            ($this->model == Constraint::class && $this->type == 'my_soldiers' && ! auth()->user()->getRoleNames()->contains('shifts-assignment') && ! auth()->user()->getRoleNames()->contains('manager'))
         ) {
             $this->refreshRecords();
         } else {
