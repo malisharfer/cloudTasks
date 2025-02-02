@@ -175,7 +175,10 @@ class TaskResource extends Resource
                         TextColumn::make('recurring.days_in_week')
                             ->description(__('Days in week'), 'above')
                             ->size(TextColumnSize::Small)
-                            ->extraAttributes(['style' => 'margin-left: 15px;']),
+                            ->extraAttributes(['style' => 'margin-left: 15px;'])
+                            ->formatStateUsing(fn ($state) => collect(explode(', ', $state))
+                                ->map(fn ($day) => DaysInWeek::from($day)->getLabel())
+                                ->implode(', ')),
                         TextColumn::make('recurring.dates_in_month')
                             ->description(__('Dates in month'), 'above')
                             ->size(TextColumnSize::Small)

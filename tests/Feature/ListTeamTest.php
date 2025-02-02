@@ -55,12 +55,7 @@ it('clicking on the members button will open form to attach member to the team',
     ]);
 
     Livewire::test(ListTeams::class)
-        ->mountTableAction('members', $team)
-
-        ->setTableActionData([
-            'members' => [$user1->userable_id, $user2->userable_id],
-        ])
-        ->callMountedTableAction();
+        ->callTableAction('members', $team, ['members' => [$user1->userable_id, $user2->userable_id]]);
 
     $this->assertDatabaseHas('soldiers', [
         'id' => $user1->userable_id,

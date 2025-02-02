@@ -18,10 +18,8 @@ class EditDepartment extends EditRecord
     protected function beforeSave(): void
     {
         if ($this->data['commander_id'] !== $this->record->commander_id) {
-            if (! $this->data['commander_id']) {
-                $user = User::where('userable_id', $this->record->commander_id)->first();
-                $user->removeRole('department-commander');
-            }
+            $user = User::where('userable_id', $this->record->commander_id)->first();
+            $user->removeRole('department-commander');
             $teams = Team::where('commander_id', $this->data['commander_id'])->get();
             $departments = Department::where('commander_id', $this->data['commander_id'])->get();
             if ($teams->isNotEmpty() || $departments->isNotEmpty()) {

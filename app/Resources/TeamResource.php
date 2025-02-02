@@ -88,13 +88,17 @@ class TeamResource extends Resource
                                 return [$user->userable_id => $user->displayName];
                             })
                         )
+                        ->formatStateUsing(function (?Team $team, string $operation) {
+                            return $operation === 'edit' ?
+                             collect($team->members)->map(fn (Soldier $soldier) => $soldier->id) :
+                            null;
+                        })
                         ->live()
                         ->optionsLimit(Soldier::count())
                         ->placeholder(__('Add a team member'))
                         ->multiple()
                         ->searchable(),
                 ])->columns(2),
-
             ]);
     }
 
@@ -142,20 +146,25 @@ class TeamResource extends Resource
                                         return User::all();
                                     })
                                         ->filter(function ($user) use ($record) {
-                                            $soldier_team_id = Soldier::where('id', $user->userable_id)->pluck('team_id');
-
-                                            return $soldier_team_id->first() !== $record->id && $record->commander_id !== $user->userable_id;
+                                            return $record->commander_id !== $user->userable_id;
                                         })
                                         ->mapWithKeys(function ($user) {
                                             return [$user->userable_id => $user->displayName];
                                         })
                                 )
+                                ->formatStateUsing(function (Team $record) {
+                                    return collect($record->members)->map(fn (Soldier $soldier) => $soldier->id);
+                                })
                                 ->optionsLimit(Soldier::count())
                                 ->multiple()
                                 ->searchable(),
                         ])
                         ->closeModalByClickingAway(false)
                         ->action(function (array $data, Team $record): void {
+                            collect($record->members)
+                                ->map(fn (Soldier $soldier) => ! collect($data['members'])->contains($soldier->id) ?
+                                    Soldier::where('id', $soldier->id)->update(['team_id' => null]) : null);
+
                             collect($data['members'])->map(fn ($soldier_id) => Soldier::where('id', $soldier_id)
                                 ->update(['team_id' => $record->id]));
                         }),
@@ -163,7 +172,7 @@ class TeamResource extends Resource
                         ->label(__('View members'))
                         ->color('success')
                         ->icon('heroicon-o-user-group')
-                        ->badge(fn ($record) => Soldier::where('team_id', $record->id)->count())
+                        ->badge(fn ($record) => collect($record->members)->count())
                         ->url(fn (Team $record): string => route('filament.app.resources.soldiers.index', ['team_id' => $record->id])),
                     EditAction::make(),
                     DeleteAction::make()

@@ -37,7 +37,7 @@ class FixedConstraints
     protected function setTimeToDate($date, $constraintType)
     {
         return match ($constraintType) {
-            'Not Thursday evening' => [$date->setTime(16, 30, 0)->toDateTimeString(), $date->setTime(17, 30, 0)->toDateTimeString()],
+            'Not Thursday evening' => [$date->setTime(14, 00, 0)->toDateTimeString(), $date->setTime(15, 30, 0)->toDateTimeString()],
             'Not Sunday morning' => [$date->setTime(8, 30, 0)->toDateTimeString(), $date->setTime(9, 30, 0)->toDateTimeString()]
         };
     }

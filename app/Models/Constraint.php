@@ -71,7 +71,10 @@ class Constraint extends Model
                 ->label(__('Constraint Name'))
                 ->inline()
                 ->visibleOn('view')
-                ->options(fn (Constraint $constraint) => [$constraint->constraint_type]),
+                ->options(fn (Constraint $constraint) => [
+                    ConstraintType::from($constraint->constraint_type)->getLabel(),
+                ]),
+
             Hidden::make('start_date')
                 ->required(),
             Hidden::make('end_date')
@@ -201,6 +204,9 @@ class Constraint extends Model
             unset($options[ConstraintType::NOT_THURSDAY_EVENING->value]);
             unset($options[ConstraintType::NOT_WEEKEND->value]);
             unset($options[ConstraintType::LOW_PRIORITY_NOT_WEEKEND->value]);
+        }
+        if (! $start_date->isSunday()) {
+            unset($options[ConstraintType::NOT_SUNDAY_MORNING->value]);
         }
         if (! (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray()))) {
             $usedCounts = self::getUsedCountsForCurrentMonth($startDate, $endDate);

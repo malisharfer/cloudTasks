@@ -64,12 +64,18 @@ class ListSoldiers extends ListRecords
                     $fields = ['max_shifts', 'max_nights', 'max_weekends', 'capacity', 'qualifications'];
 
                     foreach ($fields as $field) {
-                        if (isset($data[$field])) {
-                            $updateData[$field] = ($field === 'qualifications') ? json_encode($data[$field]) : $data[$field];
+                        if (isset($data[$field]) && ! ($field === 'qualifications' && empty($data[$field]))) {
+                            $updateData[$field] = $data[$field];
                         }
                     }
                     if (! empty($updateData)) {
-                        Soldier::where('course', $selectedCourse)->update($updateData);
+                        $soldiers = Soldier::where('course', $selectedCourse)->get();
+                        $soldiers->map(function ($soldier) use ($updateData) {
+                            collect($updateData)->map(function ($value, $key) use ($soldier) {
+                                $soldier->{$key} = $value;
+                            });
+                            $soldier->save();
+                        });
                     }
                 }),
         ];

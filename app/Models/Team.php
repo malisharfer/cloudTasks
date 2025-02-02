@@ -25,7 +25,7 @@ class Team extends Model
         return $this->belongsTo(Department::class);
     }
 
-    public function soldiers(): HasMany
+    public function members(): HasMany
     {
         return $this->hasMany(Soldier::class);
     }

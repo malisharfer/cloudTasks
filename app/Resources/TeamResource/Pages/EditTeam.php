@@ -18,6 +18,8 @@ class EditTeam extends EditRecord
     protected function beforeSave(): void
     {
         if ($this->data['commander_id'] !== $this->record->commander_id) {
+            $user = User::where('userable_id', $this->record->commander_id)->first();
+            $user->removeRole('team-commander');
             $teams = Team::where('commander_id', $this->data['commander_id'])->get();
             $departments = Department::where('commander_id', $this->data['commander_id'])->get();
             if ($teams->isNotEmpty() || $departments->isNotEmpty()) {
@@ -66,6 +68,8 @@ class EditTeam extends EditRecord
     protected function afterSave(): void
     {
         $this->assignRoles();
+        $this->unAssignMembers();
+        $this->assignMembers();
     }
 
     protected function assignRoles()
@@ -73,5 +77,19 @@ class EditTeam extends EditRecord
         Soldier::where('id', $this->record->commander_id)->update(['team_id' => null]);
         $user = User::where('userable_id', $this->record->commander_id)->first();
         $user->assignRole('team-commander');
+    }
+
+    protected function unAssignMembers()
+    {
+        Soldier::where('team_id', $this->record->id)
+            ->get()
+            ->map(fn ($soldier) => ! collect($this->data['members'])->contains($soldier->id) ?
+                Soldier::where('id', $soldier->id)->update(['team_id' => null]) : null);
+    }
+
+    protected function assignMembers()
+    {
+        collect($this->data['members'])->map(fn ($soldier_id) => Soldier::where('id', $soldier_id)
+            ->update(['team_id' => $this->record->id]));
     }
 }

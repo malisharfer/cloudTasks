@@ -412,73 +412,84 @@ class SoldierResource extends Resource
             Fieldset::make('constraints')
                 ->label(__('Constraints limit'))
                 ->schema([
-                    Group::make([
-                        Toggle::make('not_thursday_evening')
-                            ->label(__('Not Thursday evening constraint')),
-                        Toggle::make('not_sunday_morning')
-                            ->label(__('Not Sunday morning constraint')),
-                    ])->columns(2),
-                    Group::make([
-                        TextInput::make('Not weekend')
-                            ->label(__('Not weekend'))
-                            ->numeric()
-                            ->minValue(0)
-                            ->required()
-                            ->default(ConstraintType::getLimit()['Not weekend']),
-                        TextInput::make('Low priority not weekend')
-                            ->label(__('Low priority not weekend'))
-                            ->numeric()
-                            ->minValue(0)
-                            ->required()
-                            ->default(ConstraintType::getLimit()['Low priority not weekend']),
-                        TextInput::make('Not task')
-                            ->label(__('Not task'))
-                            ->numeric()
-                            ->minValue(0)
-                            ->required()
-                            ->default(ConstraintType::getLimit()['Not task']),
-                        TextInput::make('Low priority not task')
-                            ->label(__('Low priority not task'))
-                            ->numeric()
-                            ->minValue(0)
-                            ->required()
-                            ->default(ConstraintType::getLimit()['Low priority not task']),
-                        TextInput::make('Not evening')
-                            ->label(__('Not evening'))
-                            ->numeric()
-                            ->minValue(0)
-                            ->required()
-                            ->default(ConstraintType::getLimit()['Not evening']),
-                        TextInput::make('Not Thursday evening')
-                            ->label(__('Not Thursday evening'))
-                            ->numeric()
-                            ->minValue(0)
-                            ->required()
-                            ->default(ConstraintType::getLimit()['Not Thursday evening']),
-                        TextInput::make('Vacation')
-                            ->label(__('Vacation'))
-                            ->numeric()
-                            ->minValue(0)
-                            ->required()
-                            ->default(ConstraintType::getLimit()['Vacation']),
-                        TextInput::make('Medical')
-                            ->label(__('Medical'))
-                            ->numeric()
-                            ->minValue(0)
-                            ->required()
-                            ->default(ConstraintType::getLimit()['Medical']),
-                        TextInput::make('School')
-                            ->label(__('School'))
-                            ->numeric()
-                            ->minValue(0)
-                            ->required()
-                            ->default(ConstraintType::getLimit()['School']),
-                    ])
-                        ->statePath('constraints_limit')
-                        ->columns(9)
-                        ->columnSpan(3)
-                        ->label('Constraints'),
+                    Section::make([
+                        Group::make([
+                            Toggle::make('not_thursday_evening')
+                                ->label(__('Not Thursday evening constraint')),
+                            Toggle::make('not_sunday_morning')
+                                ->label(__('Not Sunday morning constraint')),
+                        ])->columns(2),
+                    ]),
+                    Section::make([
+                        Group::make([
+                            TextInput::make('Not weekend')
+                                ->label(__('Not weekend'))
+                                ->numeric()
+                                ->minValue(0)
+                                ->required()
+                                ->default(ConstraintType::getLimit()['Not weekend']),
+                            TextInput::make('Low priority not weekend')
+                                ->label(__('Low priority not weekend'))
+                                ->numeric()
+                                ->minValue(0)
+                                ->required()
+                                ->default(ConstraintType::getLimit()['Low priority not weekend']),
+                            TextInput::make('Not task')
+                                ->label(__('Not task'))
+                                ->numeric()
+                                ->minValue(0)
+                                ->required()
+                                ->default(ConstraintType::getLimit()['Not task']),
+                            TextInput::make('Low priority not task')
+                                ->label(__('Low priority not task'))
+                                ->numeric()
+                                ->minValue(0)
+                                ->required()
+                                ->default(ConstraintType::getLimit()['Low priority not task']),
+                            TextInput::make('Not evening')
+                                ->label(__('Not evening'))
+                                ->numeric()
+                                ->minValue(0)
+                                ->required()
+                                ->default(ConstraintType::getLimit()['Not evening']),
+                            TextInput::make('Not Thursday evening')
+                                ->label(__('Not Thursday evening'))
+                                ->numeric()
+                                ->minValue(0)
+                                ->required()
+                                ->default(ConstraintType::getLimit()['Not Thursday evening']),
+                            TextInput::make('Not Sunday morning')
+                                ->label(__('Not Sunday morning'))
+                                ->numeric()
+                                ->minValue(0)
+                                ->required()
+                                ->default(ConstraintType::getLimit()['Not Sunday morning']),
+                            TextInput::make('Vacation')
+                                ->label(__('Vacation'))
+                                ->numeric()
+                                ->minValue(0)
+                                ->required()
+                                ->default(ConstraintType::getLimit()['Vacation']),
+                            TextInput::make('Medical')
+                                ->label(__('Medical'))
+                                ->numeric()
+                                ->minValue(0)
+                                ->required()
+                                ->default(ConstraintType::getLimit()['Medical']),
+                            TextInput::make('School')
+                                ->label(__('School'))
+                                ->numeric()
+                                ->minValue(0)
+                                ->required()
+                                ->default(ConstraintType::getLimit()['School']),
+                        ])
+                            ->statePath('constraints_limit')
+                            ->columns(10)
+                            ->columnSpan(3)
+                            ->label('Constraints'),
+                    ]),
                 ]),
+
         ];
     }
 

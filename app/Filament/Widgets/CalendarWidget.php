@@ -470,7 +470,9 @@ class CalendarWidget extends FullCalendarWidget
                         ($this->model == Shift::class && auth()->user()->getRoleNames()->count() === 1) ||
                         ($this->model == Constraint::class && $this->type == 'my_soldiers' && ! auth()->user()->getRoleNames()->contains('shifts-assignment') && ! auth()->user()->getRoleNames()->contains('manager'))
                     ) {
-                        return [$action->getModalCancelAction()];
+                        return $this->model === Shift::class ?
+                            [...$this->getChangeActions()] :
+                            [$action->getModalCancelAction()];
                     }
 
                     return [
