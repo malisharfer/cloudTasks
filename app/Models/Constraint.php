@@ -30,6 +30,7 @@ class Constraint extends Model
     ];
 
     protected $casts = [
+        'constraint_type' => ConstraintType::class,
         'start_date' => 'datetime:Y-m-d H:i:s',
         'end_date' => 'datetime:Y-m-d H:i:s',
     ];
@@ -73,7 +74,7 @@ class Constraint extends Model
                 ->inline()
                 ->visibleOn('view')
                 ->options(fn(Constraint $constraint) => [
-                    ConstraintType::from($constraint->constraint_type)->getLabel(),
+                    $constraint->constraint_type->getLabel(),
                 ]),
 
             Hidden::make('start_date')

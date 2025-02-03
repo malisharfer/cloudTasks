@@ -19,6 +19,7 @@ class EditSoldier extends EditRecord
                 ->toArray())
             : session()->get('shifts_assignment');
 
+
         return $data;
     }
 
@@ -37,12 +38,15 @@ class EditSoldier extends EditRecord
             ->where('first_name', $this->data['user']['first_name'])
             ->pluck('last_name', 'first_name');
 
-        if ($userName = $userName->get($this->data['user']['first_name']) == $this->data['user']['last_name']) {
+        if (
+            ($userName = $userName->get($this->data['user']['first_name']) == $this->data['user']['last_name']) &&
+            $this->record->user->displayName !== $this->data['user']['first_name'] . ' ' . $this->data['user']['last_name']
+        ) {
             Notification::make()
                 ->warning()
                 ->title(__('This name already exists in the system!'))
                 ->body(__('Add identifier', [
-                    'example' => $this->data['user']['first_name'] . ' ' . $this->data['user']['last_name'] . '2',
+                    'example' => ($this->data['user']['first_name'] . ' ' . $this->data['user']['last_name'] . '2'),
                 ]))
                 ->persistent()
                 ->send();

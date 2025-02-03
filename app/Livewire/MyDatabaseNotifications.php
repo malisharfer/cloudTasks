@@ -869,7 +869,7 @@ class MyDatabaseNotifications extends DatabaseNotifications
             __('Constraint request approved'),
             __('Commander approved create constraint', [
                 'name' => User::find($user)->displayName,
-                'constraintName' => ConstraintType::from($constraintName)->getLabel(),
+                'constraintName' => __($constraintName),
                 'startDate' => $startDate,
                 'endDate' => $endDate,
             ]),
@@ -890,7 +890,7 @@ class MyDatabaseNotifications extends DatabaseNotifications
             __('Constraint request rejected'),
             __('Commander deny create constraint', [
                 'name' => User::find($user)->displayName,
-                'constraintName' => ConstraintType::from($constraintName)->getLabel(),
+                'constraintName' => $constraintName,
                 'startDate' => $startDate,
                 'endDate' => $endDate,
             ]),
@@ -921,7 +921,7 @@ class MyDatabaseNotifications extends DatabaseNotifications
             __('Your request to edit the constraint has been approved'),
             __('Commander approved edit constraint', [
                 'name' => User::find($user)->displayName,
-                'constraintName' => ConstraintType::from($data['data']['constraint_type'])->getLabel(),
+                'constraintName' => __($data['data']['constraint_type']),
                 'startDate' => $data['record']['start_date'],
                 'endDate' => $data['record']['end_date'],
                 'ToStartDate' => $data['data']['start_date'],
@@ -944,7 +944,7 @@ class MyDatabaseNotifications extends DatabaseNotifications
             __('Your request to edit the constraint has been rejected'),
             __('Commander deny edit constraint', [
                 'name' => User::find($user)->displayName,
-                'constraintName' => ConstraintType::from($constraintName)->getLabel(),
+                'constraintName' => $constraintName,
                 'startDate' => $startDate,
                 'endDate' => $endDate,
             ]),

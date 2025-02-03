@@ -266,12 +266,14 @@ class SoldierResource extends Resource
                         ->color('success')
                         ->after(function (Soldier $replica, $record): void {
                             $user = new User;
-                            $user->first_name = $record->user->first_name;
-                            $user->last_name = $record->user->last_name;
-                            $user->password = '*******';
+                            $user->first_name = '';
+                            $user->last_name = '';
+                            $user->password = '';
                             $user->userable_type = "App\Models\Soldier";
                             $user->userable_id = $replica->id;
                             $user->save();
+                            $user->assignRole('soldier');
+                            in_array('shifts-assignment', $record->user->getRoleNames()->toArray()) ? $user->assignRole('shifts-assignment') : null;
                             $replica['last_reserve_dates'] = [];
                             $replica['reserve_dates'] = [];
                             $replica['next_reserve_dates'] = [];
