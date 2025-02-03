@@ -63,7 +63,7 @@ class ShiftsExport implements FromCollection, ShouldAutoSize, WithHeadings, With
     public function styles(Worksheet $sheet)
     {
         $sheet->setRightToLeft(true);
-        $sheet->getStyle('A1:F1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('D3D3D3');
+        $sheet->getStyle('A1:G1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('D3D3D3');
 
         return [
             1 => ['font' => ['bold' => true]],

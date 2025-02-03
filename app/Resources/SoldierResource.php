@@ -64,7 +64,7 @@ class SoldierResource extends Resource
                 TextColumn::make('user')
                     ->label(__('Full name'))
                     ->formatStateUsing(function ($record) {
-                        return $record->user->last_name.' '.$record->user->first_name;
+                        return $record->user->last_name . ' ' . $record->user->first_name;
                     })
                     ->searchable(query: function ($query, $search) {
                         $query->whereHas('user', function ($query) use ($search) {
@@ -77,9 +77,9 @@ class SoldierResource extends Resource
                     ->label(__('Reservist')),
                 BadgeColumn::make('gender')
                     ->label(__('Gender'))
-                    ->formatStateUsing(fn ($state) => $state ? __('Male') : __('Female'))
+                    ->formatStateUsing(fn($state) => $state ? __('Male') : __('Female'))
                     ->badge()
-                    ->color(fn ($state) => $state ? 'info' : 'primary')
+                    ->color(fn($state) => $state ? 'info' : 'primary')
                     ->sortable(),
                 TextColumn::make('role')
                     ->label(__('Role'))
@@ -121,7 +121,7 @@ class SoldierResource extends Resource
 
                         return $soldierShifts->filter(function (Shift $shift): bool {
                             return Carbon::parse($shift->start_date)->month == now()->month || Carbon::parse($shift->end_date)->month == now()->month;
-                        })->sum(fn (Shift $shift) => $shift->parallel_weight === null ? $shift->task->parallel_weight : $shift->parallel_weight);
+                        })->sum(fn(Shift $shift) => $shift->parallel_weight === null ? $shift->task->parallel_weight : $shift->parallel_weight);
                     })
                     ->label(__('Capacity hold'))
                     ->numeric(),
@@ -135,7 +135,7 @@ class SoldierResource extends Resource
                 }
             })
             ->toggleColumnsTriggerAction(
-                fn (Action $action) => $action
+                fn(Action $action) => $action
                     ->button()
                     ->label(__('Columns')),
             )
@@ -166,19 +166,19 @@ class SoldierResource extends Resource
                     ->default(null),
                 Filter::make('reservist')
                     ->label(__('Reservist'))
-                    ->query(fn (Builder $query): Builder => $query->where('is_reservist', 1))
+                    ->query(fn(Builder $query): Builder => $query->where('is_reservist', 1))
                     ->toggle(),
                 Filter::make('is_mabat')
                     ->label(__('Is mabat'))
-                    ->query(fn (Builder $query): Builder => $query->where('is_mabat', true))
+                    ->query(fn(Builder $query): Builder => $query->where('is_mabat', true))
                     ->toggle(),
                 Filter::make('has_exemption')
                     ->label(__('Exemption'))
-                    ->query(fn (Builder $query): Builder => $query->where('has_exemption', true))
+                    ->query(fn(Builder $query): Builder => $query->where('has_exemption', true))
                     ->toggle(),
                 Filter::make('is_trainee')
                     ->label(__('Is trainee'))
-                    ->query(fn (Builder $query): Builder => $query->where('is_trainee', true))
+                    ->query(fn(Builder $query): Builder => $query->where('is_trainee', true))
                     ->toggle(),
                 Filter::make('enlist_date')
                     ->form([
@@ -196,11 +196,11 @@ class SoldierResource extends Resource
                         return $query
                             ->when(
                                 $data['recruitment_from'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('enlist_date', '>=', $date),
+                                fn(Builder $query, $date): Builder => $query->whereDate('enlist_date', '>=', $date),
                             )
                             ->when(
                                 $data['recruitment_until'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('enlist_date', '<=', $date),
+                                fn(Builder $query, $date): Builder => $query->whereDate('enlist_date', '<=', $date),
                             );
                     }),
 
@@ -208,7 +208,7 @@ class SoldierResource extends Resource
             ->filtersFormColumns(4)
             ->deferFilters()
             ->filtersTriggerAction(
-                fn (Action $action) => $action
+                fn(Action $action) => $action
                     ->button()
                     ->label(__('Filter'))
             )
@@ -219,7 +219,7 @@ class SoldierResource extends Resource
                     EditAction::make(),
                     DeleteAction::make()
                         ->label(__('Delete'))
-                        ->modalHeading(__('Delete').' '.self::getModelLabel()),
+                        ->modalHeading(__('Delete') . ' ' . self::getModelLabel()),
                     ViewAction::make()
                         ->label(__('Display'))
                         ->mutateRecordDataUsing(function (array $data, $record): array {
@@ -260,11 +260,18 @@ class SoldierResource extends Resource
                             $record->save();
                         })
                         ->closeModalByClickingAway(false)
-                        ->hidden(fn ($record) => ! $record->is_reservist),
+                        ->hidden(fn($record) => !$record->is_reservist),
                     ReplicateAction::make()
                         ->icon('heroicon-o-document-duplicate')
                         ->color('success')
                         ->after(function (Soldier $replica, $record): void {
+                            $user = new User;
+                            $user->first_name = $record->user->first_name;
+                            $user->last_name = $record->user->last_name;
+                            $user->password = '*******';
+                            $user->userable_type = "App\Models\Soldier";
+                            $user->userable_id = $replica->id;
+                            $user->save();
                             $replica['last_reserve_dates'] = [];
                             $replica['reserve_dates'] = [];
                             $replica['next_reserve_dates'] = [];

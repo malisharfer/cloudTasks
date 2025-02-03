@@ -394,9 +394,9 @@ class CalendarWidget extends FullCalendarWidget
                     if ($arguments['save'] ?? false) {
                         if ($this->model == Constraint::class) {
                             if (
-                                ($this->mountedActionsData[0]['constraint_type'] == ConstraintType::VACATION->value) ||
-                                ($this->mountedActionsData[0]['constraint_type'] == ConstraintType::MEDICAL->value) &&
-                                (auth()->user()->getRoleNames()->count() === 1)
+                                ($data['constraint_type'] === ConstraintType::VACATION->value ||
+                                $data['constraint_type'] === ConstraintType::MEDICAL->value) &&
+                                auth()->user()->getRoleNames()->count() === 1
                             ) {
                                 $dataToEdit = [
                                     'record' => $this->model::find($record['id']),
@@ -404,7 +404,7 @@ class CalendarWidget extends FullCalendarWidget
                                     'model' => $this->model,
                                 ];
 
-                                Constraint::RequestEditConstraint($dataToEdit);
+                                Constraint::requestEditConstraint($dataToEdit);
 
                                 return;
                             }

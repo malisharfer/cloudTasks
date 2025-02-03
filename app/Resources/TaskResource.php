@@ -117,17 +117,17 @@ class TaskResource extends Resource
                             ->description(__('Alert'), 'above')
                             ->extraAttributes(['style' => 'margin: 5px;'])
                             ->size(TextColumnSize::Small)
-                            ->formatStateUsing(fn ($state) => $state ? __('Yes') : __('No')),
+                            ->formatStateUsing(fn($state) => $state ? __('Yes') : __('No')),
                         TextColumn::make('is_weekend')
                             ->description(__('Is weekend'), 'above')
                             ->size(TextColumnSize::Small)
                             ->extraAttributes(['style' => 'margin: 5px;'])
-                            ->formatStateUsing(fn ($state) => $state ? __('Yes') : __('No')),
+                            ->formatStateUsing(fn($state) => $state ? __('Yes') : __('No')),
                         TextColumn::make('is_night')
                             ->description(__('Is night'), 'above')
                             ->size(TextColumnSize::Small)
                             ->extraAttributes(['style' => 'margin: 5px;'])
-                            ->formatStateUsing(fn ($state) => $state ? __('Yes') : __('No')),
+                            ->formatStateUsing(fn($state) => $state ? __('Yes') : __('No')),
 
                     ])
                         ->space(2)
@@ -137,7 +137,7 @@ class TaskResource extends Resource
                             ->description(__('In parallel'), 'above')
                             ->size(TextColumnSize::Small)
                             ->extraAttributes(['style' => 'margin: 5px;'])
-                            ->formatStateUsing(fn ($state) => $state ? __('Yes') : __('No')),
+                            ->formatStateUsing(fn($state) => $state ? __('Yes') : __('No')),
                         TextColumn::make('concurrent_tasks')
                             ->description(__('Concurrent tasks'), 'above')
                             ->size(TextColumnSize::Small)
@@ -176,8 +176,8 @@ class TaskResource extends Resource
                             ->description(__('Days in week'), 'above')
                             ->size(TextColumnSize::Small)
                             ->extraAttributes(['style' => 'margin-left: 15px;'])
-                            ->formatStateUsing(fn ($state) => collect(explode(', ', $state))
-                                ->map(fn ($day) => DaysInWeek::from($day)->getLabel())
+                            ->formatStateUsing(fn($state) => collect(explode(', ', $state))
+                                ->map(fn($day) => DaysInWeek::from($day)->getLabel())
                                 ->implode(', ')),
                         TextColumn::make('recurring.dates_in_month')
                             ->description(__('Dates in month'), 'above')
@@ -219,7 +219,7 @@ class TaskResource extends Resource
                     ->label(__('Recurring type'))
                     ->multiple()
                     ->searchable()
-                    ->options(collect(RecurringType::cases())->mapWithKeys(fn ($type) => [$type->value => $type->getLabel()]))
+                    ->options(collect(RecurringType::cases())->mapWithKeys(fn($type) => [$type->value => $type->getLabel()]))
                     ->query(function (Builder $query, array $data) {
                         return collect($data['values'])->map(function ($type) use ($query) {
                             return $query->orWhereJsonContains('recurring', $type);
@@ -230,15 +230,15 @@ class TaskResource extends Resource
                     ->label(__('Parallel weight')),
                 Filter::make('is_alert')
                     ->label(__('Is alert'))
-                    ->query(fn (Builder $query): Builder => $query->where('is_alert', true))
+                    ->query(fn(Builder $query): Builder => $query->where('is_alert', true))
                     ->toggle(),
                 Filter::make('is_weekend')
                     ->label(__('Is weekend'))
-                    ->query(fn (Builder $query): Builder => $query->where('is_weekend', true))
+                    ->query(fn(Builder $query): Builder => $query->where('is_weekend', true))
                     ->toggle(),
                 Filter::make('is_night')
                     ->label(__('Is night'))
-                    ->query(fn (Builder $query): Builder => $query->where('is_night', true))
+                    ->query(fn(Builder $query): Builder => $query->where('is_night', true))
                     ->toggle(),
                 SelectFilter::make('department_name')
                     ->label(__('Department name'))
@@ -251,7 +251,7 @@ class TaskResource extends Resource
             ], FiltersLayout::Modal)
             ->deferFilters()
             ->filtersTriggerAction(
-                fn (Action $action) => $action
+                fn(Action $action) => $action
                     ->button()
                     ->label(__('Filter'))
             )
@@ -260,7 +260,7 @@ class TaskResource extends Resource
                     EditAction::make(),
                     DeleteAction::make()
                         ->label(__('Delete'))
-                        ->modalHeading(__('Delete').' '.self::getModelLabel()),
+                        ->modalHeading(__('Delete') . ' ' . self::getModelLabel()),
                 ]),
 
             ])
@@ -322,24 +322,24 @@ class TaskResource extends Resource
         return [
             ToggleButtons::make('recurring.type')
                 ->label(__('Type'))
-                ->options(collect(RecurringType::cases())->mapWithKeys(fn ($type) => [$type->value => $type->getLabel()]))->live()
+                ->options(collect(RecurringType::cases())->mapWithKeys(fn($type) => [$type->value => $type->getLabel()]))->live()
                 ->required()
                 ->inline(),
             Select::make('recurring.days_in_week')
                 ->label(__('Days in week'))
                 ->multiple()
                 ->options(
-                    collect(DaysInWeek::cases())->mapWithKeys(fn ($type) => [$type->value => $type->getLabel()])
+                    collect(DaysInWeek::cases())->mapWithKeys(fn($type) => [$type->value => $type->getLabel()])
                 )
-                ->visible(fn (Get $get): bool => $get('recurring.type') === 'Weekly')
+                ->visible(fn(Get $get): bool => $get('recurring.type') === 'Weekly')
                 ->default(null)
                 ->required(),
             Select::make('recurring.dates_in_month')
-                ->label(fn (Get $get) => $get('recurring.type') === 'Monthly' ? __('Date') : __('Dates'))
+                ->label(fn(Get $get) => $get('recurring.type') === 'Monthly' ? __('Date') : __('Dates'))
                 ->placeholder(__('Select from dates'))
-                ->multiple(fn (Get $get): bool => $get('recurring.type') === 'Custom')
+                ->multiple(fn(Get $get): bool => $get('recurring.type') === 'Custom')
                 ->options(array_combine(range(1, 31), range(1, 31)))
-                ->visible(fn (Get $get): bool => $get('recurring.type') === 'Monthly' || $get('recurring.type') === 'Custom')
+                ->visible(fn(Get $get): bool => $get('recurring.type') === 'Monthly' || $get('recurring.type') === 'Custom')
                 ->default(null)
                 ->live()
                 ->required(),
@@ -352,14 +352,14 @@ class TaskResource extends Resource
                         ->label(__('End date'))
                         ->after('recurring.start_date')
                         ->required(),
-                ])->visible(fn (Get $get): bool => $get('recurring.type') === 'Daily range'),
+                ])->visible(fn(Get $get): bool => $get('recurring.type') === 'Daily range'),
 
             DatePicker::make('recurring.date')
                 ->label(__('Date'))
                 ->required()
                 ->minDate(today())
                 ->live()
-                ->visible(fn (Get $get) => $get('recurring.type') === 'One time'),
+                ->visible(fn(Get $get) => $get('recurring.type') === 'One time'),
         ];
     }
 
@@ -367,12 +367,12 @@ class TaskResource extends Resource
     {
         return [
             Placeholder::make('')
-                ->content(fn ($record) => $record['recurring']['type'] === RecurringType::ONETIME->value ?
+                ->content(fn($record) => $record['recurring']['type'] === RecurringType::ONETIME->value ?
                     __('This task is assigned to', ['soldierName' => Soldier::find(Shift::where('task_id', $record->id)->pluck('soldier_id')->first())->user->displayName]) : null)
                 ->extraAttributes(['style' => 'font-size: 15px'])
                 ->live()
                 ->hiddenOn('create')
-                ->visible(fn ($record) => $record['recurring']['type'] === RecurringType::ONETIME->value && Shift::where('task_id', $record->id)->pluck('soldier_id')->first() !== null),
+                ->visible(fn($record) => $record['recurring']['type'] === RecurringType::ONETIME->value && Shift::where('task_id', $record->id)->pluck('soldier_id')->first() !== null),
             Fieldset::make(__('Soldier assignment'))
                 ->schema([
                     ToggleButtons::make('soldier_type')
@@ -381,9 +381,9 @@ class TaskResource extends Resource
                         ->live()
                         ->inline()
                         ->options(
-                            fn (Get $get) => self::getOptions($get)
+                            fn(Get $get) => self::getOptions($get)
                         )
-                        ->afterStateUpdated(fn (callable $set) => $set('soldier_id', null)),
+                        ->afterStateUpdated(fn(callable $set) => $set('soldier_id', null)),
                     Select::make('soldier_id')
                         ->label(__('Assign soldier'))
                         ->options(
@@ -392,9 +392,9 @@ class TaskResource extends Resource
                             }
                         )
                         ->default(null)
-                        ->placeholder(fn (Get $get) => self::getSoldiers($get)->isEmpty() ? __('No suitable soldiers') : __('Select a soldier'))
+                        ->placeholder(fn(Get $get) => self::getSoldiers($get)->isEmpty() ? __('No suitable soldiers') : __('Select a soldier'))
                         ->visible(
-                            fn (Get $get): bool => $get('soldier_type')
+                            fn(Get $get): bool => $get('soldier_type')
                             && $get('soldier_type') != 'me'
                         )
                         ->live(),
@@ -402,7 +402,7 @@ class TaskResource extends Resource
                         ->content(__('Assigning the soldier to this shift is your sole responsibility!'))
                         ->extraAttributes(['style' => 'color: red; font-family: Arial, Helvetica, sans-serif; font-size: 20px'])
                         ->live()
-                        ->visible(fn (Get $get) => $get('soldier_type') === 'all'),
+                        ->visible(fn(Get $get) => $get('soldier_type') === 'all'),
                 ]),
         ];
     }
@@ -422,10 +422,9 @@ class TaskResource extends Resource
             Select::make('concurrent_tasks')
                 ->label(__('Concurrent tasks'))
                 ->multiple()
-                ->placeholder(fn () => Task::count() > 0 ? __('Select concurrent tasks') : __('No tasks'))
+                ->placeholder(fn() => Task::count() > 0 ? __('Select concurrent tasks') : __('No tasks'))
                 ->options(Task::all()->pluck('type', 'type'))
-                ->visible(fn (Get $get) => $get('in_parallel'))
-                ->required(),
+                ->visible(fn(Get $get) => $get('in_parallel')),
         ];
     }
 
@@ -438,7 +437,7 @@ class TaskResource extends Resource
         ];
         if ($get('department_name')) {
             $options = collect($options)
-                ->put('department', '"'.$get('department_name').'" '.__('Department'))
+                ->put('department', '"' . $get('department_name') . '" ' . __('Department'))
                 ->toArray();
         }
         if (self::amIAvailable($get)) {
@@ -446,7 +445,7 @@ class TaskResource extends Resource
                 ->put('me', __('Me'))
                 ->toArray();
         }
-        if (! in_array('manager', auth()->user()->getRoleNames()->toArray()) && ! in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())) {
+        if (!in_array('manager', auth()->user()->getRoleNames()->toArray()) && !in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())) {
             return collect($options)
                 ->put('my_soldiers', __('My Soldiers'))
                 ->toArray();
@@ -492,7 +491,7 @@ class TaskResource extends Resource
         $shift = new Shift;
         $shift->id = null;
         $shift->task = $task;
-        $shift->start_date = Carbon::parse($task_date->format('Y-m-d').' '.$get('start_hour'));
+        $shift->start_date = Carbon::parse($task_date->format('Y-m-d') . ' ' . $get('start_hour'));
         $shift->end_date = $shift->start_date->copy()->addHours((float) ($get('duration')));
         $shift->parallel_weight = $get('parallel_weight');
 
