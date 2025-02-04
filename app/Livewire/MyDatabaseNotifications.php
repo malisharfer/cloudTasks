@@ -16,7 +16,6 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Attributes\On;
-use App\Enums\ConstraintType;
 
 class MyDatabaseNotifications extends DatabaseNotifications
 {
@@ -57,7 +56,7 @@ class MyDatabaseNotifications extends DatabaseNotifications
         $shiftA = Shift::find($shiftAId);
         $shiftB = Shift::find($shiftBId);
         $this->shiftAssignmentExchange($shiftA, $shiftB);
-        $this->deleteNonRelevantNotifications($shiftAId . '-' . $shiftBId);
+        $this->deleteNonRelevantNotifications($shiftAId.'-'.$shiftBId);
         $this->sendNotification(
             __('Exchange shift'),
             __(
@@ -117,9 +116,9 @@ class MyDatabaseNotifications extends DatabaseNotifications
             User::find($requesterId)
         );
         $this->getShiftsAssignments()
-            ->filter(fn($shiftsAssignment) => $shiftsAssignment->id !== auth()->user()->id)
+            ->filter(fn ($shiftsAssignment) => $shiftsAssignment->id !== auth()->user()->id)
             ->map(
-                fn($shiftsAssignment) => $this->sendNotification(
+                fn ($shiftsAssignment) => $this->sendNotification(
                     __('Exchange shift'),
                     __(
                         'Shifts assignment notification of exchanging shifts for shifts assignment',
@@ -155,7 +154,7 @@ class MyDatabaseNotifications extends DatabaseNotifications
         $shiftB = Shift::find($shiftBId);
         $this->getShiftsAssignments()
             ->map(
-                fn($shiftsAssignment) => $this->sendNotification(
+                fn ($shiftsAssignment) => $this->sendNotification(
                     __('Request for shift exchange'),
                     __(
                         'Request for shift exchange from shifts assignments',
@@ -203,7 +202,7 @@ class MyDatabaseNotifications extends DatabaseNotifications
                             ->close(),
                     ],
                     $shiftsAssignment,
-                    $shiftA->id . '-' . $shiftB->id
+                    $shiftA->id.'-'.$shiftB->id
                 )
             );
     }
@@ -287,7 +286,7 @@ class MyDatabaseNotifications extends DatabaseNotifications
         $soldierB = Soldier::find($soldierBId);
         $shiftA = Shift::find($shiftAId);
         $shiftB = Shift::find($shiftBId);
-        $this->deleteNonRelevantNotifications($shiftAId . '-' . $shiftBId);
+        $this->deleteNonRelevantNotifications($shiftAId.'-'.$shiftBId);
         if ($sendToSoldiers) {
             $this->sendNotification(
                 __('Deny exchange shift request'),
@@ -349,9 +348,9 @@ class MyDatabaseNotifications extends DatabaseNotifications
             User::find($requesterId)
         );
         $this->getShiftsAssignments()
-            ->filter(fn($shiftsAssignment) => $shiftsAssignment->id !== auth()->user()->id)
+            ->filter(fn ($shiftsAssignment) => $shiftsAssignment->id !== auth()->user()->id)
             ->map(
-                fn($shiftsAssignment) => $this->sendNotification(
+                fn ($shiftsAssignment) => $this->sendNotification(
                     __('Deny exchange shift request'),
                     __(
                         'Shifts assignment notification of deny exchanging shifts for shifts assignment',
@@ -489,7 +488,7 @@ class MyDatabaseNotifications extends DatabaseNotifications
         $shift = Shift::find($shiftId);
         $soldierA = Soldier::find($shift->soldier_id);
         $soldierB = Soldier::find($soldierId);
-        $this->deleteNonRelevantNotifications($shiftId . '-' . $shift->soldier_id . '-' . $soldierId);
+        $this->deleteNonRelevantNotifications($shiftId.'-'.$shift->soldier_id.'-'.$soldierId);
         Shift::where('id', $shiftId)->update(['soldier_id' => $soldierId]);
         $this->sendNotification(
             __('Change shift'),
@@ -539,9 +538,9 @@ class MyDatabaseNotifications extends DatabaseNotifications
             User::find($requesterId)
         );
         $this->getShiftsAssignments()
-            ->filter(fn($shiftsAssignment) => $shiftsAssignment->id !== auth()->user()->id)
+            ->filter(fn ($shiftsAssignment) => $shiftsAssignment->id !== auth()->user()->id)
             ->map(
-                fn($shiftsAssignment) => $this->sendNotification(
+                fn ($shiftsAssignment) => $this->sendNotification(
                     __('Change shift'),
                     __(
                         'Shifts assignment notification of changing shifts for shifts assignment',
@@ -566,7 +565,7 @@ class MyDatabaseNotifications extends DatabaseNotifications
         $shift = Shift::find($shiftId);
         $this->getShiftsAssignments()
             ->map(
-                fn($shiftsAssignment) => $this->sendNotification(
+                fn ($shiftsAssignment) => $this->sendNotification(
                     __('Request for shift change'),
                     __(
                         'Request for shift change from shifts assignments',
@@ -607,7 +606,7 @@ class MyDatabaseNotifications extends DatabaseNotifications
                             ->close(),
                     ],
                     $shiftsAssignment,
-                    $shift->id . '-' . $shift->soldier_id . '-' . $soldierId
+                    $shift->id.'-'.$shift->soldier_id.'-'.$soldierId
                 )
             );
     }
@@ -682,7 +681,7 @@ class MyDatabaseNotifications extends DatabaseNotifications
         $shift = Shift::find($shiftId);
         $soldierA = Soldier::find($shift->soldier_id);
         $soldierB = Soldier::find($soldierId);
-        $this->deleteNonRelevantNotifications($shiftId . '-' . $shift->soldier_id . '-' . $soldierId);
+        $this->deleteNonRelevantNotifications($shiftId.'-'.$shift->soldier_id.'-'.$soldierId);
         if ($sendToSoldiers) {
             $this->sendNotification(
                 __('Deny change shift request'),
@@ -735,9 +734,9 @@ class MyDatabaseNotifications extends DatabaseNotifications
             User::find($requesterId)
         );
         $this->getShiftsAssignments()
-            ->filter(fn($shiftsAssignment) => $shiftsAssignment->id !== auth()->user()->id)
+            ->filter(fn ($shiftsAssignment) => $shiftsAssignment->id !== auth()->user()->id)
             ->map(
-                fn($shiftsAssignment) => $this->sendNotification(
+                fn ($shiftsAssignment) => $this->sendNotification(
                     __('Deny change shift request'),
                     __(
                         'Shifts assignment notification of deny changing shifts for shifts assignment',
@@ -907,7 +906,7 @@ class MyDatabaseNotifications extends DatabaseNotifications
 
     protected function confirmConstraintEditNotification($user, $data)
     {
-        $columns = Schema::getColumnListing(strtolower(class_basename($data['model'])) . 's');
+        $columns = Schema::getColumnListing(strtolower(class_basename($data['model'])).'s');
         $filteredData = array_intersect_key($data['data'], array_flip($columns));
         $record = $data['model']::find($data['record']['id']);
 

@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\ConstraintType;
 use App\Enums\Priority;
 use App\Models\Constraint;
 use App\Models\Shift;
@@ -54,7 +53,7 @@ class Helpers
                 fn (Constraint $constraint): ConstraintService => new ConstraintService(
                     $constraint->start_date,
                     $constraint->end_date,
-                    ConstraintType::getPriority()[$constraint->constraint_type] == 1 ? Priority::HIGH : Priority::LOW
+                    $constraint->constraint_type->getPriority() == 1 ? Priority::HIGH : Priority::LOW
                 )
             );
     }

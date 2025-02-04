@@ -44,21 +44,21 @@ class Constraint extends Model
     {
         return [
             Placeholder::make('')
-                ->content(fn(Constraint $constraint) => $constraint->soldier_name)
+                ->content(fn (Constraint $constraint) => $constraint->soldier_name)
                 ->inlineLabel()
-                ->hidden(fn(Constraint $constraint) => $constraint->soldier_id === auth()->user()->userable_id),
+                ->hidden(fn (Constraint $constraint) => $constraint->soldier_id === auth()->user()->userable_id),
             Select::make('soldier_id')
                 ->label(__('Soldier'))
                 ->hiddenOn('view')
-                ->visible(fn() => in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())
-                    && \Str::contains($_SERVER['HTTP_REFERER'], 'my-soldiers-constraint'))
-                ->options(fn() => Cache::remember('users', 30 * 60, function () {
+                ->visible(fn () => in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())
+                && \Str::contains($_SERVER['HTTP_REFERER'], 'my-soldiers-constraint'))
+                ->options(fn () => Cache::remember('users', 30 * 60, function () {
                     return User::all();
                 })
                     ->mapWithKeys(function ($user) {
                         return [$user->userable_id => $user->displayName];
                     }))
-                ->afterStateUpdated(fn($state) => session()->put('soldier_id', $state))
+                ->afterStateUpdated(fn ($state) => session()->put('soldier_id', $state))
                 ->required(),
             ToggleButtons::make('constraint_type')
                 ->required()
@@ -67,13 +67,13 @@ class Constraint extends Model
                 ->live()
                 ->hiddenOn('view')
                 ->inline()
-                ->options(fn(Get $get) => self::availableOptions($get('start_date'), $get('end_date')))
-                ->afterStateUpdated(fn(callable $set, $state, Get $get) => self::updateDates($set, $state, $get)),
+                ->options(fn (Get $get) => self::availableOptions($get('start_date'), $get('end_date')))
+                ->afterStateUpdated(fn (callable $set, $state, Get $get) => self::updateDates($set, $state, $get)),
             ToggleButtons::make('constraint_type_view')
                 ->label(__('Constraint Name'))
                 ->inline()
                 ->visibleOn('view')
-                ->options(fn(Constraint $constraint) => [
+                ->options(fn (Constraint $constraint) => [
                     $constraint->constraint_type->getLabel(),
                 ]),
 
@@ -83,12 +83,12 @@ class Constraint extends Model
                 ->required(),
             Placeholder::make('')
                 ->content(__('Please note! This constraint will only be approved for you after approval from the commander.'))
-                ->visible(fn(Get $get) => ($get('constraint_type') === ConstraintType::VACATION->value || $get('constraint_type') === ConstraintType::MEDICAL->value)
+                ->visible(fn (Get $get) => ($get('constraint_type') === ConstraintType::VACATION->value || $get('constraint_type') === ConstraintType::MEDICAL->value)
                     && auth()->user()->getRoleNames()->count() === 1)
                 ->hiddenOn('view')
                 ->extraAttributes(['style' => 'color: red; font-family: Arial, Helvetica, sans-serif; font-size: 20px']),
             Grid::make()
-                ->visible(fn($get) => in_array($get('constraint_type'), ['Medical', 'Vacation', 'School', 'Not task', 'Low priority not task']))
+                ->visible(fn ($get) => in_array($get('constraint_type'), ['Medical', 'Vacation', 'School', 'Not task', 'Low priority not task']))
                 ->schema([
                     DateTimePicker::make('start_date')
                         ->label(__('Start date'))
@@ -112,7 +112,7 @@ class Constraint extends Model
                     'name' => Soldier::find(auth()->user()->userable_id)->user->displayName,
                     'startDate' => $data['start_date'],
                     'endDate' => $data['end_date'],
-                    'type' => ConstraintType::from($data['constraint_type'])->getLabel(),
+                    'type' => __($data['constraint_type']),
                 ])
             )
             ->actions(
@@ -123,7 +123,7 @@ class Constraint extends Model
                         ->color('success')
                         ->dispatch('confirmConstraint', [
                             'user' => auth()->user()->id,
-                            'constraintName' => ConstraintType::from($data['constraint_type'])->getLabel(),
+                            'constraintName' => $data['constraint_type'],
                             'startDate' => $data['start_date'],
                             'endDate' => $data['end_date'],
                         ])
@@ -134,7 +134,7 @@ class Constraint extends Model
                         ->color('danger')
                         ->dispatch('denyConstraint', [
                             'user' => auth()->user()->id,
-                            'constraintName' => ConstraintType::from($data['constraint_type'])->getLabel(),
+                            'constraintName' => __($data['constraint_type']),
                             'startDate' => $data['start_date'],
                             'endDate' => $data['end_date'],
                         ])
@@ -156,7 +156,7 @@ class Constraint extends Model
                     'endDate' => $data['record']['end_date']->format('Y-m-d H:i:s'),
                     'ToStartDate' => $data['data']['start_date'],
                     'ToEndDate' => $data['data']['end_date'],
-                    'type' => ConstraintType::from($data['data']['constraint_type'])->getLabel(),
+                    'type' => __($data['data']['constraint_type']),
                 ])
             )
             ->actions(
@@ -176,7 +176,7 @@ class Constraint extends Model
                         ->color('danger')
                         ->dispatch('denyConstraintEdit', [
                             'user' => auth()->user()->id,
-                            'constraintName' => ConstraintType::from($data['data']['constraint_type'])->getLabel(),
+                            'constraintName' => __($data['data']['constraint_type']),
                             'startDate' => $data['data']['start_date'],
                             'endDate' => $data['data']['end_date'],
                         ])
@@ -195,8 +195,8 @@ class Constraint extends Model
     {
         $start_date = Carbon::parse($startDate);
         $options = array_combine(
-            array_map(fn($enum) => $enum->value, ConstraintType::cases()),
-            array_map(fn($enum) => $enum->getLabel(), ConstraintType::cases())
+            array_map(fn ($enum) => $enum->value, ConstraintType::cases()),
+            array_map(fn ($enum) => $enum->getLabel(), ConstraintType::cases())
         );
 
         if ($start_date->isFriday() || $start_date->isSaturday()) {
@@ -207,10 +207,10 @@ class Constraint extends Model
             unset($options[ConstraintType::NOT_WEEKEND->value]);
             unset($options[ConstraintType::LOW_PRIORITY_NOT_WEEKEND->value]);
         }
-        if (!$start_date->isSunday()) {
+        if (! $start_date->isSunday()) {
             unset($options[ConstraintType::NOT_SUNDAY_MORNING->value]);
         }
-        if (!(in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray()))) {
+        if (! (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray()))) {
             $usedCounts = self::getUsedCountsForCurrentMonth($startDate, $endDate);
             $limits = Soldier::where('id', auth()->user()->userable_id)->pluck('constraints_limit')->first() ?: ConstraintType::getLimit();
             $constraintsWithinLimit = [];
@@ -223,7 +223,7 @@ class Constraint extends Model
                 $used = $usedCounts[$constraint] ?? 0;
                 $limit = $limits[$constraint] ?? 0;
                 if ($limit === 0 || $used < $limit) {
-                    if (!in_array($constraint, $queryConstraints)) {
+                    if (! in_array($constraint, $queryConstraints)) {
                         $constraintsWithinLimit[$constraint] = $label;
                     }
                 }
@@ -316,21 +316,19 @@ class Constraint extends Model
     {
         $user_name = User::where('userable_id', $this->soldier_id)->get(['first_name', 'last_name']);
 
-        return $user_name->first()?->first_name . ' ' . $user_name->first()?->last_name;
+        return $user_name->first()?->first_name.' '.$user_name->first()?->last_name;
     }
 
     public function getConstraintNameAttribute()
     {
-        $translatedConstraint = __($this->constraint_type);
-
         return $this->soldier_id == auth()->user()->userable_id
-            ? $translatedConstraint
-            : $translatedConstraint . ' ' . $this->soldier_name;
+            ? $this->constraint_type->getLabel()
+            : $this->constraint_type->getLabel().' '.$this->soldier_name;
     }
 
     public function getConstraintColorAttribute()
     {
-        return ConstraintType::from($this->constraint_type)->getColor();
+        return $this->constraint_type->getColor();
     }
 
     public static function getFilters($calendar)
@@ -341,12 +339,12 @@ class Constraint extends Model
             ->icon('heroicon-o-funnel')
             ->form(function () use ($calendar) {
                 $constraints = $calendar->getEventsByRole();
-                $soldiersConstraints = array_filter($constraints->toArray(), fn($constraint) => $constraint['soldier_id'] !== null);
+                $soldiersConstraints = array_filter($constraints->toArray(), fn ($constraint) => $constraint['soldier_id'] !== null);
 
                 return [
                     Select::make('soldier_id')
                         ->label(__('Soldier'))
-                        ->options(fn(): array => collect($soldiersConstraints)->mapWithKeys(fn($constraint) => [
+                        ->options(fn (): array => collect($soldiersConstraints)->mapWithKeys(fn ($constraint) => [
                             $constraint['soldier_id'] => User::where('userable_id', $constraint['soldier_id'])
                                 ->first()?->displayName,
                         ])->toArray())
