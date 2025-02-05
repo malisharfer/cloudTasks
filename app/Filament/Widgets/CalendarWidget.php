@@ -354,11 +354,15 @@ class CalendarWidget extends FullCalendarWidget
                 ->extraModalFooterActions(function (Action $action, array $arguments): array {
                     $canSave = empty($arguments) ? true : (
                         ($this->model === Constraint::class) ? (
-                            isset($this->mountedActionsData[0]['constraint_type']) &&
-                            array_key_exists(
-                                $this->mountedActionsData[0]['constraint_type'],
-                                $this->model::getAvailableOptions($arguments['event']['start'], $arguments['event']['end'])
-                            )
+                            isset($this->mountedActionsData[0]['constraint_type']) ? (
+                                $arguments['type'] === 'drop' ? true : (
+                                    isset($this->mountedActionsData[0]['constraint_type']) &&
+                                    array_key_exists(
+                                        $this->mountedActionsData[0]['constraint_type'],
+                                        $this->model::getAvailableOptions($arguments['event']['start'], $arguments['event']['end'])
+                                    )
+                                )
+                            ) : false
                         ) : true
                     );
                     if (! empty($arguments) && $this->model === Shift::class) {

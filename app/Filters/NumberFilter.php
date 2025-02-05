@@ -94,7 +94,7 @@ class NumberFilter extends Filter
 
                 return $query
                     ->when(
-                        ! empty($data['range_equal']),
+                        isset($data['range_equal']),
                         function () use ($allObjects, $data, $query) {
                             $filteredIds = $allObjects
                                 ->filter(fn ($object) => $object[$this->getName()] == $data['range_equal'])
@@ -104,7 +104,7 @@ class NumberFilter extends Filter
                         }
                     )
                     ->when(
-                        ! empty($data['range_not_equal']),
+                        isset($data['range_not_equal']),
                         function () use ($allObjects, $data, $query) {
                             $filteredIds = $allObjects
                                 ->filter(fn ($object) => $object[$this->getName()] != $data['range_not_equal'])
@@ -114,7 +114,7 @@ class NumberFilter extends Filter
                         }
                     )
                     ->when(
-                        ! empty($data['range_between_from']) && ! empty($data['range_between_to']),
+                        isset($data['range_between_from']) && isset($data['range_between_to']),
                         function () use ($allObjects, $data, $query) {
                             $filteredIds = $allObjects
                                 ->filter(fn ($object) => $object[$this->getName()] >= $data['range_between_from'] && $object[$this->getName()] <= $data['range_between_to'])
@@ -124,7 +124,7 @@ class NumberFilter extends Filter
                         }
                     )
                     ->when(
-                        ! empty($data['range_greater_than']),
+                        isset($data['range_greater_than']),
                         function () use ($allObjects, $data, $query) {
                             $filteredIds = $allObjects
                                 ->filter(fn ($object) => $object[$this->getName()] > $data['range_greater_than'])
@@ -134,7 +134,7 @@ class NumberFilter extends Filter
                         }
                     )
                     ->when(
-                        ! empty($data['range_greater_than_equal']),
+                        isset($data['range_greater_than_equal']),
                         function () use ($allObjects, $data, $query) {
                             $filteredIds = $allObjects
                                 ->filter(fn ($object) => $object[$this->getName()] >= $data['range_greater_than_equal'])
@@ -144,7 +144,7 @@ class NumberFilter extends Filter
                         }
                     )
                     ->when(
-                        ! empty($data['range_less_than']),
+                        isset($data['range_less_than']),
                         function () use ($allObjects, $data, $query) {
                             $filteredIds = $allObjects
                                 ->filter(fn ($object) => $object[$this->getName()] < $data['range_less_than'])
@@ -154,7 +154,7 @@ class NumberFilter extends Filter
                         }
                     )
                     ->when(
-                        ! empty($data['range_less_than_equal']),
+                        isset($data['range_less_than_equal']),
                         function () use ($allObjects, $data, $query) {
                             $filteredIds = $allObjects
                                 ->filter(fn ($object) => $object[$this->getName()] <= $data['range_less_than_equal'])
@@ -167,7 +167,7 @@ class NumberFilter extends Filter
             ->indicateUsing(function (array $data): array {
                 $indicators = [];
 
-                if (! empty($data['range_between_from']) || ! empty($data['range_between_to'])) {
+                if (isset($data['range_between_from']) || isset($data['range_between_to'])) {
                     $indicators[] = Indicator::make(__('Range between', [
                         'label' => $this->getLabel(),
                         'fromValue' => $data['range_between_from'],
@@ -177,7 +177,7 @@ class NumberFilter extends Filter
                         ->removeField('range_between_to');
                 }
 
-                if (! empty($data['range_equal'])) {
+                if (isset($data['range_equal'])) {
                     $indicators[] = Indicator::make(__('Range equal', [
                         'label' => $this->getLabel(),
                         'value' => $data['range_equal'],
@@ -185,7 +185,7 @@ class NumberFilter extends Filter
                         ->removeField('range_equal');
                 }
 
-                if (! empty($data['range_not_equal'])) {
+                if (isset($data['range_not_equal'])) {
                     $indicators[] = Indicator::make(__('Range not equal', [
                         'label' => $this->getLabel(),
                         'value' => $data['range_not_equal'],
@@ -193,7 +193,7 @@ class NumberFilter extends Filter
                         ->removeField('range_not_equal');
                 }
 
-                if (! empty($data['range_greater_than'])) {
+                if (isset($data['range_greater_than'])) {
                     $indicators[] = Indicator::make(__('Range greater than', [
                         'label' => $this->getLabel(),
                         'value' => $data['range_greater_than'],
@@ -201,7 +201,7 @@ class NumberFilter extends Filter
                         ->removeField('range_greater_than');
                 }
 
-                if (! empty($data['range_greater_than_equal'])) {
+                if (isset($data['range_greater_than_equal'])) {
                     $indicators[] = Indicator::make(__('Range greater than equal', [
                         'label' => $this->getLabel(),
                         'value' => $data['range_greater_than_equal'],
@@ -209,7 +209,7 @@ class NumberFilter extends Filter
                         ->removeField('range_greater_than_equal');
                 }
 
-                if (! empty($data['range_less_than'])) {
+                if (isset($data['range_less_than'])) {
                     $indicators[] = Indicator::make(__('Range less than', [
                         'label' => $this->getLabel(),
                         'value' => $data['range_less_than'],
@@ -217,7 +217,7 @@ class NumberFilter extends Filter
                         ->removeField('range_less_than');
                 }
 
-                if (! empty($data['range_less_than_equal'])) {
+                if (isset($data['range_less_than_equal'])) {
                     $indicators[] = Indicator::make(__('Range less than equal', [
                         'label' => $this->getLabel(),
                         'value' => $data['range_less_than_equal'],
