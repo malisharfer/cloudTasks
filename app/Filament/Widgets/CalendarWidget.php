@@ -353,17 +353,19 @@ class CalendarWidget extends FullCalendarWidget
                 ->closeModalByClickingAway(false)
                 ->extraModalFooterActions(function (Action $action, array $arguments): array {
                     $canSave = empty($arguments) ? true : (
-                        $this->model === Constraint::class && isset($this->mountedActionsData[0]['constraint_type']) ? (
-                            $arguments['type'] === 'drop' ?
-                            array_key_exists(
-                                $this->mountedActionsData[0]['constraint_type'],
-                                $this->model::getAvailableOptions($arguments['event']['start'], $arguments['event']['end'], false)
-                            ) :
-                            array_key_exists(
-                                $this->mountedActionsData[0]['constraint_type'],
-                                $this->model::getAvailableOptions($arguments['event']['start'], $arguments['event']['end'])
-                            )
-                        ) : false
+                        $this->model === Constraint::class ? (
+                            isset($this->mountedActionsData[0]['constraint_type']) ? (
+                                $arguments['type'] === 'drop' ?
+                                array_key_exists(
+                                    $this->mountedActionsData[0]['constraint_type'],
+                                    $this->model::getAvailableOptions($arguments['event']['start'], $arguments['event']['end'], false)
+                                ) :
+                                array_key_exists(
+                                    $this->mountedActionsData[0]['constraint_type'],
+                                    $this->model::getAvailableOptions($arguments['event']['start'], $arguments['event']['end'])
+                                )
+                            ) : false
+                        ) : true
                     );
                     if (! empty($arguments) && $this->model === Shift::class) {
                         $oldDate = date('l', strtotime($this->mountedActionsArguments[0]['oldEvent']['start']));
@@ -399,7 +401,7 @@ class CalendarWidget extends FullCalendarWidget
                         if ($this->model == Constraint::class) {
                             if (
                                 ($data['constraint_type'] === ConstraintType::VACATION->value ||
-                                $data['constraint_type'] === ConstraintType::MEDICAL->value) &&
+                                    $data['constraint_type'] === ConstraintType::MEDICAL->value) &&
                                 auth()->user()->getRoleNames()->count() === 1
                             ) {
                                 $dataToEdit = [

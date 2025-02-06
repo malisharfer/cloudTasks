@@ -211,7 +211,7 @@ class Constraint extends Model
         if (! $start_date->isSunday()) {
             unset($options[ConstraintType::NOT_SUNDAY_MORNING->value]);
         }
-        if (!$end_date->isSameDay($start_date)) {
+        if (! $end_date->isSameDay($start_date)) {
             unset($options[ConstraintType::NOT_SUNDAY_MORNING->value]);
             unset($options[ConstraintType::NOT_THURSDAY_EVENING->value]);
             unset($options[ConstraintType::NOT_EVENING->value]);
