@@ -25,7 +25,7 @@ it('should return the correct available options based on start date and used cou
     $result = $availableOptionsMethod->invoke(null, $startDate, $endDate);
 
     expect($result)->toBeArray();
-    expect($result)->toContain(__('Medical'), __('Vacation'), __('School'), __('Not task'), __('Low priority not task'), __('Not evening'));
+    expect($result)->toContain(__('Medical'), __('Vacation'), __('School'), __('Not task'), __('Low priority not task'));
 });
 
 it('should return the correct used counts for current month', function () {

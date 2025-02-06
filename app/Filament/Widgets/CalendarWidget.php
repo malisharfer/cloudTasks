@@ -353,17 +353,17 @@ class CalendarWidget extends FullCalendarWidget
                 ->closeModalByClickingAway(false)
                 ->extraModalFooterActions(function (Action $action, array $arguments): array {
                     $canSave = empty($arguments) ? true : (
-                        ($this->model === Constraint::class) ? (
-                            isset($this->mountedActionsData[0]['constraint_type']) ? (
-                                $arguments['type'] === 'drop' ? true : (
-                                    isset($this->mountedActionsData[0]['constraint_type']) &&
-                                    array_key_exists(
-                                        $this->mountedActionsData[0]['constraint_type'],
-                                        $this->model::getAvailableOptions($arguments['event']['start'], $arguments['event']['end'])
-                                    )
-                                )
-                            ) : false
-                        ) : true
+                        $this->model === Constraint::class && isset($this->mountedActionsData[0]['constraint_type']) ? (
+                            $arguments['type'] === 'drop' ?
+                            array_key_exists(
+                                $this->mountedActionsData[0]['constraint_type'],
+                                $this->model::getAvailableOptions($arguments['event']['start'], $arguments['event']['end'], false)
+                            ) :
+                            array_key_exists(
+                                $this->mountedActionsData[0]['constraint_type'],
+                                $this->model::getAvailableOptions($arguments['event']['start'], $arguments['event']['end'])
+                            )
+                        ) : false
                     );
                     if (! empty($arguments) && $this->model === Shift::class) {
                         $oldDate = date('l', strtotime($this->mountedActionsArguments[0]['oldEvent']['start']));

@@ -186,14 +186,15 @@ class Constraint extends Model
             ->sendToDatabase($commander, true);
     }
 
-    public static function getAvailableOptions($startDate, $endDate): array
+    public static function getAvailableOptions($startDate, $endDate, $withLimit = true): array
     {
-        return static::availableOptions($startDate, $endDate);
+        return static::availableOptions($startDate, $endDate, $withLimit);
     }
 
-    private static function availableOptions($startDate, $endDate): array
+    private static function availableOptions($startDate, $endDate, $withLimit = true): array
     {
         $start_date = Carbon::parse($startDate);
+        $end_date = Carbon::parse($endDate);
         $options = array_combine(
             array_map(fn ($enum) => $enum->value, ConstraintType::cases()),
             array_map(fn ($enum) => $enum->getLabel(), ConstraintType::cases())
@@ -210,7 +211,12 @@ class Constraint extends Model
         if (! $start_date->isSunday()) {
             unset($options[ConstraintType::NOT_SUNDAY_MORNING->value]);
         }
-        if (! (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray()))) {
+        if ($end_date->gt($start_date)) {
+            unset($options[ConstraintType::NOT_SUNDAY_MORNING->value]);
+            unset($options[ConstraintType::NOT_THURSDAY_EVENING->value]);
+            unset($options[ConstraintType::NOT_EVENING->value]);
+        }
+        if ($withLimit && ! (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray()))) {
             $usedCounts = self::getUsedCountsForCurrentMonth($startDate, $endDate);
             $limits = Soldier::where('id', auth()->user()->userable_id)->pluck('constraints_limit')->first() ?: ConstraintType::getLimit();
             $constraintsWithinLimit = [];

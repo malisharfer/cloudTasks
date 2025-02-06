@@ -10,4 +10,9 @@ class TeamPolicy
     {
         return $user->hasRole(['manager', 'shifts-assignment', 'department-commander', 'team-commander']);
     }
+
+    public function create(User $user): bool
+    {
+        return $user->hasRole(['manager', 'shifts-assignment', 'department-commander']);
+    }
 }

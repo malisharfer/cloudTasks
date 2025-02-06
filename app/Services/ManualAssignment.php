@@ -6,6 +6,7 @@ use App\Enums\Availability;
 use App\Models\Department;
 use App\Models\Shift;
 use App\Models\Soldier;
+use App\Models\Team;
 use App\Models\User;
 use App\Services\Soldier as SoldierService;
 use Illuminate\Support\Facades\Cache;
@@ -78,9 +79,11 @@ class ManualAssignment
         $this->soldiers = $this->soldiers
             ->filter(function ($user) use ($departmentName) {
                 $soldier = Soldier::where('id', '=', $user->userable_id)->first();
+                $department = Department::where('name', $departmentName)->first();
 
                 return $soldier?->team?->department?->name == $departmentName
-                    || $soldier->id == Department::where('name', '=', $departmentName)->value('commander_id');
+                || collect($department->teams)->filter(fn (Team $team): bool => $team->commander_id === $soldier->id)->isNotEmpty()
+                || $soldier->id == $department->commander_id;
             });
     }
 
