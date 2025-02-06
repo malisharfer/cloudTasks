@@ -906,9 +906,9 @@ class MyDatabaseNotifications extends DatabaseNotifications
 
     protected function confirmConstraintEditNotification($user, $data)
     {
-        $columns = Schema::getColumnListing(strtolower(class_basename($data['model'])).'s');
-        $filteredData = array_intersect_key($data['data'], array_flip($columns));
-        $record = $data['model']::find($data['record']['id']);
+        $columns = Schema::getColumnListing(strtolower(class_basename('constraints')));
+        $filteredData = array_intersect_key($data['newConstraint'], array_flip($columns));
+        $record = Constraint::find($data['oldConstraint']['id']);
 
         if ($record) {
             collect($filteredData)->map(function ($value, $key) use ($record) {
@@ -916,15 +916,26 @@ class MyDatabaseNotifications extends DatabaseNotifications
             });
             $record->save();
         }
+
         $this->sendNotification(
             __('Your request to edit the constraint has been approved'),
-            __('Commander approved edit constraint', [
-                'name' => User::find($user)->displayName,
-                'constraintName' => __($data['data']['constraint_type']),
-                'startDate' => $data['record']['start_date'],
-                'endDate' => $data['record']['end_date'],
-                'ToStartDate' => $data['data']['start_date'],
-                'ToEndDate' => $data['data']['end_date'],
+            $data['oldConstraint']['constraint_type'] === $data['newConstraint']['constraint_type'] ?
+            __('Commander approved edit constraint times', [
+                'soldierName' => Soldier::find($data['oldConstraint']['soldier_id'])->user->displayName,
+                'constraintName' => __($data['oldConstraint']['constraint_type']),
+                'startDate' => $data['oldConstraint']['start_date'],
+                'endDate' => $data['oldConstraint']['end_date'],
+                'toStartDate' => $data['newConstraint']['start_date'],
+                'toEndDate' => $data['newConstraint']['end_date'],
+            ]) :
+            __('Commander approved edit constraint type', [
+                'soldierName' => Soldier::find($data['oldConstraint']['soldier_id'])->user->displayName,
+                'constraintName' => __($data['oldConstraint']['constraint_type']),
+                'startDate' => $data['oldConstraint']['start_date'],
+                'endDate' => $data['oldConstraint']['end_date'],
+                'toConstraintName' => __($data['newConstraint']['constraint_type']),
+                'toStartDate' => $data['newConstraint']['start_date'],
+                'toEndDate' => $data['newConstraint']['end_date'],
             ]),
             [],
             User::find($user)
@@ -932,20 +943,32 @@ class MyDatabaseNotifications extends DatabaseNotifications
     }
 
     #[On('denyConstraintEdit')]
-    public function denyConstraintEdit($user, $constraintName, $startDate, $endDate)
+    public function denyConstraintEdit($user, $data)
     {
-        $this->denyConstraintEditNotification($user, $constraintName, $startDate, $endDate);
+        $this->denyConstraintEditNotification($user, $data);
     }
 
-    protected function denyConstraintEditNotification($user, $constraintName, $startDate, $endDate)
+    protected function denyConstraintEditNotification($user, $data)
     {
         $this->sendNotification(
             __('Your request to edit the constraint has been rejected'),
-            __('Commander deny edit constraint', [
-                'name' => User::find($user)->displayName,
-                'constraintName' => $constraintName,
-                'startDate' => $startDate,
-                'endDate' => $endDate,
+            $data['oldConstraint']['constraint_type'] === $data['newConstraint']['constraint_type'] ?
+            __('Commander deny edit constraint times', [
+                'soldierName' => Soldier::find($data['oldConstraint']['soldier_id'])->user->displayName,
+                'constraintName' => __($data['oldConstraint']['constraint_type']),
+                'startDate' => $data['oldConstraint']['start_date'],
+                'endDate' => $data['oldConstraint']['end_date'],
+                'toStartDate' => $data['newConstraint']['start_date'],
+                'toEndDate' => $data['newConstraint']['end_date'],
+            ]) :
+            __('Commander deny edit constraint type', [
+                'soldierName' => Soldier::find($data['oldConstraint']['soldier_id'])->user->displayName,
+                'constraintName' => __($data['oldConstraint']['constraint_type']),
+                'startDate' => $data['oldConstraint']['start_date'],
+                'endDate' => $data['oldConstraint']['end_date'],
+                'toConstraintName' => __($data['newConstraint']['constraint_type']),
+                'toStartDate' => $data['newConstraint']['start_date'],
+                'toEndDate' => $data['newConstraint']['end_date'],
             ]),
             [],
             User::find($user)

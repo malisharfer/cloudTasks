@@ -169,7 +169,7 @@
     "Nights":"לילות",
     "nights":"לילות",
     "No":"לא",
-    "No matching data!":"אין נתונים תואמים !",
+    "No matching data!":"אין נתונים תואמים!",
     "No qualifications": "אין הסמכות",
     "No roles":"אין תפקידים",
     "No suitable soldiers":"אין חיילים מתאימים",
@@ -300,11 +300,14 @@
     "Select concurrent tasks":"בחר משימות",
     "No tasks":"אין משימות",
     "The soldier is assigned a shift during the task":"לחייל מוקצית תורנות בזמן המשמרת",
-    "Shift details edit":"החייל <strong>:name</strong> מבקש את האישור שלך לערוך את האילוץ <strong>:type</strong> שלו ולהזיז אותו ל: <br> מ <em>:startDate</em> עד <em>:endDate</em>.<br> ל <em>:ToStartDate</em> עד <em>:ToEndDate</em>.<br> האם אתה מאשר?",
-    "Commander approved edit constraint": "שלום  <strong>:name!</strong><br> בקשתך לעריכת האילוץ <strong>:constraintName</strong><br> להזיזו מהתאריך: <em>:startDate</em> עד <em>:endDate</em> לתאריך: <em>:ToStartDate</em> עד <em>:ToEndDate</em> <br>אושרה והאילוץ עודכן.<br>המשך יום טוב!",
-    "Commander deny edit constraint":"שלום  <strong>:name!</strong><br> בקשתך להזזת האילוץ <strong>:constraintName</strong><br> מ: <em>:startDate</em> עד <em>:endDate</em><br> נדחתה! <br>המשך יום טוב!",
     "Add identifier":"הוסף מזהה לשם על מנת למנוע משתמשים עם שמות כפולים. לדוגמה :example",
     "Your request to edit the constraint has been approved":"בקשתך לעריכת אילוץ אושרה",
     "Your request to edit the constraint has been rejected":"בקשתך לעריכת אילוץ נדחתה",
-    "Do you approve the request to edit the constraint?":"האם אתה מאשר עריכת אילוץ?"
+    "Do you approve the request to edit the constraint?":"האם אתה מאשר עריכת אילוץ?",
+    "Constraint edit times":"שלום <strong>:commanderName!</strong><br> האם אתה מאשר לחייל <strong>:soldierName</strong><br> להזיז את האילוץ <strong>:constraintName</strong> שלו <br> מ <em>:startDate</em> - <em>:endDate</em><br>ל <em>:toStartDate</em> - <em>:toEndDate</em> ?",
+    "Constraint edit type":"שלום <strong>:commanderName!</strong><br> האם אתה מאשר לחייל <strong>:soldierName</strong> לערוך את האילוץ <strong>:constraintName</strong> שלו<br> ב <em>:startDate</em> - <em>:endDate</em><br> לאילוץ <strong>:toConstraintName</strong> <br>ב <em>:toStartDate</em> - <em>:toEndDate</em> ?",
+    "Commander approved edit constraint times":" שלום <strong>:soldierName!</strong><br> בקשתך להזזת האילוץ <strong>:constraintName</strong> שלך <br> מ <em>:startDate</em> - <em>:endDate</em><br> ל <em>:toStartDate</em> - <em>:toEndDate</em><br> אושרה והשינוי בוצע .<br> המשך יום קסום!",
+    "Commander approved edit constraint type": "שלום  <strong>:soldierName!</strong><br> בקשתך לעריכת האילוץ <strong>:constraintName</strong> שלך<br> ב <em>:startDate</em> - <em>:endDate</em><br> לאילוץ <strong>:toConstraintName</strong><br> ב <em>:toStartDate</em> - <em>:toEndDate</em><br> אושרה והשינוי בוצע .<br> המשך יום קסום!",
+    "Commander deny edit constraint times":" שלום <strong>:soldierName</strong>!<br> בקשתך להזזת האילוץ <strong>:constraintName</strong> שלך <br> מ <em>:startDate</em> - <em>:endDate</em><br> ל <em>:toStartDate</em> - <em>:toEndDate</em> נדחתה.<br> המשך יום קסום!",
+    "Commander deny edit constraint type": "שלום  <strong>:soldierName</strong>!<br> בקשתך לעריכת האילוץ <strong>:constraintName</strong> שלך<br> ב <em>:startDate</em> - <em>:endDate</em><br> לאילוץ <strong>:toConstraintName</strong><br> ב <em>:toStartDate</em> - <em>:toEndDate</em> נדחתה.<br> המשך יום קסום!"
 }

@@ -150,13 +150,25 @@ class Constraint extends Model
         Notification::make()
             ->title(__('Do you approve the request to edit the constraint?'))
             ->body(
-                __('Shift details edit', [
-                    'name' => Soldier::find(auth()->user()->userable_id)->user->displayName,
-                    'startDate' => $data['record']['start_date']->format('Y-m-d H:i:s'),
-                    'endDate' => $data['record']['end_date']->format('Y-m-d H:i:s'),
-                    'ToStartDate' => $data['data']['start_date'],
-                    'ToEndDate' => $data['data']['end_date'],
-                    'type' => __($data['data']['constraint_type']),
+                $data['oldConstraint']['constraint_type']->value === $data['newConstraint']['constraint_type'] ?
+                __('Constraint edit times', [
+                    'commanderName' => $commander->displayName,
+                    'soldierName' => Soldier::find(auth()->user()->userable_id)->user->displayName,
+                    'constraintName' => __($data['oldConstraint']['constraint_type']->value),
+                    'startDate' => $data['oldConstraint']['start_date']->format('Y-m-d H:i:s'),
+                    'endDate' => $data['oldConstraint']['end_date']->format('Y-m-d H:i:s'),
+                    'toStartDate' => $data['newConstraint']['start_date'],
+                    'toEndDate' => $data['newConstraint']['end_date'],
+                ]) :
+                __('Constraint edit type', [
+                    'commanderName' => $commander->displayName,
+                    'soldierName' => Soldier::find(auth()->user()->userable_id)->user->displayName,
+                    'constraintName' => __($data['oldConstraint']['constraint_type']->value),
+                    'startDate' => $data['oldConstraint']['start_date']->format('Y-m-d H:i:s'),
+                    'endDate' => $data['oldConstraint']['end_date']->format('Y-m-d H:i:s'),
+                    'toConstraintName' => __($data['newConstraint']['constraint_type']),
+                    'toStartDate' => $data['newConstraint']['start_date'],
+                    'toEndDate' => $data['newConstraint']['end_date'],
                 ])
             )
             ->actions(
@@ -176,9 +188,7 @@ class Constraint extends Model
                         ->color('danger')
                         ->dispatch('denyConstraintEdit', [
                             'user' => auth()->user()->id,
-                            'constraintName' => __($data['data']['constraint_type']),
-                            'startDate' => $data['data']['start_date'],
-                            'endDate' => $data['data']['end_date'],
+                            'data' => $data,
                         ])
                         ->close(),
                 ]

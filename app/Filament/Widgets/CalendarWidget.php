@@ -405,9 +405,8 @@ class CalendarWidget extends FullCalendarWidget
                                 auth()->user()->getRoleNames()->count() === 1
                             ) {
                                 $dataToEdit = [
-                                    'record' => $this->model::find($record['id']),
-                                    'data' => $data,
-                                    'model' => $this->model,
+                                    'oldConstraint' => $record,
+                                    'newConstraint' => $data,
                                 ];
 
                                 Constraint::requestEditConstraint($dataToEdit);
