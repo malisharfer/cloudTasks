@@ -24,8 +24,8 @@ class DatabaseSeeder extends Seeder
         // Soldiers
 
         User::factory()->create([
-            'first_name' => 'name',
-            'last_name' => 'family',
+            'first_name' => 'newspace',
+            'last_name' => 'newspace',
             'password' => '1234567',
             'userable_id' => Soldier::factory()->create([
                 'qualifications' => [],
@@ -39,82 +39,82 @@ class DatabaseSeeder extends Seeder
             ])->id,
         ])->assignRole(['soldier', 'manager']);
 
-        User::factory()->create([
-            'first_name' => 'מפקד',
-            'last_name' => 'מדור 1',
-            'password' => '1111111',
-            'userable_id' => Soldier::factory()->create([
-                'qualifications' => [],
-                'capacity' => 10,
-                'max_weekends' => 10,
-                'max_shifts' => 10,
-                'max_nights' => 10,
-                'course' => 1,
-                'is_reservist' => false,
-                'constraints_limit' => ConstraintType::getLimit(),
-            ])->id,
-        ])->assignRole(['soldier']);
+        // User::factory()->create([
+        //     'first_name' => 'מפקד',
+        //     'last_name' => 'מדור 1',
+        //     'password' => '1111111',
+        //     'userable_id' => Soldier::factory()->create([
+        //         'qualifications' => [],
+        //         'capacity' => 10,
+        //         'max_weekends' => 10,
+        //         'max_shifts' => 10,
+        //         'max_nights' => 10,
+        //         'course' => 1,
+        //         'is_reservist' => false,
+        //         'constraints_limit' => ConstraintType::getLimit(),
+        //     ])->id,
+        // ])->assignRole(['soldier']);
 
-        User::factory()->create([
-            'first_name' => 'מפקד',
-            'last_name' => 'צוות 1',
-            'password' => '1111111',
-            'userable_id' => Soldier::factory()->create([
-                'qualifications' => [],
-                'capacity' => 10,
-                'max_weekends' => 10,
-                'max_shifts' => 10,
-                'max_nights' => 10,
-                'course' => 1,
-                'is_reservist' => false,
-                'constraints_limit' => ConstraintType::getLimit(),
-            ])->id,
-        ])->assignRole(['soldier']);
+        // User::factory()->create([
+        //     'first_name' => 'מפקד',
+        //     'last_name' => 'צוות 1',
+        //     'password' => '1111111',
+        //     'userable_id' => Soldier::factory()->create([
+        //         'qualifications' => [],
+        //         'capacity' => 10,
+        //         'max_weekends' => 10,
+        //         'max_shifts' => 10,
+        //         'max_nights' => 10,
+        //         'course' => 1,
+        //         'is_reservist' => false,
+        //         'constraints_limit' => ConstraintType::getLimit(),
+        //     ])->id,
+        // ])->assignRole(['soldier']);
 
-        User::factory()->create([
-            'first_name' => 'חייל',
-            'last_name' => 'א',
-            'password' => '1111111',
-            'userable_id' => Soldier::factory()->create([
-                'qualifications' => [],
-                'capacity' => 10,
-                'max_weekends' => 10,
-                'max_shifts' => 10,
-                'max_nights' => 10,
-                'course' => 1,
-                'is_reservist' => false,
-                'constraints_limit' => ConstraintType::getLimit(),
-            ])->id,
-        ])->assignRole(['soldier']);
-        User::factory()->create([
-            'first_name' => 'חייל',
-            'last_name' => 'ב',
-            'password' => '1111111',
-            'userable_id' => Soldier::factory()->create([
-                'qualifications' => [],
-                'capacity' => 10,
-                'max_weekends' => 10,
-                'max_shifts' => 10,
-                'max_nights' => 10,
-                'course' => 1,
-                'is_reservist' => false,
-                'constraints_limit' => ConstraintType::getLimit(),
-            ])->id,
-        ])->assignRole(['soldier']);
-        User::factory()->create([
-            'first_name' => 'משבץ',
-            'last_name' => '1',
-            'password' => '1111111',
-            'userable_id' => Soldier::factory()->create([
-                'qualifications' => [],
-                'capacity' => 10,
-                'max_weekends' => 10,
-                'max_shifts' => 10,
-                'max_nights' => 10,
-                'course' => 1,
-                'is_reservist' => false,
-                'constraints_limit' => ConstraintType::getLimit(),
-            ])->id,
-        ])->assignRole(['soldier','shifts-assignment']);
+        // User::factory()->create([
+        //     'first_name' => 'חייל',
+        //     'last_name' => 'א',
+        //     'password' => '1111111',
+        //     'userable_id' => Soldier::factory()->create([
+        //         'qualifications' => [],
+        //         'capacity' => 10,
+        //         'max_weekends' => 10,
+        //         'max_shifts' => 10,
+        //         'max_nights' => 10,
+        //         'course' => 1,
+        //         'is_reservist' => false,
+        //         'constraints_limit' => ConstraintType::getLimit(),
+        //     ])->id,
+        // ])->assignRole(['soldier']);
+        // User::factory()->create([
+        //     'first_name' => 'חייל',
+        //     'last_name' => 'ב',
+        //     'password' => '1111111',
+        //     'userable_id' => Soldier::factory()->create([
+        //         'qualifications' => [],
+        //         'capacity' => 10,
+        //         'max_weekends' => 10,
+        //         'max_shifts' => 10,
+        //         'max_nights' => 10,
+        //         'course' => 1,
+        //         'is_reservist' => false,
+        //         'constraints_limit' => ConstraintType::getLimit(),
+        //     ])->id,
+        // ])->assignRole(['soldier']);
+        // User::factory()->create([
+        //     'first_name' => 'משבץ',
+        //     'last_name' => '1',
+        //     'password' => '1111111',
+        //     'userable_id' => Soldier::factory()->create([
+        //         'qualifications' => [],
+        //         'capacity' => 10,
+        //         'max_weekends' => 10,
+        //         'max_shifts' => 10,
+        //         'max_nights' => 10,
+        //         'course' => 1,
+        //         'is_reservist' => false,
+        //         'constraints_limit' => ConstraintType::getLimit(),
+        //     ])->id,
+        // ])->assignRole(['soldier','shifts-assignment']);
 }
 }
