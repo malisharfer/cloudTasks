@@ -39,7 +39,7 @@
     "August":"אוגוסט",
     "April":"אפריל",
     "Assign soldier": "הקצה חייל",
-    "Assignment charts":"תרשימי שיבוץ",
+    "Assignment charts":" ניסוי ניסוי תרשימי שיבוץ",
     "Assigning the soldier to this shift is your sole responsibility!":"הקצאת החייל למשמרת זו הינה באחריותך בלבד! ",
     "Approve exchange shift request":"אישור בקשת החלפת משמרת",
     "Commander notification of approving exchange shift request for the requesting soldier": "שלום<strong> :requestingSoldierName!</strong><br> בקשתך להחלפת משמרת <strong>:shiftAName</strong> <br> מ <em>:shiftAStart</em> עד <em>:shiftAEnd</em> <br> עם החייל <strong>:approvingSoldierName</strong> בעבור משמרת <strong>:shiftBName</strong>  <br>מ <em>:shiftBStart</em> עד <em>:shiftBEnd</em><br> אושרה וההחלפה בוצעה.<br> יום מוצלח!<br> <strong>:commanderName</strong>",
