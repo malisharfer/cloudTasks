@@ -38,7 +38,7 @@ _migrate() {
   fi
 
   # echo "🚀 Running migrations..."
-  # ${ARTISAN} migrate:fresh --force --seed
+  # ${ARTISAN} migrate --force --seed
 }
 
 
