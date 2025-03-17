@@ -57,8 +57,8 @@ it('should return the night spaces', function () {
     $range = new Range('2024-11-07 22:00:00', '2024-11-08 05:00:00');
     $result = $range->getNightSpaces();
     $expect = [
-        new Range('2024-11-06 00:00:00', '2024-11-07 22:00:00'),
-        new Range('2024-11-08 05:00:00', '2024-11-09 08:00:00'),
+        new Range('2024-11-07 10:00:00', '2024-11-07 22:00:00'),
+        new Range('2024-11-08 05:00:00', '2024-11-08 17:00:00'),
     ];
     expect(count($result))->toBe(count($expect));
     foreach ($result as $index => $range) {
@@ -70,7 +70,7 @@ it('should return the night spaces', function () {
 it('should return the day before night', function () {
     $range = new Range('2024-11-07 22:00:00', '2024-11-08 05:00:00');
     $result = $range->getDayBeforeNight();
-    $expect = new Range('2024-11-06 00:00:00', '2024-11-07 22:00:00');
+    $expect = new Range('2024-11-07 10:00:00', '2024-11-07 22:00:00');
     expect($result->start)->toEqual($expect->start);
     expect($result->end)->toEqual($expect->end);
 });
@@ -78,7 +78,7 @@ it('should return the day before night', function () {
 it('should return the day after night', function () {
     $range = new Range(Carbon::create(2024, 11, 7, 22), Carbon::create(2024, 11, 8, 5));
     $result = $range->getDayAfterNight();
-    $expect = new Range(Carbon::parse('2024-11-08 05:00:00'), Carbon::parse('2024-11-09 08:00:00'));
+    $expect = new Range(Carbon::parse('2024-11-08 05:00:00'), Carbon::parse('2024-11-08 17:00:00'));
     expect($result->start->toString())->toBe($expect->start->toString());
     expect($result->end->toString())->toBe($expect->end->toString());
 });

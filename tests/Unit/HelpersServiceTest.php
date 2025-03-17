@@ -22,6 +22,7 @@ it('should return object of shift service type', function () {
         $shift->parallel_weight,
         $shift->task->is_night,
         $shift->is_weekend,
+        $shift->task->is_alert,
         $shift->task->in_parallel,
         $shift->task->concurrent_tasks
     );
@@ -37,6 +38,8 @@ it('should return object of soldier service type', function () {
         new MaxData($soldier->max_shifts, 0),
         new MaxData($soldier->max_nights, 0),
         new MaxData($soldier->max_weekends, 0),
+        new MaxData($soldier->max_alerts, 0),
+        new MaxData($soldier->max_in_parallel, 0),
         $soldier->qualifications,
         [],
         []
@@ -64,13 +67,15 @@ it('should return array of constraint service type of constraints that have not 
 });
 
 it('should return the capacity hold of soldiers paramaters', function () {
-    $shifts = Shift::factory()->count(random_int(0, 10))->create();
+    $shifts = Shift::factory()->count(random_int(0, 10))->create(['task_id' => Task::factory()->create()->id]);
     $shifts = $shifts->map(fn ($shift) => Helpers::buildShift($shift));
     $result = [
         'count' => $shifts->count(),
         'points' => $shifts->sum('points'),
         'sumWeekends' => $shifts->filter(fn ($shift) => $shift->isWeekend)->sum('points'),
-        'sumNights' => $shifts->filter(fn ($shift) => $shift->isNight)->sum('points'),
+        'sumNights' => $shifts->filter(fn ($shift) => $shift->isNight)->count(),
+        'sumAlerts' => $shifts->filter(fn ($shift) => $shift->isAlert)->count(),
+        'sumInParallel' => $shifts->filter(fn ($shift) => $shift->inParallel)->count(),
     ];
     expect(Helpers::capacityHold($shifts))->toEqual($result);
 });

@@ -18,11 +18,13 @@ class Shift
 
     public $isWeekend;
 
+    public $isAlert;
+
     public $inParallel;
 
     public $inParalelTasks;
 
-    public function __construct($id, string $taskType, $start, $end, float $points, bool $isNight, bool $isWeekend, $inParallel, $inParalelTasks)
+    public function __construct($id, string $taskType, $start, $end, float $points, bool $isNight, bool $isWeekend, bool $isAlert, $inParallel, $inParalelTasks = [])
     {
         $this->id = $id;
         $this->taskType = $taskType;
@@ -30,6 +32,7 @@ class Shift
         $this->points = $points;
         $this->isNight = $isNight;
         $this->isWeekend = $isWeekend;
+        $this->isAlert = $isAlert;
         $this->inParallel = $inParallel;
         $this->inParalelTasks = $inParalelTasks;
     }
@@ -82,10 +85,5 @@ class Shift
                 return $shift->range->start->isSameDay($expectedDate);
             }
         ) : false;
-    }
-
-    protected function name(): string
-    {
-        return $this->taskType.': from'.$this->range->start.' to'.$this->range->end;
     }
 }

@@ -4,8 +4,6 @@ namespace App\Services;
 
 use App\Enums\Availability;
 use App\Enums\Priority;
-use App\Models\Shift as ShiftModel;
-use App\Models\Task;
 
 class Soldier
 {
@@ -19,6 +17,10 @@ class Soldier
 
     public $weekendsMaxData;
 
+    public $alertsMaxData;
+
+    public $inParallelMaxData;
+
     public $qualifications;
 
     public $constraints;
@@ -27,13 +29,15 @@ class Soldier
 
     public $concurrentsShifts;
 
-    public function __construct($id, MaxData $maxPoints, MaxData $maxShifts, MaxData $maxNights, MaxData $maxWeekends, $qualifications, $constraints, $shifts = [], $concurrentsShifts = [])
+    public function __construct($id, MaxData $maxPoints, MaxData $maxShifts, MaxData $maxNights, MaxData $maxWeekends, MaxData $alertsMaxData, MaxData $inParallelMaxData, $qualifications, $constraints, $shifts = [], $concurrentsShifts = [])
     {
         $this->id = $id;
         $this->pointsMaxData = $maxPoints;
         $this->shiftsMaxData = $maxShifts;
         $this->nightsMaxData = $maxNights;
         $this->weekendsMaxData = $maxWeekends;
+        $this->alertsMaxData = $alertsMaxData;
+        $this->inParallelMaxData = $inParallelMaxData;
         $this->qualifications = collect($qualifications);
         $this->constraints = collect($constraints);
         $this->shifts = collect($shifts);
@@ -48,13 +52,18 @@ class Soldier
     public function isAbleTake(Shift $shift, $spaces): bool
     {
         return $this->isAvailableByMaxes($shift)
-            && $this->isAvailableByShifts($shift, false)
+            && $this->isAvailableByShifts($shift)
             && $this->isAvailableBySpaces($spaces);
     }
 
     public function isAvailableByMaxes(Shift $shift): bool
     {
-        if (($shift->isWeekend && $this->weekendsMaxData->remaining() < $shift->points) || ($shift->isNight && $this->nightsMaxData->remaining() < $shift->points)) {
+        if (
+            ($shift->isWeekend && $this->weekendsMaxData->remaining() < $shift->points)
+            || ($shift->isNight && $this->nightsMaxData->remaining() < 1)
+            || ($shift->isAlert && $this->alertsMaxData->remaining() < 1)
+            || ($shift->inParallel && $this->inParallelMaxData->remaining() < 1)
+        ) {
             return false;
         }
 
@@ -62,15 +71,11 @@ class Soldier
             && $this->shiftsMaxData->remaining() >= 1;
     }
 
-    public function isAvailableByShifts(Shift $shift, bool $inParallel): bool
+    public function isAvailableByShifts(Shift $shift): bool
     {
-        return $inParallel ?
-            ! $this->shifts->contains(function (Shift $soldierShift) use ($shift): bool {
-                return $soldierShift->range->isConflict($shift->range) && ! collect($shift->inParalelTasks)->contains($shift->taskType);
-            }) :
-            ! $this->shifts->contains(function (Shift $soldierShift) use ($shift) {
-                return $soldierShift->range->isConflict($shift->range);
-            });
+        return ! $this->shifts->contains(function (Shift $soldierShift) use ($shift): bool {
+            return $soldierShift->range->isConflict($shift->range) && ! collect($shift->inParalelTasks)->contains($shift->taskType);
+        });
     }
 
     public function isAvailableBySpaces($spaces): bool
@@ -89,9 +94,7 @@ class Soldier
     public function isAvailableByConcurrentsShifts(Shift $shift)
     {
         return ! $this->concurrentsShifts->contains(function (Shift $concurrentsShift) use ($shift): bool {
-            $tasksInParallel = Task::find(ShiftModel::find($concurrentsShift->id)->task_id)->concurrent_tasks;
-
-            return $concurrentsShift->range->isConflict($shift->range) && ! collect($tasksInParallel)->contains($shift->taskType);
+            return $concurrentsShift->range->isConflict($shift->range) && ! collect($concurrentsShift->inParalelTasks)->contains($shift->taskType);
         });
     }
 
@@ -125,12 +128,17 @@ class Soldier
         if ($shift->isWeekend) {
             $this->weekendsMaxData->used += $shift->points;
         } elseif ($shift->isNight) {
-            $this->nightsMaxData->used += $shift->points;
+            $this->nightsMaxData->used += 1;
+
+        } elseif ($shift->isAlert) {
+            $this->alertsMaxData->used += 1;
+        } elseif ($shift->inParallel) {
+            $this->inParallelMaxData->used += 1;
         }
     }
 
     protected function addSpaces($spaces)
     {
-        collect($spaces)->map(fn ($space) => $this->shifts->push(new Shift(0, '', $space->start, $space->end, 0, false, false, false, [])));
+        collect($spaces)->map(fn ($space) => $this->shifts->push(new Shift(0, '', $space->start, $space->end, 0, false, false, false, false, [])));
     }
 }

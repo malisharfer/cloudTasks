@@ -21,6 +21,7 @@ class Helpers
             $shift->parallel_weight === null ? $shift->task->parallel_weight : $shift->parallel_weight,
             $shift->task->is_night,
             $shift->is_weekend !== null ? $shift->is_weekend : $shift->task->is_weekend,
+            $shift->task->is_alert,
             $shift->task->in_parallel,
             $shift->task->concurrent_tasks
         );
@@ -34,6 +35,8 @@ class Helpers
             new MaxData($soldier->max_shifts, $capacityHold['count'] ?? 0),
             new MaxData($soldier->max_nights, $capacityHold['sumNights'] ?? 0),
             new MaxData($soldier->max_weekends, $capacityHold['sumWeekends'] ?? 0),
+            new MaxData($soldier->max_alerts, $capacityHold['sumAlerts'] ?? 0),
+            new MaxData($soldier->max_in_parallel, $capacityHold['sumInParallel'] ?? 0),
             $soldier->qualifications,
             $constraints,
             $shifts,
@@ -64,15 +67,19 @@ class Helpers
         $nights = 0;
         $weekends = 0;
         $count = 0;
+        $alerts = 0;
+        $inParallel = 0;
         collect($shifts)
             ->filter(function ($shift) {
                 return $shift->id != 0;
             })
-            ->map(function ($shift) use (&$count, &$points, &$nights, &$weekends) {
+            ->map(function ($shift) use (&$count, &$points, &$nights, &$weekends, &$alerts, &$inParallel) {
                 $count++;
                 $points += $shift->points;
                 $shift->isWeekend ? $weekends += $shift->points : $weekends;
-                $shift->isNight ? $nights += $shift->points : $nights;
+                $shift->isNight ? $nights++ : $nights;
+                $shift->isAlert ? $alerts++ : $alerts;
+                $shift->inParallel ? $inParallel++ : $inParallel;
             });
 
         return [
@@ -80,6 +87,8 @@ class Helpers
             'points' => $points,
             'sumWeekends' => $weekends,
             'sumNights' => $nights,
+            'sumAlerts' => $alerts,
+            'sumInParallel' => $inParallel,
         ];
     }
 
@@ -89,7 +98,7 @@ class Helpers
         collect($shifts)->map(function (ShiftService $shift) use ($shifts, &$allSpaces) {
             $spaces = $shift->isWeekend || $shift->isNight ? $shift->getShiftSpaces($shifts) : null;
             if (! empty($spaces)) {
-                collect($spaces)->map(fn (Range $space) => $allSpaces->push(new ShiftService(0, '', $space->start, $space->end, 0, false, false, false, [])));
+                collect($spaces)->map(fn (Range $space) => $allSpaces->push(new ShiftService(0, '', $space->start, $space->end, 0, false, false, false, false, [])));
             }
         });
 

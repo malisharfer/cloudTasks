@@ -43,6 +43,8 @@ class ShiftsExport implements FromCollection, ShouldAutoSize, WithHeadings, With
                     __('End date') => $shift->end_date,
                     __('Is night') => $task->is_night ? __('Yes') : __('No'),
                     __('Is weekend') => $task->is_weekend ? __('Yes') : __('No'),
+                    __('Is alert') => $task->is_alert ? __('Yes') : __('No'),
+                    __('In parallel') => $task->in_parallel ? __('Yes') : __('No'),
                 ];
             });
     }
@@ -57,13 +59,15 @@ class ShiftsExport implements FromCollection, ShouldAutoSize, WithHeadings, With
             __('End date'),
             __('Is night'),
             __('Is weekend'),
+            __('Is alert'),
+            __('In parallel'),
         ];
     }
 
     public function styles(Worksheet $sheet)
     {
         $sheet->setRightToLeft(true);
-        $sheet->getStyle('A1:G1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('D3D3D3');
+        $sheet->getStyle('A1:I1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('D3D3D3');
 
         return [
             1 => ['font' => ['bold' => true]],

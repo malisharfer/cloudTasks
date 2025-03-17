@@ -29,4 +29,25 @@ class Team extends Model
     {
         return $this->hasMany(Soldier::class);
     }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (Team $team) {
+            self::removeCommanderRole($team->commander_id);
+            self::unAssignMembers($team);
+        });
+    }
+
+    protected static function removeCommanderRole($commanderId)
+    {
+        if ($commanderId) {
+            $commander = Soldier::find($commanderId)->user;
+            $commander->removeRole('team-commander');
+        }
+    }
+
+    protected static function unAssignMembers(Team $team)
+    {
+        collect($team->members)->map(fn (Soldier $member) => $member->update(['team_id' => null]));
+    }
 }

@@ -24,6 +24,8 @@ class Soldier extends Model
         'max_shifts',
         'max_nights',
         'max_weekends',
+        'max_alerts',
+        'max_in_parallel',
         'capacity',
         'is_trainee',
         'is_mabat',
@@ -47,7 +49,6 @@ class Soldier extends Model
         'not_thursday_evening' => 'boolean',
         'not_sunday_morning' => 'boolean',
         'capacity' => Integer::class,
-        'max_nights' => Integer::class,
         'max_weekends' => Integer::class,
         'qualifications' => 'array',
         'is_reservist' => 'boolean',
@@ -101,7 +102,8 @@ class Soldier extends Model
     {
         parent::boot();
         static::deleting(function ($record) {
-            $record->user()->delete();
+            $record->user->delete();
+            Shift::where('soldier_id', $record->id)->update(['soldier_id' => null]);
         });
     }
 }

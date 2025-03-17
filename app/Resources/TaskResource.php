@@ -486,6 +486,7 @@ class TaskResource extends Resource
         $task->type = $get('type');
         $task->is_night = $get('is_night');
         $task->is_weekend = $get('is_weekend');
+        $task->is_alert = $get('is_alert');
         $task->in_parallel = $get('in_parallel');
         $task->concurrent_tasks = $get('concurrent_tasks') ?? [];
         $shift = new Shift;

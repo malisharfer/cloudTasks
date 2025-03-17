@@ -57,14 +57,12 @@ class ConcurrentTasks
             ->get()
             ->map(function (Soldier $soldier) {
                 $constraints = Helpers::buildConstraints($soldier->constraints, new Range($this->date->copy()->startOfMonth(), $this->date->copy()->endOfMonth()));
-
                 $shifts = $this->getSoldiersShifts($soldier->id, false);
-
                 $concurrentsShifts = $this->getSoldiersShifts($soldier->id, true);
-
                 $shifts->push(...Helpers::addShiftsSpaces($shifts));
+                $capacityHold = Helpers::capacityHold($shifts);
 
-                return Helpers::buildSoldier($soldier, $constraints, $shifts, [], $concurrentsShifts);
+                return Helpers::buildSoldier($soldier, $constraints, $shifts, $capacityHold, $concurrentsShifts);
             })
             ->shuffle();
     }
@@ -107,6 +105,7 @@ class ConcurrentTasks
             ->filter(function (SoldierService $soldier) use ($shift) {
                 return $soldier->isAvailableByConstraints($shift->range) === Availability::YES
                     && $soldier->isAvailableByConcurrentsShifts($shift)
+                    && $soldier->inParallelMaxData->remaining() > 0
                     && $this->isAvailableByShiftsAndSpaces($soldier->shifts, $shift);
             });
 
@@ -142,6 +141,7 @@ class ConcurrentTasks
         if ($soldier->isAvailableByConcurrentsShifts($shift)) {
             $soldier->concurrentsShifts->push($shift);
             $this->assignments->push(new Assignment($shift->id, $soldier->id));
+            $soldier->inParallelMaxData->used++;
 
             return true;
         }

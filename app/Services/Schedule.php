@@ -73,28 +73,26 @@ class Schedule
     protected function getTaskWeight($shifts, $soldiers): array
     {
         $requiredPoints = collect($shifts)->sum('points');
-        $requiredNights = collect($shifts)->sum(function (Shift $shift) {
-            return $shift->isNight;
-        });
-        $requiredWeekends = collect($shifts)->sum(function (Shift $shift) {
-            return $shift->isWeekend;
-        });
+        $requiredNights = collect($shifts)->filter(fn (Shift $shift) => $shift->isNight)->count();
+        $requiredWeekends = collect($shifts)
+            ->filter(fn (Shift $shift) => $shift->isWeekend)
+            ->sum(fn (Shift $shift) => $shift->points);
         $requiredShifts = count($shifts);
 
         $availablePoints = collect($soldiers)->sum(function (Soldier $soldier) {
-            return $soldier->pointsMaxData->max;
+            return $soldier->pointsMaxData->remaining();
         });
 
-        $availableNights = collect($soldiers)->sum(function ($soldier) {
-            return $soldier->nightsMaxData->max;
+        $availableNights = collect($soldiers)->sum(function (Soldier $soldier) {
+            return $soldier->nightsMaxData->remaining();
         });
 
-        $availableWeekends = collect($soldiers)->sum(function ($soldier) {
-            return $soldier->weekendsMaxData->max;
+        $availableWeekends = collect($soldiers)->sum(function (Soldier $soldier) {
+            return $soldier->weekendsMaxData->remaining();
         });
 
-        $availableShifts = collect($soldiers)->sum(function ($soldier) {
-            return $soldier->shiftsMaxData->max;
+        $availableShifts = collect($soldiers)->sum(function (Soldier $soldier) {
+            return $soldier->shiftsMaxData->remaining();
         });
 
         $weight = collect([

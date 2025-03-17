@@ -18,6 +18,8 @@ class SoldierFactory extends Factory
             'max_shifts' => fake()->numberBetween(0, 50),
             'max_nights' => fake()->numberBetween(0, 31),
             'max_weekends' => fake()->numberBetween(0, 5),
+            'max_alerts' => fake()->numberBetween(0, 31),
+            'max_in_parallel' => fake()->numberBetween(0, 31),
             'capacity' => fake()->numberBetween(0, 12) / 4.0,
             'is_trainee' => fake()->boolean(),
             'is_mabat' => fake()->boolean(),

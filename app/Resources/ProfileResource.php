@@ -73,7 +73,7 @@ class ProfileResource extends Resource
                             TextInput::make('max_nights')
                                 ->label(__('Max nights'))
                                 ->numeric()
-                                ->step(0.25)
+                                ->step(1)
                                 ->minValue(0)
                                 ->required()
                                 ->default(0),
@@ -81,6 +81,20 @@ class ProfileResource extends Resource
                                 ->label(__('Max weekends'))
                                 ->numeric()
                                 ->step(0.25)
+                                ->minValue(0)
+                                ->required()
+                                ->default(0),
+                            TextInput::make('max_alerts')
+                                ->label(__('Max alerts'))
+                                ->numeric()
+                                ->step(1)
+                                ->minValue(0)
+                                ->required()
+                                ->default(0),
+                            TextInput::make('max_in_parallel')
+                                ->label(__('Max in parallel'))
+                                ->numeric()
+                                ->step(1)
                                 ->minValue(0)
                                 ->required()
                                 ->default(0),
@@ -122,6 +136,8 @@ class ProfileResource extends Resource
 
                         TextColumn::make('max_nights')->weight(FontWeight::SemiBold)->description(__('Max nights'), 'above')->size(TextColumnSize::Large),
                         TextColumn::make('max_weekends')->weight(FontWeight::SemiBold)->description(__('Max weekends'), 'above')->size(TextColumnSize::Large),
+                        TextColumn::make('max_alerts')->weight(FontWeight::SemiBold)->description(__('Max alerts'), 'above')->size(TextColumnSize::Large),
+                        TextColumn::make('max_in_parallel')->weight(FontWeight::SemiBold)->description(__('Max in parallel'), 'above')->size(TextColumnSize::Large),
                         TextColumn::make('capacity')->weight(FontWeight::SemiBold)->description(__('Capacity'), 'above')->size(TextColumnSize::Large),
                         TextColumn::make('capacity_hold')
                             ->default(function () {

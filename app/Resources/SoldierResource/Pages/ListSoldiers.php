@@ -39,12 +39,22 @@ class ListSoldiers extends ListRecords
                         TextInput::make('max_nights')
                             ->label(__('Max nights'))
                             ->numeric()
-                            ->step(0.25)
+                            ->step(1)
                             ->minValue(0),
                         TextInput::make('max_weekends')
                             ->label(__('Max weekends'))
                             ->numeric()
                             ->step(0.25)
+                            ->minValue(0),
+                        TextInput::make('max_alerts')
+                            ->label(__('Max alerts'))
+                            ->numeric()
+                            ->step(1)
+                            ->minValue(0),
+                        TextInput::make('max_in_parallel')
+                            ->label(__('Max in parallel'))
+                            ->numeric()
+                            ->step(1)
                             ->minValue(0),
                         TextInput::make('capacity')
                             ->numeric()
@@ -61,7 +71,7 @@ class ListSoldiers extends ListRecords
                 ->action(function (array $data) {
                     $selectedCourse = $data['course'];
                     $updateData = [];
-                    $fields = ['max_shifts', 'max_nights', 'max_weekends', 'capacity', 'qualifications'];
+                    $fields = ['max_shifts', 'max_nights', 'max_weekends', 'max_alerts', 'max_in_parallel', 'capacity', 'qualifications'];
 
                     foreach ($fields as $field) {
                         if (isset($data[$field]) && ! ($field === 'qualifications' && empty($data[$field]))) {

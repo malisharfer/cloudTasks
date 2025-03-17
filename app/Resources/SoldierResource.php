@@ -144,6 +144,8 @@ class SoldierResource extends Resource
                 NumberFilter::make('max_shifts')->label(__('Max shifts')),
                 NumberFilter::make('max_nights')->label(__('Max nights')),
                 NumberFilter::make('max_weekends')->label(__('Max weekends')),
+                NumberFilter::make('max_alerts')->label(__('Max alerts')),
+                NumberFilter::make('max_in_parallel')->label(__('Max in parallel')),
                 NumberFilter::make('capacity')->label(__('Capacity')),
                 NumberFilter::make('capacity_hold')->label(__('Capacity hold')),
                 SelectFilter::make('gender')
@@ -388,7 +390,7 @@ class SoldierResource extends Resource
                 TextInput::make('max_nights')
                     ->label(__('Max nights'))
                     ->numeric()
-                    ->step(0.25)
+                    ->step(1)
                     ->minValue(0)
                     ->required()
                     ->default(0),
@@ -399,8 +401,22 @@ class SoldierResource extends Resource
                     ->minValue(0)
                     ->required()
                     ->default(0),
+                TextInput::make('max_alerts')
+                    ->label(__('Max alerts'))
+                    ->numeric()
+                    ->step(1)
+                    ->minValue(0)
+                    ->required()
+                    ->default(0),
+                TextInput::make('max_in_parallel')
+                    ->label(__('Max in parallel'))
+                    ->numeric()
+                    ->step(1)
+                    ->minValue(0)
+                    ->required()
+                    ->default(0),
             ])
-                ->columns(3),
+                ->columns(5),
             Section::make([
                 Toggle::make('is_trainee')
                     ->label(__('Is trainee')),

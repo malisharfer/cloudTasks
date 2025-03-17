@@ -44,9 +44,4 @@ class MaxData
 
         return ($relativeLoad * 4 + $pointValue) / 5;
     }
-
-    public function status(): string
-    {
-        return "{$this->used} / {$this->max}";
-    }
 }

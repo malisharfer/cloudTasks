@@ -62,11 +62,11 @@ class Range
 
     public function getDayBeforeNight(): Range
     {
-        return new Range($this->start->copy()->subDay()->setTime(00, 0, 0), $this->start);
+        return new Range($this->start->copy()->subHours(12), $this->start);
     }
 
     public function getDayAfterNight(): Range
     {
-        return new Range($this->end, $this->end->copy()->addDay()->setTime(8, 0, 0));
+        return new Range($this->end, $this->end->copy()->addHours(12));
     }
 }
