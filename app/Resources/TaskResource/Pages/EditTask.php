@@ -3,6 +3,7 @@
 namespace App\Resources\TaskResource\Pages;
 
 use App\Enums\RecurringType;
+use App\Enums\TaskKind;
 use App\Models\Shift;
 use App\Resources\TaskResource;
 use Filament\Actions\DeleteAction;
@@ -22,6 +23,15 @@ class EditTask extends EditRecord
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
+    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        if ($data['kind'] !== TaskKind::INPARALLEL->value) {
+            $data['concurrent_tasks'] = [];
+        }
+
+        return $data;
     }
 
     protected function afterSave(): void

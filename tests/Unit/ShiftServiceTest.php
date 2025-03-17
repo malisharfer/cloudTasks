@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\DaysInWeek;
+use App\Enums\TaskKind;
 use App\Services\Range;
 use App\Services\Shift;
 use Carbon\Carbon;
@@ -12,10 +13,7 @@ it('should return the day before and after if the shift is at night', function (
         '2024-12-17 22:30:00',
         '2024-12-18 06:00:00',
         0.25,
-        true,
-        false,
-        false,
-        false,
+        TaskKind::NIGHT->value,
         []
     );
 
@@ -41,10 +39,7 @@ it('should return the next sunday if the shift is at weekend', function () {
         '2024-11-08 22:30:00',
         '2024-11-09 09:00:00',
         0.25,
-        false,
-        true,
-        false,
-        false,
+        TaskKind::WEEKEND->value,
         []
     );
 
@@ -66,7 +61,7 @@ it('should return the next sunday if the shift is full weekend', function () {
 
     $range = new Range('2024-11-08 16:30:00', '2024-11-09 22:00:00');
 
-    $shift = new Shift(1, 'test', '2024-11-08 16:30:00', '2024-11-09 22:00:00', 0.25, false, true, false, false, []);
+    $shift = new Shift(1, 'test', '2024-11-08 16:30:00', '2024-11-09 22:00:00', 0.25, TaskKind::WEEKEND->value, []);
     $reflection = new ReflectionClass(Shift::class);
 
     $method = $reflection->getMethod('getWeekendSpaces');
@@ -92,10 +87,7 @@ it('should not return the next sunday if the shift is not full weekend', functio
         '2024-11-16 16:30:00',
         '2024-11-16 18:30:00',
         0.25,
-        false,
-        true,
-        false,
-        false,
+        TaskKind::WEEKEND->value,
         []
     );
     $reflection = new ReflectionClass(Shift::class);
@@ -114,10 +106,7 @@ it('should return true if the weekend is full', function () {
         '2024-11-08 16:30:00',
         '2024-11-09 18:30:00',
         0.25,
-        false,
-        true,
-        false,
-        false,
+        TaskKind::WEEKEND->value,
         []
     );
 
@@ -137,10 +126,7 @@ it('should return false if the weekend is not full', function () {
         '2024-11-16 16:30:00',
         '2024-11-16 18:30:00',
         0.25,
-        false,
-        true,
-        false,
-        false,
+        TaskKind::WEEKEND->value,
         []
     );
     $reflection = new ReflectionClass(Shift::class);
@@ -160,10 +146,7 @@ it('should return true if the range includes the supplied day', function () {
         '2024-11-08 16:30:00',
         '2024-11-11 18:00:00',
         0.25,
-        false,
-        true,
-        false,
-        false,
+        TaskKind::WEEKEND->value,
         []
     );
     $reflection = new ReflectionClass(Shift::class);
@@ -183,10 +166,7 @@ it('should return false if the range does not include the supplied day', functio
         '2024-11-08 16:30:00',
         '2024-11-11 18:00:00',
         0.25,
-        false,
-        true,
-        false,
-        false,
+        TaskKind::WEEKEND->value,
         []
     );
     $reflection = new ReflectionClass(Shift::class);
@@ -199,28 +179,24 @@ it('should return false if the range does not include the supplied day', functio
 });
 
 it('should return true if the shift date is adjacent to the selected date', function () {
-    $shifts = [new Shift(
-        1,
-        'test',
-        '2024-11-09 16:30:00',
-        '2024-11-09 18:30:00',
-        0.25,
-        false,
-        true,
-        false,
-        false,
-        []
-    )];
-    $shift = new Shift(
+    $shifts = [
+        new App\Services\Shift(
+            1,
+            'test',
+            '2024-11-09 16:30:00',
+            '2024-11-09 18:30:00',
+            0.25,
+            TaskKind::WEEKEND->value,
+            []
+        ),
+    ];
+    $shift = new App\Services\Shift(
         1,
         'test',
         '2024-11-08 16:30:00',
         '2024-11-08 18:00:00',
         0.25,
-        false,
-        true,
-        false,
-        false,
+        TaskKind::WEEKEND->value,
         []
     );
     $range = new Range('2024-11-08 16:30:00', '2024-11-08 18:00:00');
@@ -234,18 +210,17 @@ it('should return true if the shift date is adjacent to the selected date', func
 });
 
 it('should return false if the shift date is not adjacent to the selected date', function () {
-    $shifts = [new Shift(
-        1,
-        'test',
-        '2024-11-16 16:30:00',
-        '2024-11-16 18:30:00',
-        0.25,
-        false,
-        true,
-        false,
-        false,
-        []
-    )];
+    $shifts = [
+        new App\Services\Shift(
+            1,
+            'test',
+            '2024-11-16 16:30:00',
+            '2024-11-16 18:30:00',
+            0.25,
+            TaskKind::WEEKEND->value,
+            []
+        ),
+    ];
     $range = new Range('2024-11-08 16:30:00', '2024-11-08 18:00:00');
     $shift = new Shift(
         1,
@@ -253,10 +228,7 @@ it('should return false if the shift date is not adjacent to the selected date',
         '2024-11-08 16:30:00',
         '2024-11-08 18:00:00',
         0.25,
-        false,
-        true,
-        false,
-        false,
+        TaskKind::WEEKEND->value,
         []
     );
     $reflection = new ReflectionClass(Shift::class);

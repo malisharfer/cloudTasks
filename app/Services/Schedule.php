@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\Availability;
+use App\Enums\TaskKind;
 
 class Schedule
 {
@@ -73,9 +74,9 @@ class Schedule
     protected function getTaskWeight($shifts, $soldiers): array
     {
         $requiredPoints = collect($shifts)->sum('points');
-        $requiredNights = collect($shifts)->filter(fn (Shift $shift) => $shift->isNight)->count();
+        $requiredNights = collect($shifts)->filter(fn (Shift $shift) => ($shift->kind === TaskKind::NIGHT->value))->count();
         $requiredWeekends = collect($shifts)
-            ->filter(fn (Shift $shift) => $shift->isWeekend)
+            ->filter(fn (Shift $shift) => ($shift->kind === TaskKind::WEEKEND->value))
             ->sum(fn (Shift $shift) => $shift->points);
         $requiredShifts = count($shifts);
 
@@ -155,11 +156,12 @@ class Schedule
     {
         $weight = $taskWeight['SHIFTS_RATIO'] + $shift->points > 0 ? $taskWeight['POINTS_RATIO'] : 0;
 
-        if ($shift->isWeekend) {
-            $weight += $taskWeight['WEEKENDS_RATIO'];
-        } elseif ($shift->isNight) {
-            $weight += $taskWeight['NIGHTS_RATIO'];
-        }
+        match ($shift->kind) {
+            TaskKind::WEEKEND->value => $weight += $taskWeight['WEEKENDS_RATIO'],
+            TaskKind::NIGHT->value => $weight += $taskWeight['NIGHTS_RATIO'],
+            default => null
+        };
+
         $weight += $this->getShiftAvailabilityRatio($soldiersCount, $availableSoldiersCount)
             * $this->SHIFT_DUMBBELLS['SHIFT_AVAILABILITY'];
 
@@ -230,8 +232,8 @@ class Schedule
             'LOW_CONSTRAINT' => $potentialSoldierData->isLowConstraint ? 1 : 0,
             'POINTS_RELATIVE_LOAD' => $shift->points > 0 ? $soldier->pointsMaxData->calculatedRelativeLoad() : 0,
             'SHIFTS_RELATIVE_LOAD' => $soldier->shiftsMaxData->calculatedRelativeLoad(),
-            'NIGHT_RELATIVE_LOAD' => ! $shift->isNight ? 0 : $soldier->nightsMaxData->calculatedRelativeLoad(),
-            'WEEKEND_RELATIVE_LOAD' => ! $shift->isWeekend ? 0 : $soldier->weekendsMaxData->calculatedRelativeLoad(),
+            'NIGHT_RELATIVE_LOAD' => $shift->kind !== TaskKind::NIGHT->value ? 0 : $soldier->nightsMaxData->calculatedRelativeLoad(),
+            'WEEKEND_RELATIVE_LOAD' => $shift->kind !== TaskKind::WEEKEND->value ? 0 : $soldier->weekendsMaxData->calculatedRelativeLoad(),
             'MULTITASKING_VALUE' => $this->getMultitaskingValue(
                 $soldier->qualifications->count()
             ),

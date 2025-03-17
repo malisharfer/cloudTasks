@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\TaskKind;
 use App\Models\Constraint as ConstraintModel;
 use App\Models\Shift;
 use App\Models\Soldier;
@@ -75,12 +76,12 @@ class Charts
 
     protected function howMuchNights($shifts)
     {
-        return $shifts->filter(fn ($shift) => $shift->task->is_night)->count();
+        return $shifts->filter(fn ($shift) => $shift->task->kind === TaskKind::NIGHT->value)->count();
     }
 
     protected function howMuchWeekends($shifts)
     {
-        return $shifts->filter(fn ($shift) => $shift->is_weekend != null ? $shift->is_weekend : $shift->task->is_weekend)->count();
+        return $shifts->filter(fn ($shift) => $shift->is_weekend != null ? $shift->is_weekend : ($shift->task->kind === TaskKind::WEEKEND->value))->count();
     }
 
     protected function howMuchPoints($shifts)

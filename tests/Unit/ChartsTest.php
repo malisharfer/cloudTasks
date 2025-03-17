@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\TaskKind;
 use App\Models\Shift;
 use App\Models\Soldier;
 use App\Models\Task;
@@ -26,7 +27,7 @@ it('should organize chart data correctly', function () {
         'end_date' => now()->addMonth()->addHour(),
         'task_id' => Task::factory()->create([
             'type' => 'run',
-            'in_parallel' => false,
+            'kind' => TaskKind::REGULAR->value,
         ])->id,
     ]);
 
@@ -49,7 +50,7 @@ it('should organize chart data correctly', function () {
         'end_date' => now()->addMonth()->addHours(2),
         'task_id' => Task::factory()->create([
             'type' => 'run',
-            'in_parallel' => false,
+            'kind' => TaskKind::REGULAR->value,
         ])->id,
     ]);
 

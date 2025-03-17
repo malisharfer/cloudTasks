@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\Integer;
+use App\Enums\TaskKind;
 use App\Filament\Notifications\MyNotification;
 use App\Services\ChangeAssignment;
 use App\Services\Helpers;
@@ -882,7 +883,7 @@ class Shift extends Model
 
     public static function setData($record, $data)
     {
-        $record->is_weekend ?? $data['is_weekend'] = $record->task->is_weekend === $data['is_weekend'] ? null : $data['is_weekend'];
+        $record->is_weekend ?? $data['is_weekend'] = ($record->task->kind === TaskKind::WEEKEND->value) === $data['is_weekend'] ? null : $data['is_weekend'];
         if ($record->parallel_weight === null) {
             $data['parallel_weight'] = $record->task->parallel_weight === $data['parallel_weight'] ? null : $data['parallel_weight'];
         }
@@ -894,7 +895,7 @@ class Shift extends Model
     {
         return [
             ...$record->getAttributes(),
-            'is_weekend' => $record->is_weekend === null ? $record->task->is_weekend : $record->is_weekend,
+            'is_weekend' => $record->is_weekend === null ? ($record->task->kind === TaskKind::WEEKEND->value) : $record->is_weekend,
             'parallel_weight' => $record->parallel_weight === null ? $record->task->parallel_weight : $record->parallel_weight,
             'start_date' => $arguments['event']['start'] ?? $record->start_date,
             'end_date' => $arguments['event']['end'] ?? $record->end_date,

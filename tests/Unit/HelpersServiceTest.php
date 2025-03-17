@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\ConstraintType;
+use App\Enums\TaskKind;
 use App\Models\Constraint;
 use App\Models\Shift;
 use App\Models\Soldier;
@@ -13,17 +14,14 @@ use App\Services\Shift as ShiftService;
 use App\Services\Soldier as SoldierService;
 
 it('should return object of shift service type', function () {
-    $shift = Shift::factory()->create();
+    $shift = Shift::factory()->create(['is_weekend' => false, 'task_id' => Task::factory()->create(['kind' => TaskKind::NIGHT->value])]);
     $shiftService = new ShiftService(
         $shift->id,
         $shift->task->type,
         $shift->start_date,
         $shift->end_date,
         $shift->parallel_weight,
-        $shift->task->is_night,
-        $shift->is_weekend,
-        $shift->task->is_alert,
-        $shift->task->in_parallel,
+        $shift->task->kind,
         $shift->task->concurrent_tasks
     );
     expect(Helpers::buildShift($shift))->toBeInstanceOf(App\Services\Shift::class);
@@ -72,16 +70,16 @@ it('should return the capacity hold of soldiers paramaters', function () {
     $result = [
         'count' => $shifts->count(),
         'points' => $shifts->sum('points'),
-        'sumWeekends' => $shifts->filter(fn ($shift) => $shift->isWeekend)->sum('points'),
-        'sumNights' => $shifts->filter(fn ($shift) => $shift->isNight)->count(),
-        'sumAlerts' => $shifts->filter(fn ($shift) => $shift->isAlert)->count(),
-        'sumInParallel' => $shifts->filter(fn ($shift) => $shift->inParallel)->count(),
+        'sumWeekends' => $shifts->filter(fn ($shift) => $shift->kind === TaskKind::WEEKEND->value)->sum('points'),
+        'sumNights' => $shifts->filter(fn ($shift) => $shift->kind === TaskKind::NIGHT->value)->count(),
+        'sumAlerts' => $shifts->filter(fn ($shift) => $shift->kind === TaskKind::ALERT->value)->count(),
+        'sumInParallel' => $shifts->filter(fn ($shift) => $shift->kind === TaskKind::INPARALLEL->value)->count(),
     ];
     expect(Helpers::capacityHold($shifts))->toEqual($result);
 });
 
 it('should return shifts spaces', function () {
-    $shifts = Shift::factory()->count(3)->create(['is_weekend' => false, 'task_id' => Task::factory()->create(['is_night' => true, 'in_parallel' => false])->id]);
+    $shifts = Shift::factory()->count(3)->create(['is_weekend' => false, 'task_id' => Task::factory()->create(['kind' => TaskKind::NIGHT->value])->id]);
     $shifts = $shifts->map(fn ($shift) => Helpers::buildShift($shift));
     expect(Helpers::addShiftsSpaces($shifts))->toHaveCount(6);
 });
@@ -91,8 +89,9 @@ it('should return soldiers shifts', function () {
     $shifts = Shift::factory()->count(3)->create([
         'soldier_id' => $soldier->id,
         'task_id' => Task::factory()->create([
-            'in_parallel' => false,
+            'kind' => TaskKind::REGULAR->value,
         ])->id,
+        'is_weekend' => false,
         'start_date' => now()->isLastOfMonth() ? now()->subDays(6)->startOfSecond() : now()->addHours(7)->startOfSecond(),
         'end_date' => now()->isLastOfMonth() ? now()->subDays(5)->startOfSecond() : now()->addHours(8)->startOfSecond()]);
     $result = $shifts->map(fn ($shift) => Helpers::buildShift($shift));

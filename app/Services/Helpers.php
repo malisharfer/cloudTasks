@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\Priority;
+use App\Enums\TaskKind;
 use App\Models\Constraint;
 use App\Models\Shift;
 use App\Services\Constraint as ConstraintService;
@@ -19,12 +20,21 @@ class Helpers
             $shift->start_date,
             $shift->end_date,
             $shift->parallel_weight === null ? $shift->task->parallel_weight : $shift->parallel_weight,
-            $shift->task->is_night,
-            $shift->is_weekend !== null ? $shift->is_weekend : $shift->task->is_weekend,
-            $shift->task->is_alert,
-            $shift->task->in_parallel,
+            self::kind($shift),
             $shift->task->concurrent_tasks
         );
+    }
+
+    protected static function kind(Shift $shift)
+    {
+        if ($shift->is_weekend === true) {
+            return TaskKind::WEEKEND->value;
+        }
+        if ($shift->is_weekend === false && $shift->task->kind === TaskKind::WEEKEND->value) {
+            return TaskKind::REGULAR->value;
+        }
+
+        return $shift->task->kind;
     }
 
     public static function buildSoldier($soldier, $constraints, $shifts, array $capacityHold, $concurrentsShifts = []): SoldierService
@@ -70,16 +80,19 @@ class Helpers
         $alerts = 0;
         $inParallel = 0;
         collect($shifts)
-            ->filter(function ($shift) {
+            ->filter(function (ShiftService $shift) {
                 return $shift->id != 0;
             })
-            ->map(function ($shift) use (&$count, &$points, &$nights, &$weekends, &$alerts, &$inParallel) {
+            ->each(function (ShiftService $shift) use (&$count, &$points, &$nights, &$weekends, &$alerts, &$inParallel) {
                 $count++;
                 $points += $shift->points;
-                $shift->isWeekend ? $weekends += $shift->points : $weekends;
-                $shift->isNight ? $nights++ : $nights;
-                $shift->isAlert ? $alerts++ : $alerts;
-                $shift->inParallel ? $inParallel++ : $inParallel;
+                match ($shift->kind) {
+                    TaskKind::WEEKEND->value => $weekends += $shift->points,
+                    TaskKind::NIGHT->value => $nights++,
+                    TaskKind::ALERT->value => $alerts++,
+                    TaskKind::INPARALLEL->value => $inParallel++,
+                    TaskKind::REGULAR->value => null
+                };
             });
 
         return [
@@ -96,9 +109,9 @@ class Helpers
     {
         $allSpaces = collect([]);
         collect($shifts)->map(function (ShiftService $shift) use ($shifts, &$allSpaces) {
-            $spaces = $shift->isWeekend || $shift->isNight ? $shift->getShiftSpaces($shifts) : null;
+            $spaces = ($shift->kind === TaskKind::WEEKEND->value || $shift->kind === TaskKind::NIGHT->value) ? $shift->getShiftSpaces($shifts) : null;
             if (! empty($spaces)) {
-                collect($spaces)->map(fn (Range $space) => $allSpaces->push(new ShiftService(0, '', $space->start, $space->end, 0, false, false, false, false, [])));
+                collect($spaces)->map(fn (Range $space) => $allSpaces->push(new ShiftService(0, '', $space->start, $space->end, 0, TaskKind::REGULAR->value, [])));
             }
         });
 
@@ -113,7 +126,7 @@ class Helpers
                 function (Shift $shift) use ($newRange, $inParallel): bool {
                     $range = new Range($shift->start_date, $shift->end_date);
 
-                    return $range->isSameMonth($newRange) && $shift->task->in_parallel === $inParallel;
+                    return $range->isSameMonth($newRange) && ($shift->task->kind === TaskKind::INPARALLEL->value) === $inParallel;
                 }
             )
             ->map(fn (Shift $shift): ShiftService => self::buildShift($shift));

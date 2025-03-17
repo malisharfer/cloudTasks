@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\ConstraintType;
+use App\Enums\TaskKind;
 use App\Models\Constraint;
 use App\Models\Shift;
 use App\Models\Soldier;
@@ -13,8 +14,7 @@ it('should return the matching soldiers for shift', function () {
         'soldier_id' => Soldier::factory()->create()->id,
         'task_id' => Task::factory()->create([
             'type' => 'clean',
-            'is_night' => false,
-            'in_parallel' => false,
+            'kind' => TaskKind::REGULAR->value,
         ])->id,
         'is_weekend' => false,
         'start_date' => now()->isLastOfMonth() ? now()->subDays(8) : now()->addHours(5),
@@ -51,7 +51,7 @@ it('should return the matching soldiers for shift', function () {
         'soldier_id' => $soldier5->id,
         'task_id' => Task::factory()->create([
             'type' => 'clean',
-            'in_parallel' => false,
+            'kind' => TaskKind::REGULAR->value,
         ])->id,
         'start_date' => now()->isLastOfMonth() ? now()->subDays(9) : now()->addHours(4),
         'end_date' => now()->isLastOfMonth() ? now()->subDays(6) : now()->addHours(7),
@@ -83,8 +83,7 @@ it('should return the matching shifts for exchanging', function () {
         ])->userable_id,
         'task_id' => Task::factory()->create([
             'type' => 'clean',
-            'is_night' => false,
-            'in_parallel' => false,
+            'kind' => TaskKind::REGULAR->value,
         ])->id,
         'is_weekend' => false,
         'start_date' => now()->addHours(1),
@@ -99,8 +98,7 @@ it('should return the matching shifts for exchanging', function () {
         ])->userable_id,
         'task_id' => Task::factory()->create([
             'type' => 'jump',
-            'is_night' => false,
-            'in_parallel' => false,
+            'kind' => TaskKind::REGULAR->value,
         ])->id,
         'is_weekend' => false,
         'start_date' => now()->addHours(3),
@@ -115,8 +113,7 @@ it('should return the matching shifts for exchanging', function () {
         ])->userable_id,
         'task_id' => Task::factory()->create([
             'type' => 'run',
-            'is_night' => false,
-            'in_parallel' => false,
+            'kind' => TaskKind::REGULAR->value,
         ])->id,
         'is_weekend' => false,
         'start_date' => now()->addHours(3),
@@ -131,8 +128,7 @@ it('should return the matching shifts for exchanging', function () {
         ])->userable_id,
         'task_id' => Task::factory()->create([
             'type' => 'run',
-            'is_night' => false,
-            'in_parallel' => false,
+            'kind' => TaskKind::REGULAR->value,
         ])->id,
         'is_weekend' => false,
         'start_date' => now()->addHours(1),
@@ -147,8 +143,7 @@ it('should return the matching shifts for exchanging', function () {
         ])->userable_id,
         'task_id' => Task::factory()->create([
             'type' => 'jump',
-            'is_night' => false,
-            'in_parallel' => false,
+            'kind' => TaskKind::REGULAR->value,
         ])->id,
         'is_weekend' => false,
         'start_date' => now()->addHours(3),
@@ -163,8 +158,7 @@ it('should return the matching shifts for exchanging', function () {
         ])->userable_id,
         'task_id' => Task::factory()->create([
             'type' => 'clean',
-            'is_night' => false,
-            'in_parallel' => false,
+            'kind' => TaskKind::REGULAR->value,
         ])->id,
         'is_weekend' => false,
         'start_date' => now()->addHours(1),
@@ -179,8 +173,7 @@ it('should return the matching shifts for exchanging', function () {
         ])->userable_id,
         'task_id' => Task::factory()->create([
             'type' => 'clean',
-            'is_night' => false,
-            'in_parallel' => false,
+            'kind' => TaskKind::REGULAR->value,
         ])->id,
         'is_weekend' => false,
         'start_date' => now()->addHours(3),

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\TaskKind;
 use App\Models\Shift;
 use App\Models\Soldier;
 use App\Services\Constraint as ConstraintService;
@@ -71,7 +72,7 @@ class ChangeAssignment
                     && $this->soldier->isAvailableBySpaces($shift->getShiftSpaces($this->soldier->shifts))
                     && ! $this->isConflictWithConstraints($this->soldier, $shift->range)
                     && $this->soldier->isAvailableByShifts($shift)
-                    && ($shift->inParallel ? $this->soldier->isAvailableByConcurrentsShifts($shift) : true);
+                    && ($shift->kind === TaskKind::INPARALLEL->value ? $this->soldier->isAvailableByConcurrentsShifts($shift) : true);
             })
             ->groupBy('soldier_id')
             ->filter(function ($shifts, $soldier_id) {
@@ -86,7 +87,7 @@ class ChangeAssignment
                     && $soldier->isAvailableBySpaces($this->shift->getShiftSpaces($soldier->shifts))
                     && ! $this->isConflictWithConstraints($soldier, $this->shift->range)
                     && $soldier->isAvailableByShifts($this->shift)
-                    && ($this->shift->inParallel ? $soldier->isAvailableByConcurrentsShifts($this->shift) : true);
+                    && ($this->shift->kind === TaskKind::INPARALLEL->value ? $soldier->isAvailableByConcurrentsShifts($this->shift) : true);
             });
     }
 

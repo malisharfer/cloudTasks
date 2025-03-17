@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\TaskKind;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class TaskFactory extends Factory
@@ -15,10 +16,7 @@ class TaskFactory extends Factory
             'parallel_weight' => fake()->randomDigit(),
             'type' => fake()->name(),
             'color' => fake()->hexColor(),
-            'is_alert' => fake()->boolean(),
-            'is_weekend' => fake()->boolean(),
-            'is_night' => fake()->boolean(),
-            'in_parallel' => fake()->boolean(),
+            'kind' => TaskKind::cases()[random_int(0, count(TaskKind::cases()) - 1)]->value,
             'department_name' => fake()->name(),
             'recurring' => json_encode([]),
         ];

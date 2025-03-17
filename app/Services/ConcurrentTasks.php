@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\Availability;
+use App\Enums\TaskKind;
 use App\Models\Shift;
 use App\Models\Soldier;
 use App\Services\Shift as ShiftService;
@@ -45,7 +46,7 @@ class ConcurrentTasks
                 $range = new Range($shift->start_date, $shift->end_date);
 
                 return $range->isSameMonth(new Range(max($this->date->copy()->startOfMonth(), Carbon::tomorrow()), $this->date->copy()->endOfMonth()))
-                    && $shift->task->in_parallel;
+                    && ($shift->task->kind === TaskKind::INPARALLEL->value);
             })
             ->map(fn (Shift $shift): ShiftService => Helpers::buildShift($shift));
     }

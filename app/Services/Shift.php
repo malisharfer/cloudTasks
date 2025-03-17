@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\DaysInWeek;
+use App\Enums\TaskKind;
 
 class Shift
 {
@@ -14,39 +15,27 @@ class Shift
 
     public $points;
 
-    public $isNight;
-
-    public $isWeekend;
-
-    public $isAlert;
-
-    public $inParallel;
+    public $kind;
 
     public $inParalelTasks;
 
-    public function __construct($id, string $taskType, $start, $end, float $points, bool $isNight, bool $isWeekend, bool $isAlert, $inParallel, $inParalelTasks = [])
+    public function __construct($id, string $taskType, $start, $end, float $points, $kind, $inParalelTasks = [])
     {
         $this->id = $id;
         $this->taskType = $taskType;
         $this->range = new Range($start, $end);
         $this->points = $points;
-        $this->isNight = $isNight;
-        $this->isWeekend = $isWeekend;
-        $this->isAlert = $isAlert;
-        $this->inParallel = $inParallel;
+        $this->kind = $kind;
         $this->inParalelTasks = $inParalelTasks;
     }
 
     public function getShiftSpaces($shifts)
     {
-        if ($this->isWeekend) {
-            return $this->getWeekendSpaces($shifts);
-        }
-        if ($this->isNight) {
-            return $this->range->getNightSpaces();
-        }
-
-        return [];
+        return match ($this->kind) {
+            TaskKind::WEEKEND->value => $this->getWeekendSpaces($shifts),
+            TaskKind::NIGHT->value => $this->range->getNightSpaces(),
+            default => []
+        };
     }
 
     protected function getWeekendSpaces($shifts)

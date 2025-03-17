@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\TaskKind;
 use App\Models\Constraint;
 use App\Models\Shift;
 use App\Models\Soldier;
@@ -10,7 +11,7 @@ it('should return only unassigned shifts', function () {
     $reflection = new ReflectionClass(Algorithm::class);
     $method = $reflection->getMethod('getShiftWithTasks');
     $method->setAccessible(true);
-    $task = Task::factory()->create(['in_parallel' => false]);
+    $task = Task::factory()->create(['kind' => TaskKind::REGULAR->value]);
     Shift::factory()->count(3)->create(['task_id' => $task->id]);
     expect($method->invoke(new Algorithm))->toBeEmpty();
 });
@@ -19,15 +20,16 @@ it('should return shifts with their task details', function () {
     $reflection = new ReflectionClass(Algorithm::class);
     $method = $reflection->getMethod('getShiftWithTasks');
     $method->setAccessible(true);
-    $task = Task::factory()->create(['in_parallel' => false]);
+    $task = Task::factory()->create(['kind' => TaskKind::REGULAR->value]);
     Shift::factory()->count(3)->create([
         'task_id' => $task->id,
         'soldier_id' => null,
+        'is_weekend' => false,
         'start_date' => now()->addMonth(),
         'end_date' => now()->addMonth()->addDay(),
     ]);
     $shiftsWithTasks = $method->invoke(new Algorithm);
-    $shiftsWithTasks->map(fn ($shift) => expect($shift->isNight)->toBe($task->is_night));
+    $shiftsWithTasks->map(fn ($shift) => expect($shift->kind)->toBe($task->kind));
 });
 
 it('should return only non-reserve soldiers', function () {

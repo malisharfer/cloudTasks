@@ -4,6 +4,7 @@ namespace App\Resources;
 
 use App\Enums\DaysInWeek;
 use App\Enums\RecurringType;
+use App\Enums\TaskKind;
 use App\Filters\NumberFilter;
 use App\Models\Department;
 use App\Models\Shift;
@@ -22,7 +23,6 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
-use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -40,7 +40,6 @@ use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\TextColumn\TextColumnSize;
 use Filament\Tables\Enums\FiltersLayout;
-use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -113,65 +112,23 @@ class TaskResource extends Resource
                             ->description(__('Duration'), 'above')
                             ->size(TextColumnSize::Small)
                             ->extraAttributes(['style' => 'margin: 5px;']),
-                        TextColumn::make('is_alert')
-                            ->description(__('Alert'), 'above')
+                        TextColumn::make('kind')
+                            ->description(__('Kind'), 'above')
                             ->extraAttributes(['style' => 'margin: 5px;'])
                             ->size(TextColumnSize::Small)
-                            ->formatStateUsing(fn ($state) => $state ? __('Yes') : __('No')),
-                        TextColumn::make('is_weekend')
-                            ->description(__('Is weekend'), 'above')
-                            ->size(TextColumnSize::Small)
-                            ->extraAttributes(['style' => 'margin: 5px;'])
-                            ->formatStateUsing(fn ($state) => $state ? __('Yes') : __('No')),
-                        TextColumn::make('is_night')
-                            ->description(__('Is night'), 'above')
-                            ->size(TextColumnSize::Small)
-                            ->extraAttributes(['style' => 'margin: 5px;'])
-                            ->formatStateUsing(fn ($state) => $state ? __('Yes') : __('No')),
-
-                    ])
-                        ->space(2)
-                        ->extraAttributes(['style' => 'display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: baseline; margin-bottom:10px']),
-                    Stack::make([
-                        TextColumn::make('in_parallel')
-                            ->description(__('In parallel'), 'above')
-                            ->size(TextColumnSize::Small)
-                            ->extraAttributes(['style' => 'margin: 5px;'])
-                            ->formatStateUsing(fn ($state) => $state ? __('Yes') : __('No')),
+                            ->formatStateUsing(fn ($state) => TaskKind::from($state)->getLabel()),
                         TextColumn::make('concurrent_tasks')
                             ->description(__('Concurrent tasks'), 'above')
                             ->size(TextColumnSize::Small)
                             ->extraAttributes(['style' => 'margin-left: 15px;']),
                     ])
                         ->space(2)
-                        ->extraAttributes([
-                            'style' => 'display: flex;
-                                flex-direction: row;
-                                flex-wrap: wrap;
-                                justify-content: center;
-                                align-items: baseline;
-                                padding: 10px;',
-                        ]),
+                        ->extraAttributes(['style' => 'display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: baseline; margin-bottom:10px']),
                     Stack::make([
                         TextColumn::make('recurring.type')
                             ->description(__('Recurring type'), 'above')
                             ->size(TextColumnSize::Small)
-                            ->formatStateUsing(function ($state) {
-                                switch ($state) {
-                                    case 'Daily':
-                                        return __('Daily');
-                                    case 'Weekly':
-                                        return __('Weekly');
-                                    case 'Monthly':
-                                        return __('Monthly');
-                                    case 'Custom':
-                                        return __('Custom');
-                                    case 'One time':
-                                        return __('One time');
-                                    case 'Daily range':
-                                        return __('Daily range');
-                                }
-                            }),
+                            ->formatStateUsing(fn ($state) => RecurringType::from($state)->getLabel()),
                         TextColumn::make('recurring.days_in_week')
                             ->description(__('Days in week'), 'above')
                             ->size(TextColumnSize::Small)
@@ -228,18 +185,12 @@ class TaskResource extends Resource
                     ->default(null),
                 NumberFilter::make('parallel_weight')
                     ->label(__('Parallel weight')),
-                Filter::make('is_alert')
-                    ->label(__('Is alert'))
-                    ->query(fn (Builder $query): Builder => $query->where('is_alert', true))
-                    ->toggle(),
-                Filter::make('is_weekend')
-                    ->label(__('Is weekend'))
-                    ->query(fn (Builder $query): Builder => $query->where('is_weekend', true))
-                    ->toggle(),
-                Filter::make('is_night')
-                    ->label(__('Is night'))
-                    ->query(fn (Builder $query): Builder => $query->where('is_night', true))
-                    ->toggle(),
+                SelectFilter::make('kind')
+                    ->label(__('Kind'))
+                    ->multiple()
+                    ->searchable()
+                    ->options(collect(TaskKind::cases())->mapWithKeys(fn ($kind) => [$kind->value => $kind->getLabel()]))
+                    ->default(null),
                 SelectFilter::make('department_name')
                     ->label(__('Department name'))
                     ->multiple()
@@ -410,21 +361,17 @@ class TaskResource extends Resource
     public static function additionalDetails(): array
     {
         return [
-            Toggle::make('is_alert')
-                ->label(__('Is alert')),
-            Toggle::make('is_weekend')
-                ->label(__('Is weekend')),
-            Toggle::make('is_night')
-                ->label(__('Is night')),
-            Toggle::make('in_parallel')
+            Select::make('kind')
+                ->label(__('Kind'))
                 ->live()
-                ->label(__('In parallel')),
+                ->placeholder(fn () => __('Select task kind'))
+                ->options(collect(TaskKind::cases())->mapWithKeys(fn ($type) => [$type->value => $type->getLabel()])),
             Select::make('concurrent_tasks')
                 ->label(__('Concurrent tasks'))
                 ->multiple()
                 ->placeholder(fn () => Task::count() > 0 ? __('Select concurrent tasks') : __('No tasks'))
                 ->options(Task::all()->pluck('type', 'type'))
-                ->visible(fn (Get $get) => $get('in_parallel')),
+                ->visible(fn (Get $get) => $get('kind') === TaskKind::INPARALLEL->value),
         ];
     }
 
@@ -484,10 +431,7 @@ class TaskResource extends Resource
         $task_date = Carbon::parse($get('recurring.date'));
         $task = new Task;
         $task->type = $get('type');
-        $task->is_night = $get('is_night');
-        $task->is_weekend = $get('is_weekend');
-        $task->is_alert = $get('is_alert');
-        $task->in_parallel = $get('in_parallel');
+        $task->kind = $get('kind');
         $task->concurrent_tasks = $get('concurrent_tasks') ?? [];
         $shift = new Shift;
         $shift->id = null;

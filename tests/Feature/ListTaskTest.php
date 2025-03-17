@@ -11,15 +11,6 @@ beforeEach(function () {
         ->asUser('manager');
 });
 
-it('should filter the table in boolean filter', function () {
-    $tasks = Task::factory()->count(5)->create();
-    livewire::test(ListTasks::class)
-        ->assertCanSeeTableRecords($tasks)
-        ->filterTable('is_alert', true)
-        ->assertCanSeeTableRecords($tasks->where('is_alert', true))
-        ->assertCanNotSeeTableRecords($tasks->where('is_alert', false));
-});
-
 it('should filter the table in NumberFilter filter', function () {
     $tasks = Task::factory()->count(5)->create();
     $data = ['range_condition' => 'equal', 'range_equal' => 2.5];

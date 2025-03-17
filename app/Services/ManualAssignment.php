@@ -157,7 +157,7 @@ class ManualAssignment
             fn (SoldierService $soldier) => $soldier->isQualified($this->shift->taskType)
             && $soldier->isAvailableByMaxes($this->shift)
             && $soldier->isAvailableByConstraints($this->shift->range) != Availability::NO
-            && $soldier->isAvailableByShifts($this->shift, $this->shift->inParallel)
+            && $soldier->isAvailableByShifts($this->shift)
             && $soldier->isAvailableBySpaces($this->shift->getShiftSpaces($soldier->shifts))
         );
 
