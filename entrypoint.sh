@@ -38,7 +38,7 @@ _migrate() {
   fi
 
   echo "🚀 Running migrations..."
-  ${ARTISAN} migrate 
+  ${ARTISAN} migrate --force
 }
 
 
