@@ -37,8 +37,8 @@ _migrate() {
     exit 1
   fi
 
-  # echo "🚀 Running migrations..."
-  # ${ARTISAN} migrate --force --seed
+  echo "🚀 Running migrations..."
+  ${ARTISAN} migrate 
 }
 
 
