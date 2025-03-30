@@ -13,7 +13,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Database\Seeder;
-
+  
 class DatabaseSeeder extends Seeder
 {
     public function run(): void

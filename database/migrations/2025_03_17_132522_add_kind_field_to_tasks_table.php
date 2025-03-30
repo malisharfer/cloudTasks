@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('tasks', function (Blueprint $table) {
-            $table->string('kind')->nullable()->default('Regular'); // Set your desired dummy value here
+            $table->string('kind')->default('Regular'); // Set your desired dummy value here
 
         });
         DB::table(table: 'tasks')->whereNull('kind')->update(['kind' => 'Regular']);
