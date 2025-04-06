@@ -72,22 +72,52 @@ class ListSoldiers extends ListRecords
                     $selectedCourse = $data['course'];
                     $updateData = [];
                     $fields = ['max_shifts', 'max_nights', 'max_weekends', 'max_alerts', 'max_in_parallel', 'capacity', 'qualifications'];
-
+                
                     foreach ($fields as $field) {
-                        if (isset($data[$field]) && ! ($field === 'qualifications' && empty($data[$field]))) {
+                        if (isset($data[$field]) && !($field === 'qualifications' && empty($data[$field]))) {
                             $updateData[$field] = $data[$field];
                         }
                     }
-                    if (! empty($updateData)) {
+                
+                    if (!empty($updateData)) {
                         $soldiers = Soldier::where('course', $selectedCourse)->get();
                         $soldiers->map(function ($soldier) use ($updateData) {
-                            collect($updateData)->map(function ($value, $key) use ($soldier) {
-                                $soldier->{$key} = $value;
-                            });
-                            $soldier->save();
-                        });
-                    }
-                }),
+                            foreach ($updateData as $key => $value) {
+                                if ($key === 'qualifications') {
+                                    $currentQualifications = $soldier->{$key} ?? []; 
+                                    if (is_array($currentQualifications)) {
+                                        $soldier->{$key} = array_unique(array_merge($currentQualifications, (array) $value));
+                                    } else {
+                                        $soldier->{$key} = $currentQualifications . ',' . $value;
+                                    }
+                                } else {
+                                    $soldier->{$key} = $value;
+                                }
+                        }
+                        $soldier->save();
+                    });
+                }
+        }),
+                // ->action(function (array $data) {
+                //     $selectedCourse = $data['course'];
+                //     $updateData = [];
+                //     $fields = ['max_shifts', 'max_nights', 'max_weekends', 'max_alerts', 'max_in_parallel', 'capacity', 'qualifications'];
+
+                //     foreach ($fields as $field) {
+                //         if (isset($data[$field]) && ! ($field === 'qualifications' && empty($data[$field]))) {
+                //             $updateData[$field] = $data[$field];
+                //         }
+                //     }
+                //     if (! empty($updateData)) {
+                //         $soldiers = Soldier::where('course', $selectedCourse)->get();
+                //         $soldiers->map(function ($soldier) use ($updateData) {
+                //             collect($updateData)->map(function ($value, $key) use ($soldier) {
+                //                 $soldier->{$key} = $value;
+                //             });
+                //             $soldier->save();
+                //         });
+                //     }
+                // }),
         ];
     }
 }
