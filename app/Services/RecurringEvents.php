@@ -151,7 +151,7 @@ class RecurringEvents
                     $parallelWeight = Task::where([['type', $shiftType], ['kind', TaskKind::WEEKEND->value]])->pluck('parallel_weight')->first();
                     $parallelWeight ?
                     $shift->parallel_weight = $parallelWeight
-                    : Notification::make()
+                    : (auth()->user() ? Notification::make()
                         ->title(__('Update parallel weight of holiday shift'))
                         ->persistent()
                         ->body(
@@ -161,7 +161,7 @@ class RecurringEvents
                                 'start_date' => $shift->start_date,
                             ])
                         )
-                        ->sendToDatabase(auth()->user(), true);
+                        ->sendToDatabase(auth()->user(), true) : null);
                 }
                 $shift->save();
             }

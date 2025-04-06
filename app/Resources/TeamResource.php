@@ -57,9 +57,7 @@ class TeamResource extends Resource
                         ->options(
                             fn () => Cache::remember('users', 30 * 60, function () {
                                 return User::all();
-                            })->mapWithKeys(function ($user) {
-                                return [$user->userable_id => $user->displayName];
-                            })
+                            })->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
                         )
                         ->live()
                         ->afterStateUpdated(function ($state, Get $get, Set $set) {
@@ -68,13 +66,22 @@ class TeamResource extends Resource
                             }
                         })
                         ->optionsLimit(Soldier::count())
+                        ->placeholder(__('Select commander'))
                         ->searchable()
+                        ->getSearchResultsUsing(fn ($search) => User::all()
+                            ->filter(fn ($user) => str_contains($user->displayName, $search))
+                            ->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
+                            ->toArray())
                         ->required(),
                     Select::make('department_id')
                         ->label(__('Department'))
                         ->relationship('department')
-                        ->options(Department::all()->pluck('name', 'id'))
+                        ->options(Department::all()->pluck('name', 'id') ?? [])
                         ->searchable()
+                        ->getSearchResultsUsing(fn ($search) => Department::all()
+                            ->filter(fn (Department $department): bool => str_contains($department->name, $search))
+                            ->mapWithKeys(fn (Department $department): array => [$department->id => $department->name])
+                            ->toArray())
                         ->default(request()->input('department_id'))
                         ->required(),
                     Select::make('members')
@@ -82,22 +89,26 @@ class TeamResource extends Resource
                         ->options(
                             fn (Get $get) => Cache::remember('users', 30 * 60, function () {
                                 return User::all();
-                            })->filter(function ($user) use ($get): bool {
-                                return $user->userable_id !== (int) $get('commander_id');
-                            })->mapWithKeys(function ($user) {
-                                return [$user->userable_id => $user->displayName];
                             })
+                                ->filter(function ($user) use ($get): bool {
+                                    return $user->userable_id !== (int) $get('commander_id');
+                                })
+                                ->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
                         )
                         ->formatStateUsing(function (?Team $team, string $operation) {
                             return $operation === 'edit' ?
-                             collect($team->members)->map(fn (Soldier $soldier) => $soldier->id) :
-                            null;
+                                collect($team->members)->map(fn (Soldier $soldier) => $soldier->id) :
+                                null;
                         })
                         ->live()
                         ->optionsLimit(Soldier::count())
                         ->placeholder(__('Add a team member'))
                         ->multiple()
-                        ->searchable(),
+                        ->searchable()
+                        ->getSearchResultsUsing(fn ($search) => User::all()
+                            ->filter(fn ($user) => str_contains($user->displayName, $search))
+                            ->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
+                            ->toArray()),
                 ])->columns(2),
             ]);
     }
@@ -116,7 +127,16 @@ class TeamResource extends Resource
                         return $state->last_name.' '.$state->first_name;
                     })
                     ->label(__('Commander'))
-                    ->searchable()
+                    ->searchable(
+                        query: function ($query, $search) {
+                            $query->whereHas('commander', function ($query) use ($search) {
+                                $query->whereHas('user', function ($query) use ($search) {
+                                    $query->where('first_name', 'like', "%{$search}%")
+                                        ->orWhere('last_name', 'like', "%{$search}%");
+                                });
+                            });
+                        }
+                    )
                     ->sortable(),
                 TextColumn::make('department.name')
                     ->label(__('Department'))

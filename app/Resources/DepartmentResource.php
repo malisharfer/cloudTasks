@@ -59,7 +59,12 @@ class DepartmentResource extends Resource
                                 return [$user->userable_id => $user->displayName];
                             })
                         )
+                        ->placeholder(__('Select commander'))
                         ->optionsLimit(Soldier::count())
+                        ->getSearchResultsUsing(fn ($search) => User::all()
+                            ->filter(fn (User $user) => str_contains($user->displayName, $search))
+                            ->mapWithKeys(fn (User $user) => [$user->userable_id => $user->displayName])
+                            ->toArray())
                         ->searchable(),
                 ])->columns(2),
 
@@ -79,7 +84,16 @@ class DepartmentResource extends Resource
                         return $state->last_name.' '.$state->first_name;
                     })
                     ->label(__('Commander'))
-                    ->searchable()
+                    ->searchable(
+                        query: function ($query, $search) {
+                            $query->whereHas('commander', function ($query) use ($search) {
+                                $query->whereHas('user', function ($query) use ($search) {
+                                    $query->where('first_name', 'like', "%{$search}%")
+                                        ->orWhere('last_name', 'like', "%{$search}%");
+                                });
+                            });
+                        }
+                    )
                     ->sortable(),
             ])
             ->modifyQueryUsing(function (Builder $query) {
