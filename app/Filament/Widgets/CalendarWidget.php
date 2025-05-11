@@ -161,27 +161,29 @@ class CalendarWidget extends FullCalendarWidget
                     return [$this->createConstraintAction()];
                 }
             } else {
-                if (Task::exists()) {
-                    $actions = [
-                        ActionGroup::make([
-                            $this->downloadAssignmentsAction(),
-                            Action::make('Create shifts')
-                                ->action(fn () => $this->runEvents())
-                                ->label(__('Create shifts'))
-                                ->icon('heroicon-o-clipboard-document-check'),
-                            Action::make('Shifts assignment')
-                                ->action(fn () => $this->runAlgorithm())
-                                ->label(__('Shifts assignment and Parallel shifts'))
-                                ->icon('heroicon-o-play'),
-                            Action::make('Reset assignment')
-                                ->action(fn () => $this->resetShifts())
-                                ->label(__('Reset assignment'))
-                                ->icon('heroicon-o-arrow-path'),
-                        ])
-                            ->visible(in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())
-                                || in_array('manager', auth()->user()->getRoleNames()->toArray())),
-                    ];
-                }
+                $hasActiveTasks = Task::withTrashed()->whereNull('deleted_at')->exists();
+
+                $actions = [
+                    ActionGroup::make([
+                        $this->downloadAssignmentsAction(),
+                        Action::make('Create shifts')
+                            ->action(fn () => $this->runEvents())
+                            ->label(__('Create shifts'))
+                            ->icon('heroicon-o-clipboard-document-check')
+                            ->visible($hasActiveTasks),
+                        Action::make('Shifts assignment')
+                            ->action(fn () => $this->runAlgorithm())
+                            ->label(__('Shifts assignment and Parallel shifts'))
+                            ->icon('heroicon-o-play')
+                            ->visible($hasActiveTasks),
+                        Action::make('Reset assignment')
+                            ->action(fn () => $this->resetShifts())
+                            ->label(__('Reset assignment'))
+                            ->icon('heroicon-o-arrow-path'),
+                    ])
+                        ->visible(in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())
+                            || in_array('manager', auth()->user()->getRoleNames()->toArray())),
+                ];
             }
             if ($this->filter) {
                 return array_merge(

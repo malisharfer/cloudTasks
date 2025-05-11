@@ -169,7 +169,7 @@ class TaskResource extends Resource
                     ->multiple()
                     ->searchable()
                     ->options(
-                        Task::all()->pluck('type', 'type')
+                        Task::all()->pluck('type', 'type')->sort()->unique()->all()
                     )
                     ->default(null),
                 SelectFilter::make('recurring.type')
@@ -370,7 +370,7 @@ class TaskResource extends Resource
                 ->label(__('Concurrent tasks'))
                 ->multiple()
                 ->placeholder(fn () => Task::count() > 0 ? __('Select concurrent tasks') : __('No tasks'))
-                ->options(Task::all()->pluck('type', 'type'))
+                ->options(Task::all()->pluck('type', 'type')->sort()->unique()->all())
                 ->visible(fn (Get $get) => $get('kind') === TaskKind::INPARALLEL->value),
         ];
     }

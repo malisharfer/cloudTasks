@@ -17,12 +17,12 @@ it('should return object of shift service type', function () {
     $shift = Shift::factory()->create(['is_weekend' => false, 'task_id' => Task::factory()->create(['kind' => TaskKind::NIGHT->value])]);
     $shiftService = new ShiftService(
         $shift->id,
-        $shift->task->type,
+        $shift->task()->withTrashed()->first()->type,
         $shift->start_date,
         $shift->end_date,
         $shift->parallel_weight,
-        $shift->task->kind,
-        $shift->task->concurrent_tasks
+        $shift->task()->withTrashed()->first()->kind,
+        $shift->task()->withTrashed()->first()->concurrent_tasks
     );
     expect(Helpers::buildShift($shift))->toBeInstanceOf(App\Services\Shift::class);
     expect(Helpers::buildShift($shift))->toEqual($shiftService);

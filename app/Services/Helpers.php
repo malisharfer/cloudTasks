@@ -16,12 +16,12 @@ class Helpers
     {
         return new ShiftService(
             $shift->id,
-            $shift->task->type,
+            $shift->task()->withTrashed()->first()->type,
             $shift->start_date,
             $shift->end_date,
-            $shift->parallel_weight === null ? $shift->task->parallel_weight : $shift->parallel_weight,
+            $shift->parallel_weight === null ? $shift->task()->withTrashed()->first()->parallel_weight : $shift->parallel_weight,
             self::kind($shift),
-            $shift->task->concurrent_tasks
+            $shift->task()->withTrashed()->first()->concurrent_tasks
         );
     }
 
@@ -30,11 +30,11 @@ class Helpers
         if ($shift->is_weekend === true) {
             return TaskKind::WEEKEND->value;
         }
-        if ($shift->is_weekend === false && $shift->task->kind === TaskKind::WEEKEND->value) {
+        if ($shift->is_weekend === false && $shift->task()->withTrashed()->first()->kind === TaskKind::WEEKEND->value) {
             return TaskKind::REGULAR->value;
         }
 
-        return $shift->task->kind;
+        return $shift->task()->withTrashed()->first()->kind;
     }
 
     public static function buildSoldier($soldier, $constraints, $shifts, array $capacityHold, $concurrentsShifts = []): SoldierService
@@ -126,7 +126,7 @@ class Helpers
                 function (Shift $shift) use ($newRange, $inParallel): bool {
                     $range = new Range($shift->start_date, $shift->end_date);
 
-                    return $range->isSameMonth($newRange) && ($shift->task->kind === TaskKind::INPARALLEL->value) === $inParallel;
+                    return $range->isSameMonth($newRange) && ($shift->task()->withTrashed()->first()->kind === TaskKind::INPARALLEL->value) === $inParallel;
                 }
             )
             ->map(fn (Shift $shift): ShiftService => self::buildShift($shift));

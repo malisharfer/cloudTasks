@@ -24,7 +24,7 @@ class DailyShiftNotification
                     __('Assigned to shift today', [
                         'today' => Carbon::parse($shift->start_date)->format('d/m/y'),
                         'user' => Soldier::find($shift->soldier_id)->user->displayName,
-                        'task' => $shift->task->name,
+                        'task' => $shift->task()->withTrashed()->first()->name,
                         'startShift' => Carbon::parse($shift->start_date)->format('H:i'),
                     ])
                 )

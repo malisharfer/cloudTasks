@@ -4,7 +4,6 @@ namespace App\Exports;
 
 use App\Enums\TaskKind;
 use App\Models\Shift;
-use App\Models\Task;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -23,10 +22,10 @@ class ShiftsExport implements FromCollection, ShouldAutoSize, WithHeadings, With
 
     public function __construct($month)
     {
+        $this->month = $month;
         $this->query = Shift::whereNotNull('soldier_id')
             ->whereBetween('start_date', [Carbon::parse($this->month)->startOfMonth(), Carbon::parse($this->month)->endOfMonth()])
             ->get();
-        $this->month = $month;
     }
 
     public function collection()
@@ -34,7 +33,7 @@ class ShiftsExport implements FromCollection, ShouldAutoSize, WithHeadings, With
         return $this->query
             ->sortBy('start_date')
             ->map(function ($shift) {
-                $task = Task::find($shift->task_id);
+                $task = $shift->task()->withTrashed()->first();
 
                 return [
                     __('Shift name') => $task->name,

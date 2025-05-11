@@ -181,7 +181,7 @@ it('should refresh the fullcalendar', function () {
         ->assertDispatched('filament-fullcalendar--refresh');
 });
 
-it('should filter the fullcalendar', function () {
+it('should filter the calendar', function () {
     $user = User::factory()->create();
     $task1 = Task::factory()->create(['type' => 'wash']);
     $task2 = Task::factory()->create(['type' => 'clean']);
@@ -200,7 +200,7 @@ it('should filter the fullcalendar', function () {
         'type' => 'my_soldiers',
     ])
         ->mountAction('Filters')
-        ->setActionData(['soldier_id' => [$user->userable_id], 'type' => [$task2->id]])
+        ->setActionData(['soldier_id' => [$user->userable_id], 'type' => [$task2->type]])
         ->callMountedAction(['Filter' => true])
         ->call('fetchEvents', ['start' => Carbon::yesterday(), 'end' => Carbon::now()->addDays(5), 'timezone' => 'Asia\/Jerusalem']);
     expect($calendar->effects['returns'][0])->toHaveCount(5);

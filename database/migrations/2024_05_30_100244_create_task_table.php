@@ -16,11 +16,7 @@ return new class extends Migration
             $table->integer('parallel_weight')->default(0);
             $table->string('type');
             $table->string('color');
-            $table->boolean('is_alert')->nullable();
-            $table->boolean('is_weekend')->nullable();
-            $table->boolean('is_night')->nullable();
-            $table->boolean('in_parallel')->nullable();
-            // $table->string('kind');
+            $table->string('kind');
             $table->json('concurrent_tasks')->nullable();
             $table->string('department_name')->nullable();
             $table->json('recurring');
@@ -33,7 +29,7 @@ return new class extends Migration
     {
         Schema::table('tasks', function (Blueprint $table) {
             $table->dropIfExists();
-            // $table->dropSoftDeletes();
+            $table->dropSoftDeletes();
         });
 
     }

@@ -65,7 +65,7 @@ class ChartWidget extends ApexChartWidget
             Select::make('course')
                 ->default(1)
                 ->options(
-                    Soldier::pluck('course', 'course')->unique()->sortBy('course')->all()
+                    Soldier::pluck('course', 'course')->sort()->unique()->all()
                 )
                 ->placeholder(__('Select course'))
                 ->label(__('Course')),

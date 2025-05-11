@@ -27,7 +27,7 @@ class ListSoldiers extends ListRecords
                     Section::make([
                         Select::make('course')
                             ->label(__('Course'))
-                            ->options(Soldier::pluck('course', 'course')->unique()->sortBy('course')->all())
+                            ->options(Soldier::pluck('course', 'course')->sort()->unique()->all())
                             ->required(),
                     ]),
                     Section::make([
@@ -65,59 +65,29 @@ class ListSoldiers extends ListRecords
                             ->label(__('Qualifications'))
                             ->multiple()
                             ->placeholder(__('Select qualifications'))
-                            ->options(Task::all()->pluck('type', 'type')),
+                            ->options(Task::all()->pluck('type', 'type')->sort()->unique()->all()),
                     ]),
                 ])
                 ->action(function (array $data) {
                     $selectedCourse = $data['course'];
                     $updateData = [];
                     $fields = ['max_shifts', 'max_nights', 'max_weekends', 'max_alerts', 'max_in_parallel', 'capacity', 'qualifications'];
-                
+
                     foreach ($fields as $field) {
-                        if (isset($data[$field]) && !($field === 'qualifications' && empty($data[$field]))) {
+                        if (isset($data[$field]) && ! ($field === 'qualifications' && empty($data[$field]))) {
                             $updateData[$field] = $data[$field];
                         }
                     }
-                
-                    if (!empty($updateData)) {
+                    if (! empty($updateData)) {
                         $soldiers = Soldier::where('course', $selectedCourse)->get();
                         $soldiers->map(function ($soldier) use ($updateData) {
-                            foreach ($updateData as $key => $value) {
-                                if ($key === 'qualifications') {
-                                    $currentQualifications = $soldier->{$key} ?? []; 
-                                    if (is_array($currentQualifications)) {
-                                        $soldier->{$key} = array_unique(array_merge($currentQualifications, (array) $value));
-                                    } else {
-                                        $soldier->{$key} = $currentQualifications . ',' . $value;
-                                    }
-                                } else {
-                                    $soldier->{$key} = $value;
-                                }
-                        }
-                        $soldier->save();
-                    });
-                }
-        }),
-                // ->action(function (array $data) {
-                //     $selectedCourse = $data['course'];
-                //     $updateData = [];
-                //     $fields = ['max_shifts', 'max_nights', 'max_weekends', 'max_alerts', 'max_in_parallel', 'capacity', 'qualifications'];
-
-                //     foreach ($fields as $field) {
-                //         if (isset($data[$field]) && ! ($field === 'qualifications' && empty($data[$field]))) {
-                //             $updateData[$field] = $data[$field];
-                //         }
-                //     }
-                //     if (! empty($updateData)) {
-                //         $soldiers = Soldier::where('course', $selectedCourse)->get();
-                //         $soldiers->map(function ($soldier) use ($updateData) {
-                //             collect($updateData)->map(function ($value, $key) use ($soldier) {
-                //                 $soldier->{$key} = $value;
-                //             });
-                //             $soldier->save();
-                //         });
-                //     }
-                // }),
+                            collect($updateData)->map(function ($value, $key) use ($soldier) {
+                                $soldier->{$key} = $value;
+                            });
+                            $soldier->save();
+                        });
+                    }
+                }),
         ];
     }
 }

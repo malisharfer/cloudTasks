@@ -174,9 +174,9 @@ class Shift extends Model
             'matching' => __('Matching soldiers'),
             'all' => __('All'),
         ];
-        if ($shift->task->department_name) {
+        if ($shift->task()->withTrashed()->first()->department_name) {
             $options = collect($options)
-                ->put('department', '"'.$shift->task->department_name.'" '.__('Department'))
+                ->put('department', '"'.$shift->task()->withTrashed()->first()->department_name.'" '.__('Department'))
                 ->toArray();
         }
         $manual_assignment = new ManualAssignment($shift, 'me');
@@ -312,8 +312,8 @@ class Shift extends Model
         $shift = Helpers::buildShift($shift);
 
         return $soldier->isAvailableByConcurrentsShifts($shift) ?
-        __('Task').': '.Task::find(Shift::find($shift->id)->task_id)->name.'. '.__('Time').': '.__('From').' '.$shift->range->start.' '.__('To').' '.$shift->range->end :
-        '📌 '.__('Task').': '.Task::find(Shift::find($shift->id)->task_id)->name.'. '.__('Time').': '.__('From').' '.$shift->range->start.' '.__('To').' '.$shift->range->end;
+        __('Task').': '.Shift::find($shift->id)->task()->withTrashed()->first()->name.'. '.__('Time').': '.__('From').' '.$shift->range->start.' '.__('To').' '.$shift->range->end :
+        '📌 '.__('Task').': '.Shift::find($shift->id)->task()->withTrashed()->first()->name.'. '.__('Time').': '.__('From').' '.$shift->range->start.' '.__('To').' '.$shift->range->end;
     }
 
     protected static function shiftsAssignmentExchange($record, $shift)
@@ -333,11 +333,11 @@ class Shift extends Model
                 'Shifts assignment notification of exchanging shifts for first soldier',
                 [
                     'soldierAName' => $soldierA->user->displayName,
-                    'shiftAName' => $shiftA->task->name,
+                    'shiftAName' => $shiftA->task()->withTrashed()->first()->name,
                     'shiftAStart' => $shiftA->start_date,
                     'shiftAEnd' => $shiftA->end_date,
                     'soldierBName' => $soldierB->user->displayName,
-                    'shiftBName' => $shiftB->task->name,
+                    'shiftBName' => $shiftB->task()->withTrashed()->first()->name,
                     'shiftBStart' => $shiftB->start_date,
                     'shiftBEnd' => $shiftB->end_date,
                     'shiftsAssignmentName' => auth()->user()->displayName,
@@ -352,11 +352,11 @@ class Shift extends Model
                 'Shifts assignment notification of exchanging shifts for second soldier',
                 [
                     'soldierBName' => $soldierB->user->displayName,
-                    'shiftBName' => $shiftB->task->name,
+                    'shiftBName' => $shiftB->task()->withTrashed()->first()->name,
                     'shiftBStart' => $shiftB->start_date,
                     'shiftBEnd' => $shiftB->end_date,
                     'soldierAName' => $soldierA->user->displayName,
-                    'shiftAName' => $shiftA->task->name,
+                    'shiftAName' => $shiftA->task()->withTrashed()->first()->name,
                     'shiftAStart' => $shiftA->start_date,
                     'shiftAEnd' => $shiftA->end_date,
                     'shiftsAssignmentName' => auth()->user()->displayName,
@@ -374,12 +374,12 @@ class Shift extends Model
                         'Shifts assignment notification of exchanging shifts for shifts assignment',
                         [
                             'shiftsAssignmentName' => $shiftsAssignment->displayName,
-                            'shiftAName' => $shiftA->task->name,
+                            'shiftAName' => $shiftA->task()->withTrashed()->first()->name,
                             'soldierAName' => $soldierA->user->displayName,
                             'shiftAStart' => $shiftA->start_date,
                             'shiftAEnd' => $shiftA->end_date,
                             'soldierBName' => $soldierB->user->displayName,
-                            'shiftBName' => $shiftB->task->name,
+                            'shiftBName' => $shiftB->task()->withTrashed()->first()->name,
                             'shiftBStart' => $shiftB->start_date,
                             'shiftBEnd' => $shiftB->end_date,
                             'shiftsAssignment2Name' => auth()->user()->displayName,
@@ -402,11 +402,11 @@ class Shift extends Model
                         [
                             'shiftsAssignmentName' => $shiftsAssignment->displayName,
                             'soldierAName' => Soldier::find($record->soldier_id)->user->displayName,
-                            'shiftAName' => $record->task->name,
+                            'shiftAName' => $record->task()->withTrashed()->first()->name,
                             'shiftAStart' => $record->start_date,
                             'shiftAEnd' => $record->end_date,
                             'soldierBName' => Soldier::find($shift->soldier_id)->user->displayName,
-                            'shiftBName' => $shift->task->name,
+                            'shiftBName' => $shift->task()->withTrashed()->first()->name,
                             'shiftBStart' => $shift->start_date,
                             'shiftBEnd' => $shift->end_date,
                         ]
@@ -457,10 +457,10 @@ class Shift extends Model
                 'Request for shift exchange from soldier',
                 [
                     'soldierAName' => $user->displayName,
-                    'shiftAName' => $shift->task->name,
+                    'shiftAName' => $shift->task()->withTrashed()->first()->name,
                     'shiftAStart' => $shift->start_date,
                     'shiftAEnd' => $shift->end_date,
-                    'shiftBName' => $record->task->name,
+                    'shiftBName' => $record->task()->withTrashed()->first()->name,
                     'shiftBStart' => $record->start_date,
                     'shiftBEnd' => $record->end_date,
                     'soldierBName' => Soldier::find($record->soldier_id)->user->displayName,
@@ -522,7 +522,7 @@ class Shift extends Model
                             ->schema(
                                 [
                                     Placeholder::make(__('Task'))
-                                        ->content(Task::find($record->task_id)->name),
+                                        ->content($record->task()->withTrashed()->first()->name),
                                     Placeholder::make(__('Soldier'))
                                         ->content(Soldier::find($record->soldier_id)->user->displayName),
                                     Placeholder::make(__('Time'))
@@ -622,7 +622,7 @@ class Shift extends Model
                 'Shifts assignment notification of changing shifts for first soldier',
                 [
                     'soldierName' => $soldierA->user->displayName,
-                    'shiftName' => $shift->task->name,
+                    'shiftName' => $shift->task()->withTrashed()->first()->name,
                     'shiftStart' => $shift->start_date,
                     'shiftEnd' => $shift->end_date,
                     'shiftsAssignmentName' => auth()->user()->displayName,
@@ -637,7 +637,7 @@ class Shift extends Model
                 'Shifts assignment notification of changing shifts for second soldier',
                 [
                     'soldierName' => $soldierB->user->displayName,
-                    'shiftName' => $shift->task->name,
+                    'shiftName' => $shift->task()->withTrashed()->first()->name,
                     'shiftStart' => $shift->start_date,
                     'shiftEnd' => $shift->end_date,
                     'shiftsAssignmentName' => auth()->user()->displayName,
@@ -655,7 +655,7 @@ class Shift extends Model
                         'Shifts assignment notification of changing shifts for shifts assignment',
                         [
                             'shiftsAssignmentName' => $shiftsAssignment->displayName,
-                            'shiftName' => $shift->task->name,
+                            'shiftName' => $shift->task()->withTrashed()->first()->name,
                             'soldierAName' => $soldierA->user->displayName,
                             'shiftStart' => $shift->start_date,
                             'shiftEnd' => $shift->end_date,
@@ -679,7 +679,7 @@ class Shift extends Model
                         'Request for shift change from shifts assignments',
                         [
                             'shiftsAssignmentName' => $shiftsAssignment->displayName,
-                            'shiftName' => $shift->task->name,
+                            'shiftName' => $shift->task()->withTrashed()->first()->name,
                             'soldierAName' => Soldier::find($shift->soldier_id)->user->displayName,
                             'shiftStart' => $shift->start_date,
                             'shiftEnd' => $shift->end_date,
@@ -728,7 +728,7 @@ class Shift extends Model
                 'Request for shift change from soldier',
                 [
                     'soldierName' => $soldier->user->displayName,
-                    'shiftName' => $record->task->name,
+                    'shiftName' => $record->task()->withTrashed()->first()->name,
                     'shiftStart' => $record->start_date,
                     'shiftEnd' => $record->end_date,
                     'requestingSoldierName' => Soldier::find($record->soldier_id)->user->displayName,
@@ -795,15 +795,40 @@ class Shift extends Model
 
                 return [
                     section::make([
-                        Toggle::make('unassigned_shifts')
-                            ->label(__('Unassigned shifts'))
-                            ->live()
-                            ->visible(fn (Get $get) => ! $get('reservists')),
                         Toggle::make('reservists')
                             ->label(__('Reservists'))
                             ->live()
-                            ->visible(fn (Get $get) => ! $get('unassigned_shifts')),
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, $set) {
+                                if ($state) {
+                                    $set('unassigned_shifts', false);
+                                }
+                            }),
+                        Toggle::make('unassigned_shifts')
+                            ->label(__('Unassigned shifts'))
+                            ->live()
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, $set) {
+                                if ($state) {
+                                    $set('reservists', false);
+                                    $set('soldier_id', null);
+                                    $set('course', null);
+                                }
+                            }),
                     ])->columns(2),
+                    section::make([
+                        Radio::make('kind')
+                            ->label(__('Kind'))
+                            ->options([
+                                'Weekend' => __('Is weekend'),
+                                'Night' => __('Is night'),
+                                'In parallel' => __('In parallel'),
+                                'Alert' => __('Alert'),
+                                'Regular' => __('Regular'),
+                            ])
+                            ->inlineLabel(false)
+                            ->inline(),
+                    ]),
                     Select::make('soldier_id')
                         ->label(__('Soldier'))
                         ->options(fn (): array => collect($soldiersShifts)->mapWithKeys(fn ($shift) => [
@@ -811,69 +836,84 @@ class Shift extends Model
                                 ->first()?->displayName,
                         ])->toArray())
                         ->multiple()
-                        ->hidden(fn (Get $get) => $get('unassigned_shifts') || $get('reservists')),
+                        ->live()
+                        ->reactive()
+                        ->hidden(fn (Get $get) => $get('unassigned_shifts') || $get('course')),
                     Select::make('type')
                         ->label(__('Type'))
-                        ->options(Task::all()->pluck('type', 'id')->unique())
+                        ->options(Task::all()->pluck('type', 'type')->sort()->unique()->all())
+                        ->multiple(),
+                    Select::make('course')
+                        ->options(
+                            Soldier::pluck('course', 'course')->sort()->unique()->all()
+                        )
+                        ->label(__('Course'))
                         ->multiple()
-                        ->hidden(fn (Get $get) => $get('unassigned_shifts') || $get('reservists')),
+                        ->live()
+                        ->reactive()
+                        ->hidden(fn (Get $get) => $get('unassigned_shifts') || $get('soldier_id')),
                 ];
             })
             ->modalCancelAction(false)
             ->modalSubmitActionLabel(__('Filter'))
             ->action(function (array $data) use ($calendar) {
-                if (count($data) == 1) {
-                    $calendar->filterData = key($data) == 'unassigned_shifts' ? __('Unassigned shifts') : __('Reservists');
-                    $calendar->filter = true;
-                    $calendar->refreshRecords();
+                if (! $data['reservists'] && ! $data['unassigned_shifts'] && ! $data['kind'] && empty($data['soldier_id']) && empty($data['type']) && empty($data['course'])) {
+                    $calendar->filter = false;
+                    $calendar->filterData = [];
                 } else {
-                    $data['type'] = Task::whereIn(
-                        'type',
-                        Task::whereIn('id', $data['type'])
-                            ->pluck('type')
-                    )
-                        ->pluck('id')
-                        ->toArray();
                     $calendar->filterData = $data;
-                    $calendar->filter = ! (count($data) == 4 && ($data['soldier_id'] === [] && $data['type'] === []));
-                    $calendar->refreshRecords();
+                    $calendar->filter = true;
                 }
+                $calendar->refreshRecords();
             });
     }
 
     public static function filter($events, $filterData)
     {
         return $events
-            ->when($filterData === __('Unassigned shifts'), fn ($query) => $query
-                ->where('soldier_id', null))
-            ->when($filterData === __('Reservists'), fn ($query) => $query
+            ->when($filterData['reservists'], fn ($query) => $query
                 ->whereIn('soldier_id', Soldier::where('is_reservist', true)->pluck('id')->toArray()))
+            ->when($filterData['unassigned_shifts'], fn ($query) => $query
+                ->where('soldier_id', null))
             ->when(! empty($filterData['soldier_id']), fn ($query) => $query
                 ->whereIn('soldier_id', $filterData['soldier_id']))
-            ->when(! empty($filterData['type']), fn ($query) => $query
-                ->whereIn('task_id', $filterData['type']))
-            ->values();
+            ->filter(fn ($event) => $filterData['kind'] ? $event->task()->withTrashed()->first()->kind == $filterData['kind'] : true)
+            ->filter(fn ($event) => empty($filterData['type']) || collect($filterData['type'])->contains($event->task()->withTrashed()->first()->type))
+            ->filter(fn ($event) => empty($filterData['course']) || ($event->soldier_id && collect($filterData['course'])->contains(Soldier::find($event->soldier_id)->course)));
     }
 
     public static function activeFilters($calendar)
     {
-        if ($calendar->filter) {
-            return gettype($calendar->filterData) == 'string'
-                ? $calendar->filterData
-                : collect($calendar->filterData['soldier_id'])
-                    ->map(function ($soldier_id) {
-                        return User::where('userable_id', $soldier_id)->first()->displayName ?? null;
-                    })
-                    ->concat(
-                        collect($calendar->filterData['type'])->map(function ($task_id) {
-                            return Task::find($task_id)?->type;
-                        })->unique()
-                    )
-                    ->filter()
-                    ->toArray();
+        if (! $calendar->filter) {
+            return [];
+        }
+        $data = $calendar->filterData;
+        $labels = collect([]);
+        if ($data['reservists']) {
+            $labels->push(__('Reservists'));
+        }
+        if ($data['unassigned_shifts']) {
+            $labels->push(__('Unassigned shifts'));
+        }
+        if ($data['kind']) {
+            $labels->push(__('Kind').': '.TaskKind::from($data['kind'])->getLabel());
+        }
+        if (! empty($data['soldier_id'])) {
+            $soldiers = collect($data['soldier_id'])
+                ->map(fn ($id) => Soldier::find($id)->user->displayName)
+                ->implode(', ');
+            $labels->push(__('Soldiers').': '.$soldiers);
+        }
+        if (! empty($data['type'])) {
+            $types = implode(', ', $data['type']);
+            $labels->push(__('Type').': '.$types);
+        }
+        if (! empty($data['course'])) {
+            $courses = implode(', ', $data['course']);
+            $labels->push(__('Course').': '.$courses);
         }
 
-        return [];
+        return $labels->toArray();
     }
 
     public static function getTitle(): string
@@ -883,9 +923,9 @@ class Shift extends Model
 
     public static function setData($record, $data)
     {
-        $record->is_weekend ?? $data['is_weekend'] = ($record->task->kind === TaskKind::WEEKEND->value) === $data['is_weekend'] ? null : $data['is_weekend'];
+        $record->is_weekend ?? $data['is_weekend'] = ($record->task()->withTrashed()->first()->kind === TaskKind::WEEKEND->value) === $data['is_weekend'] ? null : $data['is_weekend'];
         if ($record->parallel_weight === null) {
-            $data['parallel_weight'] = $record->task->parallel_weight === $data['parallel_weight'] ? null : $data['parallel_weight'];
+            $data['parallel_weight'] = $record->task()->withTrashed()->first()->parallel_weight === $data['parallel_weight'] ? null : $data['parallel_weight'];
         }
 
         return $data;
@@ -895,8 +935,8 @@ class Shift extends Model
     {
         return [
             ...$record->getAttributes(),
-            'is_weekend' => $record->is_weekend === null ? ($record->task->kind === TaskKind::WEEKEND->value) : $record->is_weekend,
-            'parallel_weight' => $record->parallel_weight === null ? $record->task->parallel_weight : $record->parallel_weight,
+            'is_weekend' => $record->is_weekend === null ? ($record->task()->withTrashed()->first()->kind === TaskKind::WEEKEND->value) : $record->is_weekend,
+            'parallel_weight' => $record->parallel_weight === null ? $record->task()->withTrashed()->first()->parallel_weight : $record->parallel_weight,
             'start_date' => $arguments['event']['start'] ?? $record->start_date,
             'end_date' => $arguments['event']['end'] ?? $record->end_date,
         ];

@@ -30,7 +30,7 @@ class RecurringEvents
         $tasks = Task::get();
         $tasks->filter(function ($task) {
             return $task->recurring['type'] !== 'Daily range' && $task->recurring['type'] !== 'One time';
-        })->map(fn($task) => $this->switchTasks($task));
+        })->map(fn ($task) => $this->switchTasks($task));
     }
 
     public function oneTimeTask(Task $task)
@@ -93,7 +93,7 @@ class RecurringEvents
 
     protected function addTimeToDate($date)
     {
-        return Carbon::parse($date->format('Y-m-d') . ' ' . $this->task['start_hour']);
+        return Carbon::parse($date->format('Y-m-d').' '.$this->task['start_hour']);
     }
 
     protected function calculateEndDateTime($startDate)
@@ -126,14 +126,14 @@ class RecurringEvents
     {
         return $this->task->recurring['type'] == 'Daily range' ?
             CarbonPeriod::between(max($this->task['recurring']['start_date'], Carbon::tomorrow()), $this->task['recurring']['end_date']) :
-            CarbonPeriod::between($this->month->copy()->startOfMonth(), $this->month->copy()->endOfMonth());
+            CarbonPeriod::between(max($this->month->copy()->startOfMonth(), Carbon::tomorrow()), $this->month->copy()->endOfMonth());
     }
 
     protected function createShifts(array $dates)
     {
         collect($dates)->map(function ($date) {
             if (
-                !Shift::where('task_id', '=', $this->task['id'])
+                ! Shift::where('task_id', '=', $this->task['id'])
                     ->where('start_date', $date)
                     ->where('end_date', $this->calculateEndDateTime($date))
                     ->get()
@@ -147,21 +147,21 @@ class RecurringEvents
                 $shift->task_id = $this->task['id'];
                 if ($holiday->isHoliday) {
                     $shift->is_weekend = 1;
-                    $shiftType = Task::where('id', $shift->task_id)->pluck('type')->first();
+                    $shiftType = $shift->task()->withTrashed()->first()->type;
                     $parallelWeight = Task::where([['type', $shiftType], ['kind', TaskKind::WEEKEND->value]])->pluck('parallel_weight')->first();
                     $parallelWeight ?
-                        $shift->parallel_weight = $parallelWeight
-                        : (auth()->user() ? Notification::make()
-                            ->title(__('Update parallel weight of holiday shift'))
-                            ->persistent()
-                            ->body(
-                                __('Holiday shift notification', [
-                                    'user' => auth()->user()->displayName,
-                                    'task' => $shiftType,
-                                    'start_date' => $shift->start_date,
-                                ])
-                            )
-                            ->sendToDatabase(auth()->user(), true) : null);
+                    $shift->parallel_weight = $parallelWeight
+                    : (auth()->user() ? Notification::make()
+                        ->title(__('Update parallel weight of holiday shift'))
+                        ->persistent()
+                        ->body(
+                            __('Holiday shift notification', [
+                                'user' => auth()->user()->displayName,
+                                'task' => $shiftType,
+                                'start_date' => $shift->start_date,
+                            ])
+                        )
+                        ->sendToDatabase(auth()->user(), true) : null);
                 }
                 $shift->save();
             }

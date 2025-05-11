@@ -120,8 +120,11 @@ class SoldierResource extends Resource
                         $soldierShifts = Shift::where('soldier_id', $record->id)->get();
 
                         return $soldierShifts->filter(function (Shift $shift): bool {
-                            return Carbon::parse($shift->start_date)->month == now()->month || Carbon::parse($shift->end_date)->month == now()->month;
-                        })->sum(fn (Shift $shift) => $shift->parallel_weight === null ? $shift->task->parallel_weight : $shift->parallel_weight);
+                            return (Carbon::parse($shift->start_date)->month == now()->month
+                            && Carbon::parse($shift->start_date)->year == now()->year)
+                            || (Carbon::parse($shift->end_date)->month == now()->month
+                        && Carbon::parse($shift->end_date)->year == now()->year);
+                        })->sum(fn (Shift $shift) => $shift->parallel_weight === null ? $shift->task()->withTrashed()->first()->parallel_weight : $shift->parallel_weight);
                     })
                     ->label(__('Capacity hold'))
                     ->numeric(),
@@ -159,7 +162,7 @@ class SoldierResource extends Resource
                     ->label(__('Qualifications'))
                     ->multiple()
                     ->searchable()
-                    ->options(Task::all()->pluck('type', 'type'))
+                    ->options(Task::withTrashed()->get()->pluck('type', 'type')->sort()->unique()->all())
                     ->query(function (Builder $query, array $data) {
                         return collect($data['values'])->map(function ($qualification) use ($query) {
                             return $query->whereJsonContains('qualifications', $qualification);
@@ -393,6 +396,10 @@ class SoldierResource extends Resource
                     ->step(1)
                     ->minValue(0)
                     ->required()
+                    ->lte('max_shifts')
+                    ->validationMessages([
+                        'lte' => __('The field cannot be greater than max_shifts field'),
+                    ])
                     ->default(0),
                 TextInput::make('max_weekends')
                     ->label(__('Max weekends'))
@@ -400,6 +407,10 @@ class SoldierResource extends Resource
                     ->step(0.25)
                     ->minValue(0)
                     ->required()
+                    ->lte('capacity')
+                    ->validationMessages([
+                        'lte' => __('The field cannot be greater than capacity field'),
+                    ])
                     ->default(0),
                 TextInput::make('max_alerts')
                     ->label(__('Max alerts'))
@@ -426,7 +437,7 @@ class SoldierResource extends Resource
                     ->label(__('Qualifications'))
                     ->multiple()
                     ->placeholder(__('Select qualifications'))
-                    ->options(Task::all()->pluck('type', 'type')),
+                    ->options(Task::all()->pluck('type', 'type')->sort()->unique()->all()),
             ])->columns(3),
         ];
     }

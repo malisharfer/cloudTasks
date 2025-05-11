@@ -76,17 +76,17 @@ class Charts
 
     protected function howMuchNights($shifts)
     {
-        return $shifts->filter(fn ($shift) => $shift->task->kind === TaskKind::NIGHT->value)->count();
+        return $shifts->filter(fn ($shift) => $shift->task()->withTrashed()->first()->kind === TaskKind::NIGHT->value)->count();
     }
 
     protected function howMuchWeekends($shifts)
     {
-        return $shifts->filter(fn ($shift) => $shift->is_weekend != null ? $shift->is_weekend : ($shift->task->kind === TaskKind::WEEKEND->value))->count();
+        return $shifts->filter(fn ($shift) => $shift->is_weekend != null ? $shift->is_weekend : ($shift->task()->withTrashed()->first()->kind === TaskKind::WEEKEND->value))->count();
     }
 
     protected function howMuchPoints($shifts)
     {
-        return collect($shifts)->sum(fn ($shift) => $shift->parallel_weight != null ? $shift->parallel_weight : $shift->task->parallel_weight);
+        return collect($shifts)->sum(fn ($shift) => $shift->parallel_weight != null ? $shift->parallel_weight : $shift->task()->withTrashed()->first()->parallel_weight);
     }
 
     protected function howMuchLowConstraintsRejected($constraints, $shifts): int

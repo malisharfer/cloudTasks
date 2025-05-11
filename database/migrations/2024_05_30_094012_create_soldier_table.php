@@ -19,6 +19,8 @@ return new class extends Migration
             $table->integer('max_shifts')->default(0)->nullable();
             $table->integer('max_nights')->default(0)->nullable();
             $table->integer('max_weekends')->default(0)->nullable();
+            $table->integer('max_alerts')->default(0)->nullable();
+            $table->integer('max_in_parallel')->default(0)->nullable();
             $table->integer('capacity');
             $table->boolean('is_trainee');
             $table->boolean('is_mabat');
