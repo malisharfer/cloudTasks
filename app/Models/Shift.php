@@ -60,14 +60,13 @@ class Shift extends Model
 
         return $this->soldier_id == auth()->user()->userable_id
             ? $this->task()->withTrashed()->name
-            : $this->task()->withTrashed().' '.$user_name->first()?->first_name.' '.$user_name->first()?->last_name;
+            : $this->task()->withTrashed()->name.' '.$user_name->first()?->first_name.' '.$user_name->first()?->last_name;
     }
 
     public function getTaskColorAttribute()
     {
         return $this->task()->withTrashed()->color;
     }
-
     public static function getSchema(): array
     {
         return [
