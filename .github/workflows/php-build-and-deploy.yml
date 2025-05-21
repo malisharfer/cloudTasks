@@ -35,7 +35,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.REGISTRY_LOGIN_SERVER }}/holshift_version_14
+          images: ${{ secrets.REGISTRY_LOGIN_SERVER }}/holshift_version_15
           flavor: |
             latest=false
           tags: |
