@@ -15,6 +15,8 @@ COPY --chmod=755 /common common
 COPY --chown=${user}:${user} /artisan artisan
 COPY .env.example .env
 COPY /php.ini "${PHP_INI_DIR}/php.ini"
+RUN php --ini \
+ && php -r "echo 'max_execution_time: ' . ini_get('max_execution_time') . PHP_EOL;"
 
 
 RUN apt-get update \
