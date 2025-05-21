@@ -143,7 +143,7 @@ class CalendarWidget extends FullCalendarWidget
 
     protected function headerActions(): array
     {
-        set_time_limit(600);
+        set_time_limit(120);
         $this->currentMonth ?? $this->currentMonth = Carbon::now()->year.'-'.Carbon::now()->month;
         if ($this->lastFilterData != $this->filterData) {
             $this->refreshRecords();
