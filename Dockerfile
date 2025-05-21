@@ -18,7 +18,7 @@ COPY /php.ini "${PHP_INI_DIR}/php.ini"
 
 
 RUN apt-get update \
-  && apt-get install php-mbstring \
+  && apt-get install -y php8.2-mbstring \
   && apt-get satisfy -y --no-install-recommends \
     "curl (>=7.88)" \
     "supervisor (>=4.2)" \
