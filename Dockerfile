@@ -18,6 +18,7 @@ COPY /php.ini "${PHP_INI_DIR}/php.ini"
 
 
 RUN apt-get update \
+  && apt-get install php-mbstring \
   && apt-get satisfy -y --no-install-recommends \
     "curl (>=7.88)" \
     "supervisor (>=4.2)" \
@@ -26,7 +27,6 @@ RUN apt-get update \
   && apt-get install -y nodejs npm \
   && npm install -g npm@7  \
   && apt-get clean \
-  $$ apt-get install php-mbstring \
   && rm -rf /var/lib/apt/lists/*
 
 RUN useradd \
