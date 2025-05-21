@@ -18,15 +18,13 @@ COPY /php.ini "${PHP_INI_DIR}/php.ini"
 
 
 RUN apt-get update \
-  && apt-get install -y lsb-release apt-transport-https wget gnupg \
+  && apt-get install -y lsb-release apt-transport-https wget gnupg software-properties-common \
   && wget -qO - https://packages.sury.org/php/apt.gpg | apt-key add - \
   && echo "deb https://packages.sury.org/php/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/php.list \
   && apt-get update \
   && add-apt-repository ppa:ondrej/php \
-  && apt update \
-  && apt upgrade \
-  && apt install php8.2-dev \
-  && apt-get install -y php8.2 php8.2-mbstring \
+  && apt-get update \
+  && apt-get install -y php8.2 php8.2-mbstring php8.2-dev \
   && apt-get satisfy -y --no-install-recommends \
     "curl (>=7.88)" \
     "supervisor (>=4.2)" \
