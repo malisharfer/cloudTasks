@@ -22,7 +22,7 @@ RUN apt-get update \
   && wget -qO - https://packages.sury.org/php/apt.gpg | apt-key add - \
   && echo "deb https://packages.sury.org/php/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/php.list \
   && apt-get update \
-  add-apt-repository ppa:ondrej/php \
+  && add-apt-repository ppa:ondrej/php \
   && apt update \
   && apt upgrade \
   && apt install php8.2-dev \
