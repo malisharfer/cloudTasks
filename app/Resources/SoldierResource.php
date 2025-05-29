@@ -81,24 +81,26 @@ class SoldierResource extends Resource
                     ->badge()
                     ->color(fn ($state) => $state ? 'info' : 'primary')
                     ->sortable(),
-                TextColumn::make('role')
+                    TextColumn::make('role')
                     ->label(__('Role'))
                     ->default(
                         function ($record) {
-                            $roles = Soldier::find($record->id)->user->getRoleNames();
-                            $roles->count() > 1 ? $roles->shift(1) : null;
-                            $roles->all();
+                            if (Soldier::find($record->id)->user) {
+                                $roles = Soldier::find($record->id)?->user?->getRoleNames();
+                                $roles->count() > 1 ? $roles->shift(1) : null;
+                                $roles->all();
 
-                            return array_map(function ($role) {
-                                return match ($role) {
-                                    'manager' => __('Manager'),
-                                    'shifts-assignment' => __('A shifts assignment'),
-                                    'department-commander' => __('Department commander'),
-                                    'team-commander' => __('Team commander'),
-                                    'soldier' => __('Soldier'),
-                                    default => __('No roles'),
-                                };
-                            }, $roles->toArray());
+                                return array_map(function ($role) {
+                                    return match ($role) {
+                                        'manager' => __('Manager'),
+                                        'shifts-assignment' => __('A shifts assignment'),
+                                        'department-commander' => __('Department commander'),
+                                        'team-commander' => __('Team commander'),
+                                        'soldier' => __('Soldier'),
+                                        default => __('No roles'),
+                                    };
+                                }, $roles->toArray());
+                            }
                         }
                     ),
                 TextColumn::make('teamSoldier')
