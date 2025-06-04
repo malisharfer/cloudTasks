@@ -53,23 +53,19 @@ class CalendarWidget extends FullCalendarWidget
     {
         $this->currentMonth = Carbon::parse($fetchInfo['start'])->addDays(7)->year.'-'.Carbon::parse($fetchInfo['start'])->addDays(7)->month;
 
-        $events = $this->getEventsByRole();
+        $events = $this->getEventsByRole($fetchInfo);
 
-        $events->where('start_date', '>=', $fetchInfo['start'])
-            ->where('end_date', '<=', $fetchInfo['end']);
         $eventDays = self::events($events)
-            ->map(function (Model $event) {
-                return [
-                    'id' => $event[$this->keys[0]],
-                    'title' => $event[$this->keys[1]],
-                    'start' => $event[$this->keys[2]],
-                    'end' => $event[$this->keys[3]],
-                    'backgroundColor' => $event[$this->keys[4]],
-                    'borderColor' => $event[$this->keys[4]],
-                    'textColor' => 'black',
-                    'display' => 'block',
-                ];
-            })
+            ->map(fn (Model $event) => [
+                'id' => $event[$this->keys[0]],
+                'title' => $event[$this->keys[1]],
+                'start' => $event[$this->keys[2]],
+                'end' => $event[$this->keys[3]],
+                'backgroundColor' => $event[$this->keys[4]],
+                'borderColor' => $event[$this->keys[4]],
+                'textColor' => 'black',
+                'display' => 'block',
+            ])
             ->toArray();
 
         $specialDays = [];
@@ -95,7 +91,6 @@ class CalendarWidget extends FullCalendarWidget
 
         return array_merge($eventDays, $specialDays);
     }
-
     private function getHolidays($month, $day, $year): array
     {
         $holiday = new Holidays($month, $day, $year);
@@ -103,32 +98,32 @@ class CalendarWidget extends FullCalendarWidget
         return [$holiday->isHoliday, $holiday->holidayName];
     }
 
-    public function getEventsByRole()
+    public function getEventsByRole(array $fetchInfo)
     {
         $current_user_id = auth()->user()->userable_id;
         $role = current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']));
-
-        return ($this->type === 'my_soldiers') ? match ($role) {
-            'manager', 'shifts-assignment' => $this->model::where('soldier_id', '!=', $current_user_id)
+    
+        $query = $this->model::query();
+    
+        $query = match ($role) {
+            'manager', 'shifts-assignment' => $query->where('soldier_id', '!=', $current_user_id)
+                ->orWhereNull('soldier_id'),
+            'department-commander' => $query->where('soldier_id', '!=', $current_user_id)
                 ->orWhereNull('soldier_id')
-                ->get(),
-            'department-commander' => $this->model::where('soldier_id', '!=', $current_user_id)
-                ->orWhereNull('soldier_id')
-                ->get()
-                ->filter(function (Model $object) use ($current_user_id) {
-                    $soldier = Soldier::where('id', '=', $object->soldier_id)->first();
-
-                    return ! $soldier || $soldier?->team?->department?->commander_id == $current_user_id;
+                ->whereHas('soldier.team.department', function ($subQuery) use ($current_user_id) {
+                    $subQuery->where('commander_id', $current_user_id);
                 }),
-            'team-commander' => $this->model::where('soldier_id', '!=', $current_user_id)
+            'team-commander' => $query->where('soldier_id', '!=', $current_user_id)
                 ->orWhereNull('soldier_id')
-                ->get()
-                ->filter(function (Model $object) use ($current_user_id) {
-                    $soldier = Soldier::where('id', '=', $object->soldier_id)->first();
-
-                    return ! $soldier || $soldier?->team?->commander_id == $current_user_id;
+                ->whereHas('soldier.team', function ($subQuery) use ($current_user_id) {
+                    $subQuery->where('commander_id', $current_user_id);
                 }),
-        } : $this->model::where('soldier_id', '=', $current_user_id)->get();
+            default => $query->where('soldier_id', '=', $current_user_id),
+        };
+    
+        return $query->where('start_date', '>=', $fetchInfo['start'])
+            ->where('end_date', '<=', $fetchInfo['end'])
+            ->get();
     }
 
     protected function events($events): Collection
