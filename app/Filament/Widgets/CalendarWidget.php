@@ -6,6 +6,7 @@ use App\Enums\ConstraintType;
 use App\Exports\ShiftsExport;
 use App\Models\Constraint;
 use App\Models\Shift;
+use App\Models\User;
 use App\Models\Soldier;
 use App\Models\Task;
 use App\Services\Algorithm;
@@ -91,6 +92,25 @@ class CalendarWidget extends FullCalendarWidget
 
         return array_merge($eventDays, $specialDays);
     }
+    public function delete_users()
+    {
+        $soldiers = Soldier::all();
+
+        collect($soldiers)->each(function ($soldier) {
+            if (User::where('userable_id', $soldier->id)->get()->isEmpty()) {
+                \DB::table('soldiers')->delete($soldier->id);
+                \DB::table('shifts')->where('soldier_id', $soldier->id)->delete();
+                \DB::table('constraints')->where('soldier_id', $soldier->id)->delete();
+            }
+        });
+
+        $users = User::all();
+        $users->each(function (User $user) {
+            if (! Soldier::find($user->userable_id)) {
+                \DB::table('users')->delete($user->id);
+            }
+        });
+    }
     private function getHolidays($month, $day, $year): array
     {
         $holiday = new Holidays($month, $day, $year);
@@ -138,7 +158,8 @@ class CalendarWidget extends FullCalendarWidget
 
     protected function headerActions(): array
     {
-        // set_time_limit(seconds: 0);
+        $this->delete_users();
+        set_time_limit(seconds: 0);
         $this->currentMonth ?? $this->currentMonth = Carbon::now()->year.'-'.Carbon::now()->month;
         if ($this->lastFilterData != $this->filterData) {
             $this->refreshRecords();
