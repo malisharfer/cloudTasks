@@ -98,9 +98,9 @@ class CalendarWidget extends FullCalendarWidget
 
         collect($soldiers)->each(function ($soldier) {
             if (User::where('userable_id', $soldier->id)->get()->isEmpty()) {
-                \DB::table('soldiers')->delete($soldier->id);
                 \DB::table('shifts')->where('soldier_id', $soldier->id)->delete();
                 \DB::table('constraints')->where('soldier_id', $soldier->id)->delete();
+                \DB::table('soldiers')->delete($soldier->id);
             }
         });
 
