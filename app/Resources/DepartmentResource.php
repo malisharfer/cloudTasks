@@ -53,16 +53,12 @@ class DepartmentResource extends Resource
                         ->label(__('Commander'))
                         ->relationship('commander', 'id')
                         ->options(
-                            fn () => Cache::remember('users', 30 * 60, function () {
-                                return User::all();
-                            })->mapWithKeys(function ($user) {
-                                return [$user->userable_id => $user->displayName];
-                            })
+                            fn () => Cache::remember('users', 30 * 60, fn () => User::all())->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
                         )
                         ->placeholder(__('Select commander'))
                         ->optionsLimit(Soldier::count())
-                        ->getSearchResultsUsing(fn ($search) => User::all()
-                            ->filter(fn (User $user) => str_contains($user->displayName, $search))
+                        ->getSearchResultsUsing(fn ($search) => User::whereRaw("first_name || ' ' || last_name LIKE ?", "%{$search}%")
+                            ->get()
                             ->mapWithKeys(fn (User $user) => [$user->userable_id => $user->displayName])
                             ->toArray())
                         ->searchable(),
@@ -80,9 +76,7 @@ class DepartmentResource extends Resource
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('commander.user')
-                    ->formatStateUsing(function ($state) {
-                        return $state->last_name.' '.$state->first_name;
-                    })
+                    ->formatStateUsing(fn ($state) => $state->last_name.' '.$state->first_name)
                     ->label(__('Commander'))
                     ->searchable(
                         query: function ($query, $search) {

@@ -52,12 +52,9 @@ class Constraint extends Model
                 ->hiddenOn('view')
                 ->visible(fn () => in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())
                 && \Str::contains($_SERVER['HTTP_REFERER'], 'my-soldiers-constraint'))
-                ->options(fn () => Cache::remember('users', 30 * 60, function () {
-                    return User::all();
-                })
-                    ->mapWithKeys(function ($user) {
-                        return [$user->userable_id => $user->displayName];
-                    }))
+                ->options(fn () => Cache::remember('users', 30 * 60, fn () => User::all()
+                )
+                    ->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName]))
                 ->afterStateUpdated(fn ($state) => session()->put('soldier_id', $state))
                 ->required(),
             ToggleButtons::make('constraint_type')
@@ -386,9 +383,8 @@ class Constraint extends Model
     public static function activeFilters($calendar)
     {
         if ($calendar->filter) {
-            $activeFilter = collect($calendar->filterData['soldier_id'])->map(function ($soldier_id) {
-                return User::where('userable_id', $soldier_id)->first()->displayName;
-            });
+            $activeFilter = collect($calendar->filterData['soldier_id'])->map(fn ($soldier_id) => User::where('userable_id', $soldier_id)->first()->displayName
+            );
         }
 
         return $activeFilter->toArray();

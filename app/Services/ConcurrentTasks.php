@@ -40,14 +40,21 @@ class ConcurrentTasks
 
     protected function getShiftsWithTasks()
     {
-        return Shift::whereNull('soldier_id')
-            ->get()
-            ->filter(function (Shift $shift) {
-                $range = new Range($shift->start_date, $shift->end_date);
+        $startOfMonth = max($this->date->copy()->startOfMonth(), Carbon::tomorrow());
+        $endOfMonth = $this->date->copy()->endOfMonth();
 
-                return $range->isSameMonth(new Range(max($this->date->copy()->startOfMonth(), Carbon::tomorrow()), $this->date->copy()->endOfMonth()))
-                    && ($shift->task()->withTrashed()->first()->kind === TaskKind::INPARALLEL->value);
+        return Shift::whereNull('soldier_id')
+            ->whereHas('task', function ($query) {
+                $query->withTrashed()
+                    ->where('kind', TaskKind::INPARALLEL->value);
             })
+            ->where(function ($query) use ($startOfMonth, $endOfMonth) {
+                $query->where(function ($subQuery) use ($startOfMonth, $endOfMonth) {
+                    $subQuery->where('start_date', '<', $endOfMonth)
+                        ->where('end_date', '>', $startOfMonth);
+                });
+            })
+            ->get()
             ->map(fn (Shift $shift): ShiftService => Helpers::buildShift($shift));
     }
 
@@ -76,9 +83,8 @@ class ConcurrentTasks
     protected function initShiftsData(): void
     {
         $groupedShifts = collect($this->shifts)->groupBy('taskType');
-        $groupedShifts->each(function ($shifts, $taskType) {
-            $this->addShiftsDataByTask($taskType, collect($shifts));
-        });
+        $groupedShifts->each(fn ($shifts, $taskType) => $this->addShiftsDataByTask($taskType, collect($shifts))
+        );
     }
 
     protected function addShiftsDataByTask(string $taskType, $shifts): void
@@ -122,9 +128,8 @@ class ConcurrentTasks
 
     protected function assignShifts()
     {
-        collect($this->shiftsData)->map(function (ShiftData $shiftData) {
-            $this->assignShift($shiftData);
-        });
+        collect($this->shiftsData)->map(fn (ShiftData $shiftData) => $this->assignShift($shiftData)
+        );
     }
 
     protected function assignShift(ShiftData $shiftData)

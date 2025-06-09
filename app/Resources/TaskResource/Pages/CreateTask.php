@@ -74,10 +74,9 @@ class CreateTask extends CreateRecord
                     Section::make()->schema(TaskResource::assignSoldier())->columns(),
                 ])
                 ->visible(
-                    function (Get $get) {
-                        return $get('recurring.type') == 'One time'
-                            && $get('recurring.date');
-                    }
+                    fn (Get $get) => $get('recurring.type') == 'One time'
+                            && $get('recurring.date')
+
                 ),
         ];
     }

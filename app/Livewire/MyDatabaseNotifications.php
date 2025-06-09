@@ -845,9 +845,8 @@ class MyDatabaseNotifications extends DatabaseNotifications
 
     protected static function getShiftsAssignments()
     {
-        return User::whereHas('roles', function ($query) {
-            $query->where('name', 'shifts-assignment');
-        })->get();
+        return User::whereHas('roles', fn ($query) => $query->where('name', 'shifts-assignment')
+        )->get();
     }
 
     #[On('confirmConstraint')]

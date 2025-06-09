@@ -111,9 +111,7 @@ class Soldier
         }
 
         if (
-            $conflicts->contains(function ($conflict) {
-                return $conflict->priority == Priority::HIGH;
-            })
+            $conflicts->contains(fn ($conflict) => $conflict->priority == Priority::HIGH)
         ) {
             return Availability::NO;
         }

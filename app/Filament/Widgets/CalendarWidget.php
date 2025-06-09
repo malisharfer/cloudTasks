@@ -105,8 +105,8 @@ class CalendarWidget extends FullCalendarWidget
     {
         $current_user_id = auth()->user()->userable_id;
         $role = current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']));
-
-        $query = $this->model::query();
+        $query = $this->model::with(['task', 'soldier']);
+        // $query = $this->model::query();
         $query = match ($role) {
             'manager', 'shifts-assignment' => $query->where('soldier_id', '!=', $current_user_id)
                 ->orWhereNull('soldier_id'),
@@ -150,7 +150,6 @@ class CalendarWidget extends FullCalendarWidget
 
     protected function headerActions(): array
     {
-        set_time_limit(seconds: 0);
         $this->currentMonth ?? $this->currentMonth = Carbon::now()->year.'-'.Carbon::now()->month;
         if ($this->lastFilterData != $this->filterData) {
             $this->refreshRecords();
@@ -267,7 +266,7 @@ class CalendarWidget extends FullCalendarWidget
         $this->startDate = (Carbon::now()->format('m') == Carbon::parse($this->currentMonth)->format('m'))
             ? Carbon::now()->addDay()->format('Y-m-d')
             : Carbon::parse($this->currentMonth)->startOfMonth()->format('Y-m-d');
-        Shift::whereNotNull('soldier_id')
+        Shift::with('task')->whereNotNull('soldier_id')
             ->whereBetween('start_date', [$this->startDate, (Carbon::parse($this->currentMonth)->endOfMonth()->addDay())->format('Y-m-d')])
             ->update(['soldier_id' => null]);
         $this->refreshRecords();

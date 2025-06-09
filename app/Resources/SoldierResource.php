@@ -12,7 +12,6 @@ use App\Models\Task;
 use App\Models\Team;
 use App\Models\User;
 use App\Resources\SoldierResource\Pages;
-use Carbon\Carbon;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Group;
@@ -63,9 +62,9 @@ class SoldierResource extends Resource
             ->columns([
                 TextColumn::make('user')
                     ->label(__('Full name'))
-                    ->formatStateUsing(function ($record) {
-                        return $record->user->last_name.' '.$record->user->first_name;
-                    })
+                    ->formatStateUsing(
+                        fn ($record) => $record->user->last_name.' '.$record->user->first_name
+                    )
                     ->searchable(query: function ($query, $search) {
                         $query->whereHas('user', function ($query) use ($search) {
                             $query->where('first_name', 'like', "%{$search}%")
@@ -81,24 +80,22 @@ class SoldierResource extends Resource
                     ->badge()
                     ->color(fn ($state) => $state ? 'info' : 'primary')
                     ->sortable(),
-                    TextColumn::make('role')
+                TextColumn::make('role')
                     ->label(__('Role'))
                     ->default(
                         function ($record) {
-                            if (Soldier::find($record->id)->user) {
-                                $roles = Soldier::find($record->id)?->user?->getRoleNames();
+                            if ($record->user) {
+                                $roles = $record->user->getRoleNames();
                                 $roles->count() > 1 ? $roles->shift(1) : null;
                                 $roles->all();
 
-                                return array_map(function ($role) {
-                                    return match ($role) {
-                                        'manager' => __('Manager'),
-                                        'shifts-assignment' => __('A shifts assignment'),
-                                        'department-commander' => __('Department commander'),
-                                        'team-commander' => __('Team commander'),
-                                        'soldier' => __('Soldier'),
-                                        default => __('No roles'),
-                                    };
+                                return array_map(fn ($role) => match ($role) {
+                                    'manager' => __('Manager'),
+                                    'shifts-assignment' => __('A shifts assignment'),
+                                    'department-commander' => __('Department commander'),
+                                    'team-commander' => __('Team commander'),
+                                    'soldier' => __('Soldier'),
+                                    default => __('No roles'),
                                 }, $roles->toArray());
                             }
                         }
@@ -107,7 +104,6 @@ class SoldierResource extends Resource
                     ->label(__('Team'))
                     ->visible(collect(auth()->user()->getRoleNames())->intersect(['manager', 'shifts-assignment', 'department-commander'])->isNotEmpty())
                     ->placeholder(__('Not associated'))
-
                     ->default(function ($record) {
                         $soldier = Soldier::find($record->id);
 
@@ -118,15 +114,23 @@ class SoldierResource extends Resource
                     ->sortable()
                     ->date(),
                 TextColumn::make('capacity_hold')
-                    ->default(function ($record) {
-                        $soldierShifts = Shift::where('soldier_id', $record->id)->get();
+                    ->default(function () {
+                        $now = now();
 
-                        return $soldierShifts->filter(function (Shift $shift): bool {
-                            return (Carbon::parse($shift->start_date)->month == now()->month
-                            && Carbon::parse($shift->start_date)->year == now()->year)
-                            || (Carbon::parse($shift->end_date)->month == now()->month
-                        && Carbon::parse($shift->end_date)->year == now()->year);
-                        })->sum(fn (Shift $shift) => $shift->parallel_weight === null ? $shift->task()->withTrashed()->first()->parallel_weight : $shift->parallel_weight);
+                        return Shift::where('soldier_id', auth()->user()->userable_id)
+                            ->where(function ($query) use ($now) {
+                                $query->whereYear('start_date', $now->year)
+                                    ->whereMonth('start_date', $now->month)
+                                    ->orWhere(function ($query) use ($now) {
+                                        $query->whereYear('end_date', $now->year)
+                                            ->whereMonth('end_date', $now->month);
+                                    });
+                            })
+                            ->with(['task' => function ($query) {
+                                $query->withTrashed();
+                            }])
+                            ->get()
+                            ->sum(fn (Shift $shift) => $shift->parallel_weight ?? $shift->task->parallel_weight);
                     })
                     ->label(__('Capacity hold'))
                     ->numeric(),
@@ -164,12 +168,16 @@ class SoldierResource extends Resource
                     ->label(__('Qualifications'))
                     ->multiple()
                     ->searchable()
-                    ->options(Task::withTrashed()->get()->pluck('type', 'type')->sort()->unique()->all())
-                    ->query(function (Builder $query, array $data) {
-                        return collect($data['values'])->map(function ($qualification) use ($query) {
+                    ->options(Task::withTrashed()->select('type')
+                        ->distinct()
+                        ->orderBy('type')
+                        ->pluck('type', 'type')
+                        ->all())
+                    ->query(
+                        fn (Builder $query, array $data) => collect($data['values'])->map(function ($qualification) use ($query) {
                             return $query->whereJsonContains('qualifications', $qualification);
-                        });
-                    })
+                        })
+                    )
                     ->default(null),
                 Filter::make('reservist')
                     ->label(__('Reservist'))
@@ -199,8 +207,8 @@ class SoldierResource extends Resource
                                     ->after('recruitment_from'),
                             ]),
                     ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query
+                    ->query(
+                        fn (Builder $query, array $data) => $query
                             ->when(
                                 $data['recruitment_from'],
                                 fn (Builder $query, $date): Builder => $query->whereDate('enlist_date', '>=', $date),
@@ -208,8 +216,8 @@ class SoldierResource extends Resource
                             ->when(
                                 $data['recruitment_until'],
                                 fn (Builder $query, $date): Builder => $query->whereDate('enlist_date', '<=', $date),
-                            );
-                    }),
+                            )
+                    ),
 
             ], FiltersLayout::Modal)
             ->filtersFormColumns(4)
@@ -238,8 +246,8 @@ class SoldierResource extends Resource
                         ->label(__('Update reserve days'))
                         ->icon('heroicon-o-pencil')
                         ->color('primary')
-                        ->form(function ($record) {
-                            return [
+                        ->form(
+                            fn ($record) => [
                                 Flatpickr::make('last_reserve_dates')
                                     ->label(__('Last reserve dates'))
                                     ->multiple()
@@ -258,8 +266,8 @@ class SoldierResource extends Resource
                                     ->default($record->next_reserve_dates)
                                     ->minDate(now()->addMonth()->startOfMonth())
                                     ->maxDate(now()->addMonth()->endOfMonth()),
-                            ];
-                        })
+                            ]
+                        )
                         ->action(function (Soldier $record, array $data): void {
                             $record->last_reserve_dates = $data['last_reserve_dates'];
                             $record->reserve_dates = $data['reserve_dates'];
@@ -271,23 +279,7 @@ class SoldierResource extends Resource
                     ReplicateAction::make()
                         ->icon('heroicon-o-document-duplicate')
                         ->color('success')
-                        ->after(function (Soldier $replica, $record): void {
-                            $user = new User;
-                            $user->first_name = '';
-                            $user->last_name = '';
-                            $user->password = '';
-                            $user->userable_type = "App\Models\Soldier";
-                            $user->userable_id = $replica->id;
-                            $user->save();
-                            $user->assignRole('soldier');
-                            in_array('shifts-assignment', $record->user->getRoleNames()->toArray()) ? $user->assignRole('shifts-assignment') : null;
-                            $replica['last_reserve_dates'] = [];
-                            $replica['reserve_dates'] = [];
-                            $replica['next_reserve_dates'] = [];
-                            $replica->save();
-                            session()->put('shifts_assignment', User::where('userable_id', $record->id)->first()->getRoleNames()->contains('shifts-assignment'));
-                            redirect()->route('filament.app.resources.soldiers.edit', ['record' => $replica->id]);
-                        })
+                        ->after(fn (Soldier $replica, $record) => self::replicateSoldier($replica, $record))
                         ->successNotification(null)
                         ->closeModalByClickingAway(false),
                 ]),
@@ -299,16 +291,41 @@ class SoldierResource extends Resource
             ]);
     }
 
+    protected static function replicateSoldier(Soldier $replica, $record)
+    {
+        $user = new User;
+        $user->first_name = '';
+        $user->last_name = '';
+        $user->password = '';
+        $user->userable_type = "App\Models\Soldier";
+        $user->userable_id = $replica->id;
+        $user->save();
+        $user->assignRole('soldier');
+        in_array('shifts-assignment', $record->user->getRoleNames()->toArray()) ? $user->assignRole('shifts-assignment') : null;
+        $replica['last_reserve_dates'] = [];
+        $replica['reserve_dates'] = [];
+        $replica['next_reserve_dates'] = [];
+        $replica->save();
+        session()->put('shifts_assignment', User::where('userable_id', $record->id)->first()->getRoleNames()->contains('shifts-assignment'));
+        redirect()->route('filament.app.resources.soldiers.edit', ['record' => $replica->id]);
+    }
+
     public static function getEloquentQuery(): Builder
     {
         if (auth()->user()->hasRole('manager') || auth()->user()->hasRole('shifts-assignment')) {
-            return parent::getEloquentQuery()->where('id', '!=', User::where('userable_id', auth()->user()->id)->value('userable_id'));
+            return parent::getEloquentQuery()->where('id', '!=', auth()->user()->userable_id);
         }
 
         return parent::getEloquentQuery()
-            ->whereIn('team_id', Team::select('id')->where('department_id', Department::select('id')->where('commander_id', auth()->user()->userable_id)))
-            ->orWhere('team_id', Team::select('id')->where('commander_id', auth()->user()->userable_id));
-
+            ->whereIn('team_id', Department::whereHas('commander', function ($query) {
+                $query->where('id', auth()->user()->userable_id);
+            })->first()?->teams->pluck('id') ?? collect([]))
+            ->orWhereIn('id', Department::whereHas('commander', function ($query) {
+                $query->where('id', auth()->user()->userable_id);
+            })->first()?->teams->pluck('commander_id') ?? collect([]))
+            ->orWhere('team_id', Team::whereHas('commander', function ($query) {
+                $query->where('id', auth()->user()->userable_id);
+            })->value('id') ?? collect([]));
     }
 
     public static function getPages(): array
@@ -439,7 +456,11 @@ class SoldierResource extends Resource
                     ->label(__('Qualifications'))
                     ->multiple()
                     ->placeholder(__('Select qualifications'))
-                    ->options(Task::all()->pluck('type', 'type')->sort()->unique()->all()),
+                    ->options(Task::select('type')
+                        ->distinct()
+                        ->orderBy('type')
+                        ->pluck('type', 'type')
+                        ->all()),
             ])->columns(3),
         ];
     }

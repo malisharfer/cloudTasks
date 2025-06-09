@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ConstraintType;
 use App\Enums\TaskKind;
 use App\Models\Constraint as ConstraintModel;
 use App\Models\Shift;
@@ -93,7 +94,7 @@ class Charts
     {
         $count = 0;
         $constraints->filter(
-            fn (ConstraintModel $constraint) => $constraint->constraint_type->getPriority() == 2
+            fn (ConstraintModel $constraint) => ConstraintType::getPriority()[$constraint->constraint_type->value] == 2
         )
             ->map(
                 function ($constraint) use ($count, $shifts) {

@@ -17,7 +17,7 @@ class Login extends BaseAuth
                     ->label(__('First name'))
                     ->required()
                     ->autofocus(),
-                TextInput::make(('last_name'))
+                TextInput::make('last_name')
                     ->label(__('Last name'))
                     ->required(),
                 TextInput::make('password')

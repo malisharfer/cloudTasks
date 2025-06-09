@@ -27,7 +27,7 @@ class ListSoldiers extends ListRecords
                     Section::make([
                         Select::make('course')
                             ->label(__('Course'))
-                            ->options(Soldier::pluck('course', 'course')->sort()->unique()->all())
+                            ->options(Soldier::select('course')->distinct()->orderBy('course')->pluck('course', 'course')->all())
                             ->required(),
                     ]),
                     Section::make([
@@ -40,11 +40,19 @@ class ListSoldiers extends ListRecords
                             ->label(__('Max nights'))
                             ->numeric()
                             ->step(1)
+                            ->lte('max_shifts')
+                            ->validationMessages([
+                                'lte' => __('The field cannot be greater than max_shifts field'),
+                            ])
                             ->minValue(0),
                         TextInput::make('max_weekends')
                             ->label(__('Max weekends'))
                             ->numeric()
                             ->step(0.25)
+                            ->lte('capacity')
+                            ->validationMessages([
+                                'lte' => __('The field cannot be greater than capacity field'),
+                            ])
                             ->minValue(0),
                         TextInput::make('max_alerts')
                             ->label(__('Max alerts'))
@@ -65,7 +73,11 @@ class ListSoldiers extends ListRecords
                             ->label(__('Qualifications'))
                             ->multiple()
                             ->placeholder(__('Select qualifications'))
-                            ->options(Task::all()->pluck('type', 'type')->sort()->unique()->all()),
+                            ->options(Task::select('type')
+                                ->distinct()
+                                ->orderBy('type')
+                                ->pluck('type', 'type')
+                                ->all()),
                     ]),
                 ])
                 ->action(function (array $data) {

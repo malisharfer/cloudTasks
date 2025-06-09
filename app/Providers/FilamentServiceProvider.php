@@ -85,15 +85,14 @@ class FilamentServiceProvider extends PanelProvider
 
     public function boot()
     {
-        Filament::serving(function () {
-            Filament::registerNavigationGroups([
-                NavigationGroup::make()
-                    ->label(fn (): string => __('Constraints'))
-                    ->icon('heroicon-o-calendar-days'),
-                NavigationGroup::make()
-                    ->label(fn (): string => __('Shifts'))
-                    ->icon('heroicon-o-calendar'),
-            ]);
-        });
+        Filament::serving(fn () => Filament::registerNavigationGroups([
+            NavigationGroup::make()
+                ->label(fn (): string => __('Constraints'))
+                ->icon('heroicon-o-calendar-days'),
+            NavigationGroup::make()
+                ->label(fn (): string => __('Shifts'))
+                ->icon('heroicon-o-calendar'),
+        ])
+        );
     }
 }

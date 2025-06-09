@@ -22,15 +22,14 @@ class ShiftAssignmentNotification
 
         $users = User::whereIn('userable_id', $users)->get();
 
-        $users->map(function ($user) {
-            Notification::make()
-                ->title(__('View assigned shifts'))
-                ->warning()
-                ->body(__('Go to view the schedule of shifts assigned to you for this month.'))
-                ->actions([Action::make(__('View your shift schedule'))
-                    ->button()
-                    ->url(route('filament.app.resources.my-shifts.index')), ])
-                ->sendToDatabase($user, true);
-        });
+        $users->map(fn ($user) => Notification::make()
+            ->title(__('View assigned shifts'))
+            ->warning()
+            ->body(__('Go to view the schedule of shifts assigned to you for this month.'))
+            ->actions([Action::make(__('View your shift schedule'))
+                ->button()
+                ->url(route('filament.app.resources.my-shifts.index')), ])
+            ->sendToDatabase($user, true)
+        );
     }
 }

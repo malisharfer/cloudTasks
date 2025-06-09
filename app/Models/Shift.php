@@ -48,10 +48,14 @@ class Shift extends Model
     {
         return $this->belongsTo(Task::class);
     }
-
+    
+    public function soldier()
+    {
+        return $this->belongsTo(Soldier::class);
+    }
     private function getTaskParallelWeight()
     {
-        return $this->task()->withTrashed()->first()->parallel_weight;
+        return $this->task?->parallel_weight;
     }
 
     public function getTaskNameAttribute()
@@ -59,14 +63,15 @@ class Shift extends Model
         $user_name = User::where('userable_id', $this->soldier_id)->get(['first_name', 'last_name']);
 
         return $this->soldier_id == auth()->user()->userable_id
-            ? $this->task()->withTrashed()->first()->name
-            : $this->task()->withTrashed()->first()->name.' '.$user_name->first()?->first_name.' '.$user_name->first()?->last_name;
+            ? $this->task?->name
+            : $this->task?->name.' '.$user_name->first()?->first_name.' '.$user_name->first()?->last_name;
     }
 
     public function getTaskColorAttribute()
     {
-        return $this->task()->withTrashed()->first()->color;
+        return $this->task?->color;
     }
+
     public static function getSchema(): array
     {
         return [
@@ -90,12 +95,8 @@ class Shift extends Model
                             ->options(
                                 function (?Shift $shift, Get $get) {
                                     if ($get('soldier_type') === 'all') {
-                                        return Cache::remember('users', 30 * 60, function () {
-                                            return User::all();
-                                        })
-                                            ->mapWithKeys(function ($user) {
-                                                return [$user->userable_id => $user->displayName];
-                                            });
+                                        return Cache::remember('users', 30 * 60, fn () => User::all())
+                                            ->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName]);
                                     }
                                     $manual_assignment = new ManualAssignment($shift, $get('soldier_type'));
 
@@ -127,6 +128,7 @@ class Shift extends Model
                 TextInput::make('parallel_weight')
                     ->numeric()
                     ->minValue(0)
+                    ->step(0.25)
                     ->label(__('Parallel weight')),
                 DateTimePicker::make('start_date')
                     ->label(__('Start date'))
@@ -143,9 +145,7 @@ class Shift extends Model
     protected static function soldierIdPlaceholder($soldierType, $shift)
     {
         if ($soldierType === 'all') {
-            return Cache::remember('users', 30 * 60, function () {
-                return User::all();
-            })->count() > 0 ? __('Select a soldier') : __('No suitable soldiers');
+            return Cache::remember('users', 30 * 60, fn () => User::all())->count() > 0 ? __('Select a soldier') : __('No suitable soldiers');
         }
         $manual_assignment = new ManualAssignment($shift, $soldierType);
 
@@ -170,7 +170,7 @@ class Shift extends Model
     {
         $options = [
             'reserves' => __('Reserves'),
-            'matching' => __('Matching soldiers'),
+            'matching' => __('Matching'),
             'all' => __('All'),
         ];
         if ($shift->task()->withTrashed()->first()->department_name) {
@@ -249,22 +249,20 @@ class Shift extends Model
                     );
                 }
             )
-            ->extraModalFooterActions(function (Action $action) {
-                return [
-                    $action->makeExtraModalAction('exchange', ['exchange' => true, 'role' => auth()->user()->getRoleNames()])
-                        ->label(__('Exchange assignment'))
-                        ->icon('heroicon-s-arrow-path')
-                        ->color('primary')
-                        ->disabled(fn (): bool => ! session()->get('selected_shift'))
-                        ->visible(fn (): bool => auth()->user()->getRoleNames()->count() > 1),
-                    $action->makeExtraModalAction(__('Request'), ['request' => true])
-                        ->icon('heroicon-s-arrow-path')
-                        ->disabled(fn (): bool => ! session()->get('selected_shift'))
-                        ->color('primary')
-                        ->visible(fn (): bool => ! (auth()->user()->getRoleNames()->count() > 1)),
-                    $action->makeExtraModalAction(__('Cancel'), ['cancel' => true]),
-                ];
-            })
+            ->extraModalFooterActions(fn (Action $action) => [
+                $action->makeExtraModalAction('exchange', ['exchange' => true, 'role' => auth()->user()->getRoleNames()])
+                    ->label(__('Exchange assignment'))
+                    ->icon('heroicon-s-arrow-path')
+                    ->color('primary')
+                    ->disabled(fn (): bool => ! session()->get('selected_shift'))
+                    ->visible(fn (): bool => auth()->user()->getRoleNames()->count() > 1),
+                $action->makeExtraModalAction(__('Request'), ['request' => true])
+                    ->icon('heroicon-s-arrow-path')
+                    ->disabled(fn (): bool => ! session()->get('selected_shift'))
+                    ->color('primary')
+                    ->visible(fn (): bool => ! (auth()->user()->getRoleNames()->count() > 1)),
+                $action->makeExtraModalAction(__('Cancel'), ['cancel' => true]),
+            ])
             ->action(function (array $data, array $arguments, Model $record, Component $livewire): void {
                 session()->put('selected_shift', false);
                 if ($arguments['exchange'] ?? false) {
@@ -281,14 +279,14 @@ class Shift extends Model
                 if ($arguments['cancel'] ?? false) {
                     $livewire->dispatch('filament-fullcalendar--refresh');
                 }
-            })
-            ->hidden(function ($record) {
-                if ($record->soldier_id) {
-                    $changeAssignment = new ChangeAssignment($record);
-
-                    return $changeAssignment->getMatchingShifts()->isEmpty();
-                }
             });
+            // ->hidden(function ($record) {
+            //     if ($record->soldier_id) {
+            //         $changeAssignment = new ChangeAssignment($record);
+
+            //         return $changeAssignment->getMatchingShifts()->isEmpty();
+            //     }
+            // });
     }
 
     protected static function description($soldierId, $shift)
@@ -533,7 +531,7 @@ class Shift extends Model
                                         ->visible(fn (Get $get) => $get('soldiers') == 'all'),
                                     ToggleButtons::make('soldiers')
                                         ->label('')
-                                        ->options(['all' => __('All soldiers'), 'matching' => __('Matching soldiers')])
+                                        ->options(['all' => __('All soldiers'), 'matching' => __('Matching')])
                                         ->inline()
                                         ->live()
                                         ->default(fn () => 'matching')
@@ -546,12 +544,8 @@ class Shift extends Model
                                         ->label(__('Soldier'))
                                         ->options(
                                             fn (Get $get) => match ($get('soldiers')) {
-                                                'all' => Cache::remember('users', 30 * 60, function () {
-                                                    return User::all();
-                                                })->where('userable_id', '!=', $record->soldier_id)
-                                                    ->mapWithKeys(function ($user) {
-                                                        return [$user->userable_id => $user->displayName];
-                                                    }),
+                                                'all' => Cache::remember('users', 30 * 60, fn () => User::all())->where('userable_id', '!=', $record->soldier_id)
+                                                    ->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName]),
                                                 'matching' => $changeAssignment->getMatchingSoldiers(),
                                                 default => $changeAssignment->getMatchingSoldiers(),
                                             }
@@ -568,22 +562,20 @@ class Shift extends Model
                 }
             )
             ->extraModalFooterActions(
-                function (Action $action): array {
-                    return [
-                        $action->makeExtraModalAction('change', ['change' => true, 'role' => auth()->user()->getRoleNames()])
-                            ->label(__('Change assignment'))
-                            ->icon('heroicon-o-arrow-uturn-up')
-                            ->color('primary')
-                            ->disabled(fn (): bool => ! session()->get('selected_soldier'))
-                            ->visible(fn (): bool => auth()->user()->getRoleNames()->count() > 1),
-                        $action->makeExtraModalAction(__('Request'), ['request' => true])
-                            ->icon('heroicon-o-arrow-uturn-up')
-                            ->disabled(fn (): bool => ! session()->get('selected_soldier'))
-                            ->color('primary')
-                            ->visible(fn (): bool => ! (auth()->user()->getRoleNames()->count() > 1)),
-                        $action->makeExtraModalAction(__('Cancel'), ['cancel' => true]),
-                    ];
-                }
+                fn (Action $action) => [
+                    $action->makeExtraModalAction('change', ['change' => true, 'role' => auth()->user()->getRoleNames()])
+                        ->label(__('Change assignment'))
+                        ->icon('heroicon-o-arrow-uturn-up')
+                        ->color('primary')
+                        ->disabled(fn (): bool => ! session()->get('selected_soldier'))
+                        ->visible(fn (): bool => auth()->user()->getRoleNames()->count() > 1),
+                    $action->makeExtraModalAction(__('Request'), ['request' => true])
+                        ->icon('heroicon-o-arrow-uturn-up')
+                        ->disabled(fn (): bool => ! session()->get('selected_soldier'))
+                        ->color('primary')
+                        ->visible(fn (): bool => ! (auth()->user()->getRoleNames()->count() > 1)),
+                    $action->makeExtraModalAction(__('Cancel'), ['cancel' => true]),
+                ]
             )
             ->action(function (array $data, array $arguments, Model $record, Component $livewire): void {
                 session()->put('selected_soldier', false);
@@ -608,7 +600,7 @@ class Shift extends Model
     protected static function shiftsAssignmentChange($shift, $soldierId)
     {
         self::shiftsAssignmentSendChangeNotifications($shift, $soldierId);
-        Shift::where('id', $shift->id)->update(['soldier_id' => $soldierId]);
+        Shift::with('task')->where('id', $shift->id)->update(['soldier_id' => $soldierId]);
     }
 
     protected static function shiftsAssignmentSendChangeNotifications($shift, $soldierId)
@@ -766,9 +758,8 @@ class Shift extends Model
 
     protected static function getShiftsAssignments()
     {
-        return User::whereHas('roles', function ($query) {
-            $query->where('name', 'shifts-assignment');
-        })->get();
+        return User::whereHas('roles', fn ($query) => $query->where('name', 'shifts-assignment')
+        )->get();
     }
 
     protected static function sendNotification($title, $body, $actions, $user, $commonKey = null)
@@ -818,13 +809,7 @@ class Shift extends Model
                     section::make([
                         Radio::make('kind')
                             ->label(__('Kind'))
-                            ->options([
-                                'Weekend' => __('Is weekend'),
-                                'Night' => __('Is night'),
-                                'In parallel' => __('In parallel'),
-                                'Alert' => __('Alert'),
-                                'Regular' => __('Regular'),
-                            ])
+                            ->options(collect(TaskKind::cases())->mapWithKeys(fn ($kind) => [$kind->value => $kind->getLabel()]))
                             ->inlineLabel(false)
                             ->inline(),
                     ]),
@@ -840,12 +825,14 @@ class Shift extends Model
                         ->hidden(fn (Get $get) => $get('unassigned_shifts') || $get('course')),
                     Select::make('type')
                         ->label(__('Type'))
-                        ->options(Task::all()->pluck('type', 'type')->sort()->unique()->all())
+                        ->options(Task::select('type')
+                            ->distinct()
+                            ->orderBy('type')
+                            ->pluck('type', 'type')
+                            ->all())
                         ->multiple(),
                     Select::make('course')
-                        ->options(
-                            Soldier::pluck('course', 'course')->sort()->unique()->all()
-                        )
+                        ->options(Soldier::select('course')->distinct()->orderBy('course')->pluck('course', 'course')->all())
                         ->label(__('Course'))
                         ->multiple()
                         ->live()

@@ -69,10 +69,8 @@ class TaskResource extends Resource
                 Section::make()->schema(self::additionalDetails())->columns(),
                 Section::make()->schema(self::assignSoldier())->columns()
                     ->visible(
-                        function (Get $get) {
-                            return $get('recurring.type') == 'One time'
-                                && $get('recurring.date');
-                        }
+                        fn (Get $get) => $get('recurring.type') == 'One time'
+                        && $get('recurring.date')
                     ),
             ]);
     }
@@ -169,7 +167,11 @@ class TaskResource extends Resource
                     ->multiple()
                     ->searchable()
                     ->options(
-                        Task::all()->pluck('type', 'type')->sort()->unique()->all()
+                        Task::select('type')
+                            ->distinct()
+                            ->orderBy('type')
+                            ->pluck('type', 'type')
+                            ->all()
                     )
                     ->default(null),
                 SelectFilter::make('recurring.type')
@@ -177,11 +179,10 @@ class TaskResource extends Resource
                     ->multiple()
                     ->searchable()
                     ->options(collect(RecurringType::cases())->mapWithKeys(fn ($type) => [$type->value => $type->getLabel()]))
-                    ->query(function (Builder $query, array $data) {
-                        return collect($data['values'])->map(function ($type) use ($query) {
-                            return $query->orWhereJsonContains('recurring', $type);
-                        });
+                    ->query(fn (Builder $query, array $data) => collect($data['values'])->map(function ($type) use ($query) {
+                        return $query->orWhereJsonContains('recurring', $type);
                     })
+                    )
                     ->default(null),
                 NumberFilter::make('parallel_weight')
                     ->label(__('Parallel weight')),
@@ -195,9 +196,7 @@ class TaskResource extends Resource
                     ->label(__('Department name'))
                     ->multiple()
                     ->searchable()
-                    ->options(
-                        Department::all()->pluck('name', 'name')
-                    )
+                    ->options(Department::select('name')->distinct()->orderBy('name')->pluck('name', 'name')->all())
                     ->default(null),
             ], FiltersLayout::Modal)
             ->deferFilters()
@@ -239,9 +238,7 @@ class TaskResource extends Resource
                 ->required(),
             Select::make('department_name')
                 ->label(__('Department'))
-                ->options(Department::all()->mapWithKeys(function ($department) {
-                    return [$department->name => $department->name];
-                }))
+                ->options(Department::select('name')->distinct()->orderBy('name')->pluck('name', 'name'))
                 ->live(),
             TextInput::make('type')
                 ->label(__('Type'))
@@ -338,9 +335,8 @@ class TaskResource extends Resource
                     Select::make('soldier_id')
                         ->label(__('Assign soldier'))
                         ->options(
-                            function (Get $get) {
-                                return self::getSoldiers($get);
-                            }
+                            fn (Get $get) => self::getSoldiers($get)
+
                         )
                         ->default(null)
                         ->placeholder(fn (Get $get) => self::getSoldiers($get)->isEmpty() ? __('No suitable soldiers') : __('Select a soldier'))
@@ -370,7 +366,11 @@ class TaskResource extends Resource
                 ->label(__('Concurrent tasks'))
                 ->multiple()
                 ->placeholder(fn () => Task::count() > 0 ? __('Select concurrent tasks') : __('No tasks'))
-                ->options(Task::all()->pluck('type', 'type')->sort()->unique()->all())
+                ->options(Task::select('type')
+                    ->distinct()
+                    ->orderBy('type')
+                    ->pluck('type', 'type')
+                    ->all())
                 ->visible(fn (Get $get) => $get('kind') === TaskKind::INPARALLEL->value),
         ];
     }
@@ -379,7 +379,7 @@ class TaskResource extends Resource
     {
         $options = [
             'reserves' => __('Reserves'),
-            'matching' => __('Matching soldiers'),
+            'matching' => __('Matching'),
             'all' => __('All'),
         ];
         if ($get('department_name')) {
@@ -418,12 +418,8 @@ class TaskResource extends Resource
             return $manual_assignment->getSoldiers($get('department_name'));
         }
 
-        return Cache::remember('users', 30 * 60, function () {
-            return User::all();
-        })
-            ->mapWithKeys(function ($user) {
-                return [$user->userable_id => $user->displayName];
-            });
+        return Cache::remember('users', 30 * 60, fn () => User::all())
+            ->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName]);
     }
 
     protected static function taskDetails(Get $get)

@@ -39,13 +39,10 @@ class Task extends Model
 
     protected static function booted(): void
     {
-        static::deleting(function (Task $task) {
-            Shift::where('task_id', $task->id)
-                ->where('start_date', '>', now())
-                ->get()
-                ->map(function (Shift $shift) {
-                    $shift->delete();
-                });
-        });
+        static::deleting(fn (Task $task) => Shift::where('task_id', $task->id)
+            ->where('start_date', '>', now())
+            ->get()
+            ->map(fn (Shift $shift) => $shift->delete())
+        );
     }
 }

@@ -175,6 +175,7 @@ it('should refresh the fullcalendar', function () {
     livewire(CalendarWidget::class, [
         'model' => Shift::class,
         'type' => 'my_soldiers',
+        'fetchInfo' => ['start' => Carbon::yesterday(), 'end' => Carbon::now()->addDays(12), 'timezone' => 'Asia\/Jerusalem'],
     ])
         ->mountAction('Filters')
         ->callMountedAction(['Filter' => true])
@@ -198,6 +199,7 @@ it('should filter the calendar', function () {
             'task_color',
         ]),
         'type' => 'my_soldiers',
+        'fetchInfo' => ['start' => Carbon::yesterday(), 'end' => Carbon::now()->addDays(5), 'timezone' => 'Asia\/Jerusalem'],
     ])
         ->mountAction('Filters')
         ->setActionData(['soldier_id' => [$user->userable_id], 'type' => [$task2->type]])
@@ -224,6 +226,7 @@ it('should filter the unassigned shifts', function () {
             'task_color',
         ]),
         'type' => 'my_soldiers',
+        'fetchInfo' => ['start' => Carbon::yesterday(), 'end' => Carbon::now()->addDays(5), 'timezone' => 'Asia\/Jerusalem'],
     ])
         ->mountAction('Filters')
         ->callMountedAction(['Unassigned shifts' => true])

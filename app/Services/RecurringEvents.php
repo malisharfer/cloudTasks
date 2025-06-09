@@ -20,17 +20,11 @@ class RecurringEvents
         $this->month = $month ? Carbon::parse($month) : Carbon::now()->addMonth();
     }
 
-    public function setMonth($month)
-    {
-        $this->month = Carbon::parse($month);
-    }
-
     public function recurringTask(): void
     {
-        $tasks = Task::get();
-        $tasks->filter(function ($task) {
-            return $task->recurring['type'] !== 'Daily range' && $task->recurring['type'] !== 'One time';
-        })->map(fn ($task) => $this->switchTasks($task));
+        Task::whereNotIn('recurring->type', ['Daily range', 'One time'])
+            ->get()
+            ->each(fn ($task) => $this->switchTasks($task));
     }
 
     public function oneTimeTask(Task $task)
@@ -86,9 +80,7 @@ class RecurringEvents
     {
         $period = $this->createPeriod();
 
-        return collect($period)->map(function ($date) {
-            return $this->addTimeToDate($date);
-        })->all();
+        return collect($period)->map(fn ($date) => $this->addTimeToDate($date))->all();
     }
 
     protected function addTimeToDate($date)
@@ -117,9 +109,7 @@ class RecurringEvents
 
     protected function convertNumbersToDatesInMonth($dayNumbers)
     {
-        return collect($dayNumbers)->map(function ($day) {
-            return $this->addTimeToDate(Carbon::create($this->month->year, $this->month->month, $day));
-        })->all();
+        return collect($dayNumbers)->map(fn ($day) => $this->addTimeToDate(Carbon::create($this->month->year, $this->month->month, $day)))->all();
     }
 
     protected function createPeriod()

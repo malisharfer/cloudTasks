@@ -89,81 +89,36 @@ class NumberFilter extends Filter
                 ])
                 ->columns(1),
         ])
-            ->query(function (Builder $query, array $data) {
-                $allObjects = $query->getModel()::all();
-
-                return $query
-                    ->when(
-                        isset($data['range_equal']),
-                        function () use ($allObjects, $data, $query) {
-                            $filteredIds = $allObjects
-                                ->filter(fn ($object) => $object[$this->getName()] == $data['range_equal'])
-                                ->pluck('id');
-
-                            return $query->whereIn('id', $filteredIds);
-                        }
-                    )
-                    ->when(
-                        isset($data['range_not_equal']),
-                        function () use ($allObjects, $data, $query) {
-                            $filteredIds = $allObjects
-                                ->filter(fn ($object) => $object[$this->getName()] != $data['range_not_equal'])
-                                ->pluck('id');
-
-                            return $query->whereIn('id', $filteredIds);
-                        }
-                    )
-                    ->when(
-                        isset($data['range_between_from']) && isset($data['range_between_to']),
-                        function () use ($allObjects, $data, $query) {
-                            $filteredIds = $allObjects
-                                ->filter(fn ($object) => $object[$this->getName()] >= $data['range_between_from'] && $object[$this->getName()] <= $data['range_between_to'])
-                                ->pluck('id');
-
-                            return $query->whereIn('id', $filteredIds);
-                        }
-                    )
-                    ->when(
-                        isset($data['range_greater_than']),
-                        function () use ($allObjects, $data, $query) {
-                            $filteredIds = $allObjects
-                                ->filter(fn ($object) => $object[$this->getName()] > $data['range_greater_than'])
-                                ->pluck('id');
-
-                            return $query->whereIn('id', $filteredIds);
-                        }
-                    )
-                    ->when(
-                        isset($data['range_greater_than_equal']),
-                        function () use ($allObjects, $data, $query) {
-                            $filteredIds = $allObjects
-                                ->filter(fn ($object) => $object[$this->getName()] >= $data['range_greater_than_equal'])
-                                ->pluck('id');
-
-                            return $query->whereIn('id', $filteredIds);
-                        }
-                    )
-                    ->when(
-                        isset($data['range_less_than']),
-                        function () use ($allObjects, $data, $query) {
-                            $filteredIds = $allObjects
-                                ->filter(fn ($object) => $object[$this->getName()] < $data['range_less_than'])
-                                ->pluck('id');
-
-                            return $query->whereIn('id', $filteredIds);
-                        }
-                    )
-                    ->when(
-                        isset($data['range_less_than_equal']),
-                        function () use ($allObjects, $data, $query) {
-                            $filteredIds = $allObjects
-                                ->filter(fn ($object) => $object[$this->getName()] <= $data['range_less_than_equal'])
-                                ->pluck('id');
-
-                            return $query->whereIn('id', $filteredIds);
-                        }
-                    );
-            })
+            ->query(fn (Builder $query, array $data) => $query
+                ->when(
+                    isset($data['range_equal']),
+                    fn ($q) => $q->where($this->getName(), $data['range_equal'])
+                )
+                ->when(
+                    isset($data['range_not_equal']),
+                    fn ($q) => $q->where($this->getName(), '!=', $data['range_not_equal'])
+                )
+                ->when(
+                    isset($data['range_between_from']) && isset($data['range_between_to']),
+                    fn ($q) => $q->whereBetween($this->getName(), [$data['range_between_from'], $data['range_between_to']])
+                )
+                ->when(
+                    isset($data['range_greater_than']),
+                    fn ($q) => $q->where($this->getName(), '>', $data['range_greater_than'])
+                )
+                ->when(
+                    isset($data['range_greater_than_equal']),
+                    fn ($q) => $q->where($this->getName(), '>=', $data['range_greater_than_equal'])
+                )
+                ->when(
+                    isset($data['range_less_than']),
+                    fn ($q) => $q->where($this->getName(), '<', $data['range_less_than'])
+                )
+                ->when(
+                    isset($data['range_less_than_equal']),
+                    fn ($q) => $q->where($this->getName(), '<=', $data['range_less_than_equal'])
+                )
+            )
             ->indicateUsing(function (array $data): array {
                 $indicators = [];
 

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ConstraintType;
 use App\Enums\Priority;
 use App\Enums\TaskKind;
 use App\Models\Constraint;
@@ -66,7 +67,7 @@ class Helpers
                 fn (Constraint $constraint): ConstraintService => new ConstraintService(
                     $constraint->start_date,
                     $constraint->end_date,
-                    $constraint->constraint_type->getPriority() == 1 ? Priority::HIGH : Priority::LOW
+                    ConstraintType::getPriority()[$constraint->constraint_type->value] == 1 ? Priority::HIGH : Priority::LOW
                 )
             );
     }
@@ -80,9 +81,7 @@ class Helpers
         $alerts = 0;
         $inParallel = 0;
         collect($shifts)
-            ->filter(function (ShiftService $shift) {
-                return $shift->id != 0;
-            })
+            ->filter(fn (ShiftService $shift) => $shift->id != 0)
             ->each(function (ShiftService $shift) use (&$count, &$points, &$nights, &$weekends, &$alerts, &$inParallel) {
                 $count++;
                 $points += $shift->points;
@@ -120,15 +119,20 @@ class Helpers
 
     public static function getSoldiersShifts($soldierId, $newRange, $inParallel)
     {
-        return Shift::where('soldier_id', $soldierId)
+        Shift::with('task')
+            ->where('soldier_id', $soldierId)
+            ->whereHas('task', function ($query) use ($inParallel) {
+                $query->withTrashed()
+                    ->when($inParallel, fn ($query) => $query->where('kind', TaskKind::INPARALLEL->value))
+                    ->when(! $inParallel, fn ($query) => $query->where('kind', '!=', TaskKind::INPARALLEL->value));
+            })
+            ->where(function ($query) use ($newRange) {
+                $query->where(function ($subQuery) use ($newRange) {
+                    $subQuery->where('start_date', '<', $newRange->end)
+                        ->where('end_date', '>', $newRange->start);
+                });
+            })
             ->get()
-            ->filter(
-                function (Shift $shift) use ($newRange, $inParallel): bool {
-                    $range = new Range($shift->start_date, $shift->end_date);
-
-                    return $range->isSameMonth($newRange) && ($shift->task()->withTrashed()->first()->kind === TaskKind::INPARALLEL->value) === $inParallel;
-                }
-            )
             ->map(fn (Shift $shift): ShiftService => self::buildShift($shift));
     }
 

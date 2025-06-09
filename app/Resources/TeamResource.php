@@ -55,9 +55,7 @@ class TeamResource extends Resource
                         ->label(__('Commander'))
                         ->relationship('commander')
                         ->options(
-                            fn () => Cache::remember('users', 30 * 60, function () {
-                                return User::all();
-                            })->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
+                            fn () => Cache::remember('users', 30 * 60, fn () => User::all())->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
                         )
                         ->live()
                         ->afterStateUpdated(function ($state, Get $get, Set $set) {
@@ -68,45 +66,41 @@ class TeamResource extends Resource
                         ->optionsLimit(Soldier::count())
                         ->placeholder(__('Select commander'))
                         ->searchable()
-                        ->getSearchResultsUsing(fn ($search) => User::all()
-                            ->filter(fn ($user) => str_contains($user->displayName, $search))
+                        ->getSearchResultsUsing(fn ($search) => User::whereRaw("first_name || ' ' || last_name LIKE ?", "%{$search}%")
+                            ->get()
                             ->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
                             ->toArray())
                         ->required(),
                     Select::make('department_id')
                         ->label(__('Department'))
                         ->relationship('department')
-                        ->options(Department::all()->pluck('name', 'id') ?? [])
+                        ->options(Department::select('id', 'name')->distinct()->orderBy('name')->pluck('name', 'id')->toArray())
                         ->searchable()
-                        ->getSearchResultsUsing(fn ($search) => Department::all()
-                            ->filter(fn (Department $department): bool => str_contains($department->name, $search))
-                            ->mapWithKeys(fn (Department $department): array => [$department->id => $department->name])
+                        ->getSearchResultsUsing(fn ($search) => Department::where('name', 'like', "%{$search}%")
+                            ->orderBy('name')
+                            ->pluck('name', 'id')
                             ->toArray())
                         ->default(request()->input('department_id'))
                         ->required(),
                     Select::make('members')
                         ->label(__('Members'))
                         ->options(
-                            fn (Get $get) => Cache::remember('users', 30 * 60, function () {
-                                return User::all();
-                            })
+                            fn (Get $get) => Cache::remember('users', 30 * 60, fn () => User::all())
                                 ->filter(function ($user) use ($get): bool {
                                     return $user->userable_id !== (int) $get('commander_id');
                                 })
                                 ->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
                         )
-                        ->formatStateUsing(function (?Team $team, string $operation) {
-                            return $operation === 'edit' ?
-                                collect($team->members)->map(fn (Soldier $soldier) => $soldier->id) :
-                                null;
-                        })
+                        ->formatStateUsing(fn (?Team $team, string $operation) => $operation === 'edit' ?
+                            collect($team->members)->map(fn (Soldier $soldier) => $soldier->id) :
+                            null)
                         ->live()
                         ->optionsLimit(Soldier::count())
                         ->placeholder(__('Add a team member'))
                         ->multiple()
                         ->searchable()
-                        ->getSearchResultsUsing(fn ($search) => User::all()
-                            ->filter(fn ($user) => str_contains($user->displayName, $search))
+                        ->getSearchResultsUsing(fn ($search) => User::whereRaw("first_name || ' ' || last_name LIKE ?", "%{$search}%")
+                            ->get()
                             ->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
                             ->toArray()),
                 ])->columns(2),
@@ -162,19 +156,13 @@ class TeamResource extends Resource
                             Select::make('members')
                                 ->label(__('Members'))
                                 ->options(
-                                    fn (Team $record) => Cache::remember('users', 30 * 60, function () {
-                                        return User::all();
-                                    })
+                                    fn (Team $record) => Cache::remember('users', 30 * 60, fn () => User::all())
                                         ->filter(function ($user) use ($record) {
                                             return $record->commander_id !== $user->userable_id;
                                         })
-                                        ->mapWithKeys(function ($user) {
-                                            return [$user->userable_id => $user->displayName];
-                                        })
+                                        ->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
                                 )
-                                ->formatStateUsing(function (Team $record) {
-                                    return collect($record->members)->map(fn (Soldier $soldier) => $soldier->id);
-                                })
+                                ->formatStateUsing(fn (Team $record) => collect($record->members)->map(fn (Soldier $soldier) => $soldier->id))
                                 ->optionsLimit(Soldier::count())
                                 ->multiple()
                                 ->searchable(),

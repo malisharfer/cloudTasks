@@ -6,7 +6,6 @@ use App\Models\Shift;
 use App\Models\Soldier;
 use App\Models\Task;
 use App\Resources\ProfileResource\Pages;
-use Carbon\Carbon;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Section;
@@ -56,7 +55,11 @@ class ProfileResource extends Resource
                             Select::make('qualifications')
                                 ->label(__('Qualifications'))
                                 ->placeholder(__('Select qualifications'))
-                                ->options(Task::all()->pluck('type', 'type')->sort()->unique()->all()),
+                                ->options(Task::select('type')
+                                    ->distinct()
+                                    ->orderBy('type')
+                                    ->pluck('type', 'type')
+                                    ->all()),
                             TextInput::make('capacity')
                                 ->numeric()
                                 ->step(0.25)
@@ -76,6 +79,10 @@ class ProfileResource extends Resource
                                 ->step(1)
                                 ->minValue(0)
                                 ->required()
+                                ->lte('max_shifts')
+                                ->validationMessages([
+                                    'lte' => __('The field cannot be greater than max_shifts field'),
+                                ])
                                 ->default(0),
                             TextInput::make('max_weekends')
                                 ->label(__('Max weekends'))
@@ -83,6 +90,10 @@ class ProfileResource extends Resource
                                 ->step(0.25)
                                 ->minValue(0)
                                 ->required()
+                                ->lte('capacity')
+                                ->validationMessages([
+                                    'lte' => __('The field cannot be greater than capacity field'),
+                                ])
                                 ->default(0),
                             TextInput::make('max_alerts')
                                 ->label(__('Max alerts'))
@@ -125,9 +136,8 @@ class ProfileResource extends Resource
                     Stack::make([
                         TextColumn::make('user.first_name')
                             ->label(__('Full name'))
-                            ->formatStateUsing(function ($record) {
-                                return $record->user->last_name.' '.$record->user->first_name;
-                            })->weight(FontWeight::SemiBold)->description(__('Full name'), 'above')->size(TextColumnSize::Large),
+                            ->formatStateUsing(fn ($record) => $record->user->last_name.' '.$record->user->first_name
+                            )->weight(FontWeight::SemiBold)->description(__('Full name'), 'above')->size(TextColumnSize::Large),
                         TextColumn::make('enlist_date')->weight(FontWeight::SemiBold)->description(__('Enlist date'), 'above')->size(TextColumnSize::Large)->date(),
                         TextColumn::make('course')->weight(FontWeight::SemiBold)->description(__('Course'), 'above')->size(TextColumnSize::Large),
                         TextColumn::make('max_shifts')->weight(FontWeight::SemiBold)->description(__('Max shifts'), 'above')->size(TextColumnSize::Large),
@@ -141,14 +151,22 @@ class ProfileResource extends Resource
                         TextColumn::make('capacity')->weight(FontWeight::SemiBold)->description(__('Capacity'), 'above')->size(TextColumnSize::Large),
                         TextColumn::make('capacity_hold')
                             ->default(function () {
-                                $soldierShifts = Shift::where('soldier_id', auth()->user()->userable_id)->get();
+                                $now = now();
 
-                                return $soldierShifts->filter(function (Shift $shift): bool {
-                                    return (Carbon::parse($shift->start_date)->month == now()->month
-                                    && Carbon::parse($shift->start_date)->year == now()->year)
-                                    || (Carbon::parse($shift->end_date)->month == now()->month
-                                && Carbon::parse($shift->end_date)->year == now()->year);
-                                })->sum(fn (Shift $shift) => $shift->parallel_weight === null ? $shift->task()->withTrashed()->first()->parallel_weight : $shift->parallel_weight);
+                                return Shift::where('soldier_id', auth()->user()->userable_id)
+                                    ->where(function ($query) use ($now) {
+                                        $query->whereYear('start_date', $now->year)
+                                            ->whereMonth('start_date', $now->month)
+                                            ->orWhere(function ($query) use ($now) {
+                                                $query->whereYear('end_date', $now->year)
+                                                    ->whereMonth('end_date', $now->month);
+                                            });
+                                    })
+                                    ->with(['task' => function ($query) {
+                                        $query->withTrashed();
+                                    }])
+                                    ->get()
+                                    ->sum(fn (Shift $shift) => $shift->parallel_weight ?? $shift->task->parallel_weight);
                             })
                             ->weight(FontWeight::SemiBold)
                             ->description(__('Capacity hold'), 'above')

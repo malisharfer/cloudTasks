@@ -35,9 +35,7 @@ class ManualAssignment
 
     protected function initSoldiersData($departmentName)
     {
-        $this->soldiers = Cache::remember('users', 30 * 60, function () {
-            return User::all();
-        });
+        $this->soldiers = Cache::remember('users', 30 * 60, fn () => User::all());
         match ($this->soldierType) {
             'reserves' => $this->filterReserves(),
             'my_soldiers' => $this->filterMySoldiers(),

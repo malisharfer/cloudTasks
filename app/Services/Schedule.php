@@ -80,21 +80,13 @@ class Schedule
             ->sum(fn (Shift $shift) => $shift->points);
         $requiredShifts = count($shifts);
 
-        $availablePoints = collect($soldiers)->sum(function (Soldier $soldier) {
-            return $soldier->pointsMaxData->remaining();
-        });
+        $availablePoints = collect($soldiers)->sum(fn (Soldier $soldier) => $soldier->pointsMaxData->remaining());
 
-        $availableNights = collect($soldiers)->sum(function (Soldier $soldier) {
-            return $soldier->nightsMaxData->remaining();
-        });
+        $availableNights = collect($soldiers)->sum(fn (Soldier $soldier) => $soldier->nightsMaxData->remaining());
 
-        $availableWeekends = collect($soldiers)->sum(function (Soldier $soldier) {
-            return $soldier->weekendsMaxData->remaining();
-        });
+        $availableWeekends = collect($soldiers)->sum(fn (Soldier $soldier) => $soldier->weekendsMaxData->remaining());
 
-        $availableShifts = collect($soldiers)->sum(function (Soldier $soldier) {
-            return $soldier->shiftsMaxData->remaining();
-        });
+        $availableShifts = collect($soldiers)->sum(fn (Soldier $soldier) => $soldier->shiftsMaxData->remaining());
 
         $weight = collect([
             'POINTS_RATIO' => $this->getRatio($requiredPoints, $availablePoints),
@@ -260,9 +252,7 @@ class Schedule
 
     protected function getSortedPotentialSoldiers($soldiers)
     {
-        $sortedSoldiers = $soldiers->sortBy(function ($item) {
-            return $item[1];
-        });
+        $sortedSoldiers = $soldiers->sortBy(fn ($item) => $item[1]);
 
         return $sortedSoldiers->map(fn ($soldier) => $soldier[0]);
     }

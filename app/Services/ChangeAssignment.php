@@ -43,23 +43,20 @@ class ChangeAssignment
 
                 return Helpers::buildSoldier($soldier, $constraints, $soldierShifts, [], $concurrentsShifts);
             })
-            ->filter(function (SoldierService $soldier) {
-                return $soldier->isQualified($this->shift->taskType)
-                    && $soldier->isAvailableBySpaces($this->shift->getShiftSpaces($soldier->shifts))
-                    && ! $this->isConflictWithConstraints($soldier, $this->shift->range)
-                    && $soldier->isAvailableByShifts($this->shift);
-            })
-            ->mapWithKeys(function (SoldierService $soldier) {
-                return ! $soldier->isAvailableByConcurrentsShifts($this->shift) ?
-                    [$soldier->id => Soldier::find($soldier->id)->user->displayName.' 📌']
-                    : [$soldier->id => Soldier::find($soldier->id)->user->displayName];
-            })
+            ->filter(fn (SoldierService $soldier) => $soldier->isQualified($this->shift->taskType)
+                && $soldier->isAvailableBySpaces($this->shift->getShiftSpaces($soldier->shifts))
+                && ! $this->isConflictWithConstraints($soldier, $this->shift->range)
+                && $soldier->isAvailableByShifts($this->shift))
+            ->mapWithKeys(fn (SoldierService $soldier) => ! $soldier->isAvailableByConcurrentsShifts($this->shift) ?
+                [$soldier->id => Soldier::find($soldier->id)->user->displayName.' 📌']
+                : [$soldier->id => Soldier::find($soldier->id)->user->displayName])
             ->toArray();
     }
 
     public function getMatchingShifts()
     {
-        return Shift::whereNotNull('soldier_id')
+        Shift::with('task')
+            ->whereNotNull('soldier_id')
             ->where('soldier_id', '!=', $this->soldier->id)
             ->get()
             ->filter(function (Shift $shift) {
