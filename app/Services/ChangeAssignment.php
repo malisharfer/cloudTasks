@@ -55,7 +55,7 @@ class ChangeAssignment
 
     public function getMatchingShifts()
     {
-        Shift::with('task')
+        return Shift::with('task')
             ->whereNotNull('soldier_id')
             ->where('soldier_id', '!=', $this->soldier->id)
             ->get()
