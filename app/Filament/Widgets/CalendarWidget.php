@@ -105,6 +105,7 @@ class CalendarWidget extends FullCalendarWidget
     {
         $current_user_id = auth()->user()->userable_id;
         $role = current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']));
+
         $query = $this->model::with(['task', 'soldier']);
         // $query = $this->model::query();
         $query = match ($role) {

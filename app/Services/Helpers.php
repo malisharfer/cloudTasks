@@ -119,7 +119,7 @@ class Helpers
 
     public static function getSoldiersShifts($soldierId, $newRange, $inParallel)
     {
-        Shift::with('task')
+        return Shift::with('task')
             ->where('soldier_id', $soldierId)
             ->whereHas('task', function ($query) use ($inParallel) {
                 $query->withTrashed()

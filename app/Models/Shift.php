@@ -48,11 +48,12 @@ class Shift extends Model
     {
         return $this->belongsTo(Task::class);
     }
-    
+
     public function soldier()
     {
         return $this->belongsTo(Soldier::class);
     }
+
     private function getTaskParallelWeight()
     {
         return $this->task?->parallel_weight;
@@ -150,9 +151,9 @@ class Shift extends Model
         $manual_assignment = new ManualAssignment($shift, $soldierType);
 
         return
-         ! $manual_assignment->getSoldiers() ?
-              __('No suitable soldiers') :
-          __('Select a soldier');
+            ! $manual_assignment->getSoldiers() ?
+            __('No suitable soldiers') :
+            __('Select a soldier');
     }
 
     public static function afterSave($shift, $record)
@@ -267,7 +268,7 @@ class Shift extends Model
                 session()->put('selected_shift', false);
                 if ($arguments['exchange'] ?? false) {
                     collect($arguments['role'])->contains('shifts-assignment')
-                    || collect($arguments['role'])->contains('manager') ?
+                        || collect($arguments['role'])->contains('manager') ?
                         self::shiftsAssignmentExchange($record, Shift::find($data['selected_shift'])) :
                         self::commanderExchange($record, Shift::find($data['selected_shift']));
                     $livewire->dispatch('filament-fullcalendar--refresh');
@@ -280,13 +281,14 @@ class Shift extends Model
                     $livewire->dispatch('filament-fullcalendar--refresh');
                 }
             });
-            // ->hidden(function ($record) {
-            //     if ($record->soldier_id) {
-            //         $changeAssignment = new ChangeAssignment($record);
+        // ->hidden(function ($record) {
+        //     if ($record->soldier_id) {
+        //         $changeAssignment = new ChangeAssignment($record);
+        //         // \Log::info('in hidden in getMatchingShifts');
 
-            //         return $changeAssignment->getMatchingShifts()->isEmpty();
-            //     }
-            // });
+        //         return $changeAssignment->getMatchingShifts()->isEmpty();
+        //     }
+        // })
     }
 
     protected static function description($soldierId, $shift)
@@ -309,8 +311,8 @@ class Shift extends Model
         $shift = Helpers::buildShift($shift);
 
         return $soldier->isAvailableByConcurrentsShifts($shift) ?
-        __('Task').': '.Shift::find($shift->id)->task()->withTrashed()->first()->name.'. '.__('Time').': '.__('From').' '.$shift->range->start.' '.__('To').' '.$shift->range->end :
-        '📌 '.__('Task').': '.Shift::find($shift->id)->task()->withTrashed()->first()->name.'. '.__('Time').': '.__('From').' '.$shift->range->start.' '.__('To').' '.$shift->range->end;
+            __('Task').': '.Shift::find($shift->id)->task()->withTrashed()->first()->name.'. '.__('Time').': '.__('From').' '.$shift->range->start.' '.__('To').' '.$shift->range->end :
+            '📌 '.__('Task').': '.Shift::find($shift->id)->task()->withTrashed()->first()->name.'. '.__('Time').': '.__('From').' '.$shift->range->start.' '.__('To').' '.$shift->range->end;
     }
 
     protected static function shiftsAssignmentExchange($record, $shift)
@@ -581,7 +583,7 @@ class Shift extends Model
                 session()->put('selected_soldier', false);
                 if ($arguments['change'] ?? false) {
                     collect($arguments['role'])->contains('shifts-assignment')
-                    || collect($arguments['role'])->contains('manager') ?
+                        || collect($arguments['role'])->contains('manager') ?
                         self::shiftsAssignmentChange($record, $data['soldier']) :
                         self::commanderChange($record, $data['soldier']);
 
@@ -758,7 +760,9 @@ class Shift extends Model
 
     protected static function getShiftsAssignments()
     {
-        return User::whereHas('roles', fn ($query) => $query->where('name', 'shifts-assignment')
+        return User::whereHas(
+            'roles',
+            fn ($query) => $query->where('name', 'shifts-assignment')
         )->get();
     }
 
