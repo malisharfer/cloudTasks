@@ -65,10 +65,10 @@ class Algorithm
 
     public function run()
     {
-        $shifts = $this->getShiftWithTasks();
-        $soldiers = $this->getSoldiersDetails();
-        $scheduleAlgorithm = new Schedule($shifts, $soldiers);
-        $scheduleAlgorithm->schedule();
+        // $shifts = $this->getShiftWithTasks();
+        // $soldiers = $this->getSoldiersDetails();
+        // $scheduleAlgorithm = new Schedule($shifts, $soldiers);
+        // $scheduleAlgorithm->schedule();
         $concurrentTasks = new ConcurrentTasks($this->date);
         $concurrentTasks->run();
     }
