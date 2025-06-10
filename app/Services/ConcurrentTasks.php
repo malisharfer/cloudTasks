@@ -50,8 +50,8 @@ class ConcurrentTasks
             })
             ->where(function ($query) use ($startOfMonth, $endOfMonth) {
                 $query->where(function ($subQuery) use ($startOfMonth, $endOfMonth) {
-                    $subQuery->where('start_date', '<', $endOfMonth)
-                        ->where('end_date', '>', $startOfMonth);
+                    $subQuery->where('start_date', '<=', $endOfMonth)
+                        ->where('end_date', '>=', $startOfMonth);
                 });
             })
             ->get()
@@ -83,8 +83,7 @@ class ConcurrentTasks
     protected function initShiftsData(): void
     {
         $groupedShifts = collect($this->shifts)->groupBy('taskType');
-        $groupedShifts->each(fn ($shifts, $taskType) => $this->addShiftsDataByTask($taskType, collect($shifts))
-        );
+        $groupedShifts->each(fn ($shifts, $taskType) => $this->addShiftsDataByTask($taskType, collect($shifts)));
     }
 
     protected function addShiftsDataByTask(string $taskType, $shifts): void
@@ -100,8 +99,8 @@ class ConcurrentTasks
         $potentialSoldiers = $this->getPotentialSoldiers($soldiers, $shift);
         $shiftData = new ShiftData(
             $shift,
-            $potentialSoldiers,
-            0
+            0,
+            $potentialSoldiers
         );
         $this->shiftsData->push($shiftData);
     }
@@ -113,17 +112,10 @@ class ConcurrentTasks
                 return $soldier->isAvailableByConstraints($shift->range) === Availability::YES
                     && $soldier->isAvailableByConcurrentsShifts($shift)
                     && $soldier->inParallelMaxData->remaining() > 0
-                    && $this->isAvailableByShiftsAndSpaces($soldier->shifts, $shift);
+                    && $soldier->isAvailableByShifts($shift);
             });
 
-        return $potentialSoldiers;
-    }
-
-    protected function isAvailableByShiftsAndSpaces($soldierShifts, ShiftService $shift): bool
-    {
-        return ! $soldierShifts->contains(function (ShiftService $soldierShift) use ($shift): bool {
-            return $soldierShift->range->isConflict($shift->range) && ! collect($shift->inParalelTasks)->contains($soldierShift->taskType);
-        });
+        return collect($potentialSoldiers)->shuffle();
     }
 
     protected function assignShifts()
@@ -144,10 +136,10 @@ class ConcurrentTasks
 
     protected function tryAssignShift(SoldierService $soldier, ShiftService $shift)
     {
-        if ($soldier->isAvailableByConcurrentsShifts($shift)) {
+        if ($soldier->isAvailableByConcurrentsShifts($shift) && $soldier->inParallelMaxData->remaining() > 0) {
             $soldier->concurrentsShifts->push($shift);
-            $this->assignments->push(new Assignment($shift->id, $soldier->id));
             $soldier->inParallelMaxData->used++;
+            $this->assignments->push(new Assignment($shift->id, $soldier->id));
 
             return true;
         }

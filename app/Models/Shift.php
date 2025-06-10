@@ -6,9 +6,7 @@ use App\Casts\Integer;
 use App\Enums\TaskKind;
 use App\Filament\Notifications\MyNotification;
 use App\Services\ChangeAssignment;
-use App\Services\Helpers;
 use App\Services\ManualAssignment;
-use App\Services\Range;
 use Cache;
 use Carbon\Carbon;
 use Filament\Actions\Action;
@@ -206,30 +204,33 @@ class Shift extends Model
             ->form(
                 function ($record) {
                     session()->put('selected_shift', false);
+
                     $changeAssignment = new ChangeAssignment($record);
-                    $sections = $changeAssignment->getMatchingShifts()
+                    $data = $changeAssignment->getMatchingShifts();
+                    $sections = collect($data['shifts'])
+                        ->groupBy(fn ($data) => $data['shift']->soldier_id)
                         ->map(
-                            function ($shifts, $soldierId) use ($record) {
+                            function ($shifts, $soldierId) use ($data) {
+
                                 return Section::make()
                                     ->id($soldierId)
-                                    ->description(self::description($soldierId, $record))
+                                    ->description(self::description($soldierId, collect($data['soldiersWithConcurrents'])->contains($soldierId)))
                                     ->schema(
-                                        $shifts->map(
-                                            function (Shift $shift) use ($record) {
-                                                return Section::make()
-                                                    ->id($shift->id)
-                                                    ->schema([
-                                                        Radio::make('selected_shift')
-                                                            ->label(__(''))
-                                                            ->options([
-                                                                $shift->id => self::getOption($shift, $record),
-                                                            ])
-                                                            ->default(null)
-                                                            ->afterStateUpdated(fn () => session()->put('selected_shift', true))
-                                                            ->live()
-                                                            ->reactive(),
-                                                    ]);
-                                            }
+                                        collect($shifts)->map(
+                                            fn ($shift) => Section::make()
+                                                ->id($shift['shift']->id)
+                                                ->schema([
+                                                    Radio::make('selected_shift')
+                                                        ->label(__(''))
+                                                        ->options([
+                                                            $shift['shift']->id => self::getOption($shift['shift'], $shift['hasConcurrentsShifts']),
+                                                        ])
+                                                        ->default(null)
+                                                        ->afterStateUpdated(fn () => session()->put('selected_shift', true))
+                                                        ->live()
+                                                        ->reactive(),
+                                                ])
+
                                         )
                                             ->toArray()
                                     )
@@ -291,28 +292,19 @@ class Shift extends Model
         // })
     }
 
-    protected static function description($soldierId, $shift)
+    protected static function description($soldierId, $hasConcurrent)
     {
-        $soldier = Soldier::find($soldierId);
-        $concurrentsShifts = Helpers::getSoldiersShifts($soldierId, new Range($shift->start_date->copy()->startOfMonth(), $shift->end_date->copy()->endOfMonth()), true);
-        $soldier = Helpers::buildSoldier($soldier, [], [], [], $concurrentsShifts);
-        $shift = Helpers::buildShift($shift);
-
-        return $soldier->isAvailableByConcurrentsShifts($shift) ?
-            __('Exchange with').' '.Soldier::find($soldierId)->user->displayName :
-            __('Exchange with').' '.Soldier::find($soldierId)->user->displayName.' ('.__('The soldier is assigned a shift during the task').')';
+        return $hasConcurrent ?
+        __('Exchange with').' '.Soldier::find($soldierId)->user->displayName.' ('.__('The soldier is assigned a shift during the task').')' :
+            __('Exchange with').' '.Soldier::find($soldierId)->user->displayName;
     }
 
-    protected static function getOption($shift, $record)
+    protected static function getOption($shift, $hasConcurrent)
     {
-        $soldier = Soldier::find($record->soldier_id);
-        $concurrentsShifts = Helpers::getSoldiersShifts($soldier->id, new Range($record->start_date->copy()->startOfMonth(), $record->end_date->copy()->endOfMonth()), true);
-        $soldier = Helpers::buildSoldier($soldier, [], [], [], $concurrentsShifts);
-        $shift = Helpers::buildShift($shift);
 
-        return $soldier->isAvailableByConcurrentsShifts($shift) ?
-            __('Task').': '.Shift::find($shift->id)->task()->withTrashed()->first()->name.'. '.__('Time').': '.__('From').' '.$shift->range->start.' '.__('To').' '.$shift->range->end :
-            '📌 '.__('Task').': '.Shift::find($shift->id)->task()->withTrashed()->first()->name.'. '.__('Time').': '.__('From').' '.$shift->range->start.' '.__('To').' '.$shift->range->end;
+        return $hasConcurrent ?
+        '📌 '.__('Task').': '.Shift::find($shift->id)->task()->withTrashed()->first()->name.'. '.__('Time').': '.__('From').' '.$shift->start_date.' '.__('To').' '.$shift->end_date :
+        __('Task').': '.Shift::find($shift->id)->task()->withTrashed()->first()->name.'. '.__('Time').': '.__('From').' '.$shift->start_date.' '.__('To').' '.$shift->end_date;
     }
 
     protected static function shiftsAssignmentExchange($record, $shift)

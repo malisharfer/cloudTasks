@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\Availability;
 use App\Models\Department;
 use App\Models\Shift;
 use App\Models\Soldier;
@@ -130,13 +129,12 @@ class ManualAssignment
 
         $capacityHold = Helpers::capacityHold($myShifts);
 
-        $soldier = Helpers::buildSoldier($me, $constraints, $myShifts, $capacityHold);
+        $concurrentsShifts = $this->getSoldiersShifts($me->id, true);
 
-        return $soldier->isQualified($this->shift->taskType)
-            && $soldier->isAvailableByMaxes($this->shift)
-            && $soldier->isAvailableByConstraints($this->shift->range) != Availability::NO
-            && $soldier->isAvailableByShifts($this->shift)
-            && $soldier->isAvailableBySpaces($this->shift->getShiftSpaces($soldier->shifts));
+        $soldier = Helpers::buildSoldier($me, $constraints, $myShifts, $capacityHold, $concurrentsShifts);
+
+        return $soldier->isAbleTake($this->shift, true)
+            && $soldier->isAvailableByConcurrentsShifts($this->shift);
     }
 
     protected function getConstraints(Soldier $soldier)
@@ -151,13 +149,7 @@ class ManualAssignment
 
     protected function getAvailableSoldiers()
     {
-        $availableSoldiers = $this->soldiers->filter(
-            fn (SoldierService $soldier) => $soldier->isQualified($this->shift->taskType)
-            && $soldier->isAvailableByMaxes($this->shift)
-            && $soldier->isAvailableByConstraints($this->shift->range) != Availability::NO
-            && $soldier->isAvailableByShifts($this->shift)
-            && $soldier->isAvailableBySpaces($this->shift->getShiftSpaces($soldier->shifts))
-        );
+        $availableSoldiers = $this->soldiers->filter(fn (SoldierService $soldier) => $soldier->isAbleTake($this->shift, true));
 
         $soldiersWithConcurrentsShifts = collect([]);
         $availableSoldiers->map(function (SoldierService $soldier) use ($soldiersWithConcurrentsShifts) {

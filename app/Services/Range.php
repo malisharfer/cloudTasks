@@ -42,7 +42,7 @@ class Range
         $endDayIndex = $this->end->dayOfWeek;
         $checkDayIndex = date('N', strtotime($dayInWeek->value));
         if ($startDayIndex <= $endDayIndex) {
-            return $this->start->diffInDays($this->end) > 5 || ($checkDayIndex >= $startDayIndex && $checkDayIndex <= $endDayIndex);
+            return $this->start->copy()->diffInDays($this->end->copy()) > 5 || ($checkDayIndex >= $startDayIndex && $checkDayIndex <= $endDayIndex);
         }
 
         return $checkDayIndex >= $startDayIndex || $checkDayIndex <= $endDayIndex;
@@ -50,7 +50,7 @@ class Range
 
     public function getDayAfterWeekend(): Range
     {
-        $nextDayAfterWeekend = $this->end->next(DaysInWeek::SUNDAY->value)->setTime(8, 0);
+        $nextDayAfterWeekend = $this->end->englishDayOfWeek == DaysInWeek::SUNDAY->value ? $this->end->copy() : $this->end->copy()->next(DaysInWeek::SUNDAY->value)->setTime(8, 0);
 
         return new Range($nextDayAfterWeekend, $nextDayAfterWeekend->copy()->addDay());
     }
@@ -62,11 +62,11 @@ class Range
 
     public function getDayBeforeNight(): Range
     {
-        return new Range($this->start->copy()->subHours(12), $this->start);
+        return new Range($this->start->copy()->subHours(12), $this->start->copy());
     }
 
     public function getDayAfterNight(): Range
     {
-        return new Range($this->end, $this->end->copy()->addHours(12));
+        return new Range($this->end->copy(), $this->end->copy()->addHours(12));
     }
 }

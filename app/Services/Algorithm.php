@@ -29,8 +29,8 @@ class Algorithm
             })
             ->where(function ($query) use ($startOfMonth, $endOfMonth) {
                 $query->where(function ($subQuery) use ($startOfMonth, $endOfMonth) {
-                    $subQuery->where('start_date', '<', $endOfMonth)
-                        ->where('end_date', '>', $startOfMonth);
+                    $subQuery->where('start_date', '<=', $endOfMonth)
+                        ->where('end_date', '>=', $startOfMonth);
                 });
             })
             ->get()
@@ -41,6 +41,7 @@ class Algorithm
     {
         return Soldier::with('constraints')
             ->where('is_reservist', false)
+            ->whereJsonLength('qualifications', '>', 0)
             ->get()
             ->map(function (Soldier $soldier) {
                 $constraints = Helpers::buildConstraints($soldier->constraints, new Range($this->date->copy()->startOfMonth(), $this->date->copy()->endOfMonth()));
@@ -53,8 +54,8 @@ class Algorithm
 
                 return Helpers::buildSoldier($soldier, $constraints, $shifts, $capacityHold);
             })
-            ->shuffle()
-            ->toArray();
+            ->filter(fn ($soldier) => $soldier->hasMaxes())
+            ->shuffle();
     }
 
     protected function getSoldiersShifts($soldierId, $inParallel)

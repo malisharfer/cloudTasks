@@ -9,6 +9,8 @@ class Shift
 {
     public $id;
 
+    public $taskId;
+
     public $taskType;
 
     public $range;
@@ -17,16 +19,28 @@ class Shift
 
     public $kind;
 
+    public $isAssigned;
+
     public $inParalelTasks;
 
-    public function __construct($id, string $taskType, $start, $end, float $points, $kind, $inParalelTasks = [])
+    public $isAttached;
+
+    public function __construct($id, int $taskId, string $taskType, $start, $end, float $points, $kind, $inParalelTasks = [])
     {
         $this->id = $id;
+        $this->taskId = $taskId;
         $this->taskType = $taskType;
         $this->range = new Range($start, $end);
         $this->points = $points;
         $this->kind = $kind;
+        $this->isAssigned = false;
         $this->inParalelTasks = $inParalelTasks;
+        $this->isAttached = false;
+    }
+
+    public function isAssigned(): bool
+    {
+        return $this->isAssigned;
     }
 
     public function getShiftSpaces($shifts)
@@ -67,7 +81,7 @@ class Shift
 
     protected function isAttached($shifts, $range, DaysInWeek $dayInWeek): bool
     {
-        $expectedDate = $dayInWeek == DaysInWeek::FRIDAY ? $range->start->subDay()->startOfDay() : $range->end->addDay()->startOfDay();
+        $expectedDate = $dayInWeek == DaysInWeek::FRIDAY ? $range->start->copy()->subDay()->startOfDay() : $range->end->copy()->addDay()->startOfDay();
 
         return $shifts ? collect($shifts)->contains(
             function ($shift) use ($expectedDate): bool {
