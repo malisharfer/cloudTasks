@@ -41,7 +41,7 @@ class Algorithm
     {
         return Soldier::with('constraints')
             ->where('is_reservist', false)
-            ->whereJsonLength('qualifications', '>', 0)
+            // ->whereJsonLength('qualifications', '>', 0)
             ->get()
             ->map(function (Soldier $soldier) {
                 $constraints = Helpers::buildConstraints($soldier->constraints, new Range($this->date->copy()->startOfMonth(), $this->date->copy()->endOfMonth()));
