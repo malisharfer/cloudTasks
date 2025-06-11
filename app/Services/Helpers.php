@@ -130,8 +130,8 @@ class Helpers
             })
             ->where(function ($query) use ($range) {
                 $query->where(function ($subQuery) use ($range) {
-                    $subQuery->where('start_date', '<', $range->end)
-                        ->where('end_date', '>', $range->start);
+                    $subQuery->where('start_date', '<=', $range->end)
+                        ->where('start_date', '>=', $range->start);
                 });
             })
             ->get()
@@ -146,9 +146,12 @@ class Helpers
         return self::buildConstraints($constraints, $newRange);
     }
 
+    // public static function updateShiftTable($assignments)
+    // {
+    //     collect($assignments)->map(fn (Assignment $assignment) => Shift::where('id', $assignment->shiftId)->update(['soldier_id' => $assignment->soldierId]));
+    // }
     public static function updateShiftTable($assignments)
     {
-        set_time_limit(0);
         if (empty($assignments)) {
             return;
         }
@@ -165,7 +168,7 @@ class Helpers
             });
 
             Shift::whereIn('id', $ids)
-                ->update(['soldier_id' => \DB::raw("CASE " . implode(' ', $cases) . " END")]);
+                ->update(['soldier_id' => \DB::raw('CASE '.implode(' ', $cases).' END')]);
         }
     }
 }

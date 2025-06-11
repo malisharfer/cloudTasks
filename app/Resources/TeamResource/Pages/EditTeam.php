@@ -83,15 +83,18 @@ class EditTeam extends EditRecord
 
     protected function unAssignMembers()
     {
+        $members = collect($this->data['members'])->pluck('id');
+
         Soldier::where('team_id', $this->record->id)
-            ->get()
-            ->map(fn ($soldier) => ! collect($this->data['members'])->contains($soldier->id) ?
-                Soldier::where('id', $soldier->id)->update(['team_id' => null]) : null);
+            ->whereNotIn('id', $members)
+            ->update(['team_id' => null]);
     }
 
     protected function assignMembers()
     {
-        collect($this->data['members'])->map(fn ($soldier_id) => Soldier::where('id', $soldier_id)
-            ->update(['team_id' => $this->record->id]));
+        $members = collect($this->data['members']);
+
+        Soldier::whereIn('id', $members)
+            ->update(['team_id' => $this->record->id]);
     }
 }

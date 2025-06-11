@@ -22,7 +22,8 @@ class Algorithm
         $startOfMonth = max($this->date->copy()->startOfMonth(), Carbon::tomorrow());
         $endOfMonth = $this->date->copy()->endOfMonth();
 
-        return Shift::whereNull('soldier_id')
+        return Shift::with('task')
+            ->whereNull('soldier_id')
             ->whereHas('task', function ($query) {
                 $query->withTrashed()
                     ->where('kind', '!=', TaskKind::INPARALLEL->value);

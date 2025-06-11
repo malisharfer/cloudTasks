@@ -33,6 +33,7 @@ class ChangeAssignment
     public function getMatchingSoldiers()
     {
         return Soldier::where('id', '!=', $this->soldier->id)
+            // ->whereJsonLength('qualifications', '>', 0)
             ->get()
             ->map(function ($soldier) {
                 $constraints = $this->getConstraints($soldier);
@@ -128,7 +129,12 @@ class ChangeAssignment
 
     public function exchange($shift)
     {
-        Shift::where('id', $shift->id)->update(['soldier_id' => Shift::find($this->shift->id)->soldier_id]);
-        Shift::where('id', $this->shift->id)->update(['soldier_id' => $shift->soldier_id]);
+        $currentSoldierId = Shift::find($this->shift->id)->soldier_id;
+        $newSoldierId = $shift->soldier_id;
+
+        \DB::transaction(function () use ($shift, $currentSoldierId, $newSoldierId) {
+            Shift::where('id', $shift->id)->update(['soldier_id' => $currentSoldierId]);
+            Shift::where('id', $this->shift->id)->update(['soldier_id' => $newSoldierId]);
+        });
     }
 }

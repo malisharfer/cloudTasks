@@ -48,6 +48,7 @@ class Team extends Model
 
     protected static function unAssignMembers(Team $team)
     {
-        collect($team->members)->map(fn (Soldier $member) => $member->update(['team_id' => null]));
+        $memberIds = $team->members->pluck('id');
+        Soldier::whereIn('id', $memberIds)->update(['team_id' => null]);
     }
 }

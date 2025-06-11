@@ -83,8 +83,12 @@ class CreateTeam extends CreateRecord
 
     protected function attachSoldiers(): void
     {
-        collect($this->data['members'])->map(fn ($soldier_id) => Soldier::where('id', $soldier_id)
-            ->update(['team_id' => Team::latest()->pluck('id')->first()]));
+        $teamId = Team::latest()->pluck('id')->first();
+
+        if ($teamId) {
+            Soldier::whereIn('id', $this->data['members'])
+                ->update(['team_id' => $teamId]);
+        }
     }
 
     protected function assignRoles()

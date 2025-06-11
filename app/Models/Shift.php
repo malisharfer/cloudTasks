@@ -194,6 +194,8 @@ class Shift extends Model
 
     public static function exchangeAction(): Action
     {
+        $hasMatchingShifts = false;
+
         return Action::make('Exchange')
             ->label(__('Exchange assignment'))
             ->cancelParentActions()
@@ -202,11 +204,12 @@ class Shift extends Model
             ->modalSubmitAction(false)
             ->modalCloseButton(false)
             ->form(
-                function ($record) {
+                function ($record) use (&$hasMatchingShifts) {
                     session()->put('selected_shift', false);
 
                     $changeAssignment = new ChangeAssignment($record);
                     $data = $changeAssignment->getMatchingShifts();
+                    $hasMatchingShifts = $data['shifts']->isNotEmpty();
                     $sections = collect($data['shifts'])
                         ->groupBy(fn ($data) => $data['shift']->soldier_id)
                         ->map(
@@ -281,15 +284,12 @@ class Shift extends Model
                 if ($arguments['cancel'] ?? false) {
                     $livewire->dispatch('filament-fullcalendar--refresh');
                 }
+            })
+            ->hidden(function ($record) use ($hasMatchingShifts) {
+                if ($record->soldier_id) {
+                    return $hasMatchingShifts;
+                }
             });
-        // ->hidden(function ($record) {
-        //     if ($record->soldier_id) {
-        //         $changeAssignment = new ChangeAssignment($record);
-        //         // \Log::info('in hidden in getMatchingShifts');
-
-        //         return $changeAssignment->getMatchingShifts()->isEmpty();
-        //     }
-        // })
     }
 
     protected static function description($soldierId, $hasConcurrent)
@@ -591,10 +591,10 @@ class Shift extends Model
             });
     }
 
-    protected static function shiftsAssignmentChange($shift, $soldierId)
+    protected static function shiftsAssignmentChange(Shift $shift, $soldierId)
     {
         self::shiftsAssignmentSendChangeNotifications($shift, $soldierId);
-        Shift::with('task')->where('id', $shift->id)->update(['soldier_id' => $soldierId]);
+        $shift->update(['soldier_id' => $soldierId]);
     }
 
     protected static function shiftsAssignmentSendChangeNotifications($shift, $soldierId)
