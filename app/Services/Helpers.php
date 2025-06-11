@@ -146,21 +146,25 @@ class Helpers
         return self::buildConstraints($constraints, $newRange);
     }
 
-    public static function updateShiftTable($assignments)
+    public function updateShiftTable($assignments)
     {
         if (empty($assignments)) {
             return;
         }
 
-        $cases = [];
-        $ids = [];
+        $chunks = array_chunk($assignments, 80);
 
-        collect($assignments)->each(function ($assignment) use (&$ids, &$cases) {
-            $ids[] = $assignment->shiftId;
-            $cases[] = "WHEN id = {$assignment->shiftId} THEN {$assignment->soldierId}";
-        });
+        foreach ($chunks as $chunk) {
+            $cases = [];
+            $ids = [];
 
-        Shift::whereIn('id', $ids)
-            ->update(['soldier_id' => \DB::raw('CASE '.implode(' ', $cases).' END')]);
+            collect($chunk)->each(function ($assignment) use (&$ids, &$cases) {
+                $ids[] = $assignment->shiftId;
+                $cases[] = "WHEN id = {$assignment->shiftId} THEN {$assignment->soldierId}";
+            });
+
+            Shift::whereIn('id', $ids)
+                ->update(['soldier_id' => \DB::raw("CASE " . implode(' ', $cases) . " END")]);
+        }
     }
 }
