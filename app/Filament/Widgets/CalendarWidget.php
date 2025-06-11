@@ -108,7 +108,7 @@ class CalendarWidget extends FullCalendarWidget
         $query = $this->model == Shift::class ?
         $this->model::with(['task', 'soldier'])
         : $this->model::with('soldier');
-        $query = match ($role) {
+        $query = ($this->type === 'my_soldiers') ? match ($role) {
             'manager', 'shifts-assignment' => $query->where('soldier_id', '!=', $current_user_id)
                 ->orWhereNull('soldier_id'),
             'department-commander' => $query->where(function ($query) use ($current_user_id) {
@@ -131,14 +131,12 @@ class CalendarWidget extends FullCalendarWidget
                         $query->where('id', $current_user_id);
                     })->first()?->members->pluck('id') ?? collect([]));
             }),
-            default => $query->where('soldier_id', '=', $current_user_id),
-        };
+        } :  $query->where('soldier_id', '=', $current_user_id);
 
         return $query->where('start_date', '>=', $this->fetchInfo['start'])
             ->where('end_date', '<=', $this->fetchInfo['end'])
             ->get();
     }
-
     protected function events($events): Collection
     {
         return $this->filter ? $this->model::filter($events, $this->filterData) : $events;

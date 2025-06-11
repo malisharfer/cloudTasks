@@ -35,7 +35,7 @@ class Constraint extends Model
         'end_date' => 'datetime:Y-m-d H:i:s',
     ];
 
-    public function soldiers(): BelongsTo
+    public function soldier(): BelongsTo
     {
         return $this->belongsTo(Soldier::class);
     }
