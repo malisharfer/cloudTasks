@@ -148,6 +148,19 @@ class Helpers
 
     public static function updateShiftTable($assignments)
     {
-        collect($assignments)->map(fn (Assignment $assignment) => Shift::where('id', $assignment->shiftId)->update(['soldier_id' => $assignment->soldierId]));
+        if (empty($assignments)) {
+            return;
+        }
+
+        $cases = [];
+        $ids = [];
+
+        collect($assignments)->each(function ($assignment) use (&$ids, &$cases) {
+            $ids[] = $assignment->shiftId;
+            $cases[] = "WHEN id = {$assignment->shiftId} THEN {$assignment->soldierId}";
+        });
+
+        Shift::whereIn('id', $ids)
+            ->update(['soldier_id' => \DB::raw('CASE '.implode(' ', $cases).' END')]);
     }
 }
