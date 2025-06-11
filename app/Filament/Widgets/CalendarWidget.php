@@ -105,9 +105,9 @@ class CalendarWidget extends FullCalendarWidget
     {
         $current_user_id = auth()->user()->userable_id;
         $role = current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']));
-
-        $query = $this->model::with(['task', 'soldier']);
-        // $query = $this->model::query();
+        $query = $this->model == Shift::class ?
+        $this->model::with(['task', 'soldier'])
+        : $this->model::with('soldier');
         $query = match ($role) {
             'manager', 'shifts-assignment' => $query->where('soldier_id', '!=', $current_user_id)
                 ->orWhereNull('soldier_id'),

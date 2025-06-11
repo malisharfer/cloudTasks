@@ -30,7 +30,7 @@ class Algorithm
             ->where(function ($query) use ($startOfMonth, $endOfMonth) {
                 $query->where(function ($subQuery) use ($startOfMonth, $endOfMonth) {
                     $subQuery->where('start_date', '<=', $endOfMonth)
-                        ->where('end_date', '>=', $startOfMonth);
+                        ->where('start_date', '>=', $startOfMonth);
                 });
             })
             ->get()
