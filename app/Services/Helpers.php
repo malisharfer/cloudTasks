@@ -146,13 +146,13 @@ class Helpers
         return self::buildConstraints($constraints, $newRange);
     }
 
-    public function updateShiftTable($assignments)
+    public static function updateShiftTable($assignments)
     {
         if (empty($assignments)) {
             return;
         }
 
-        $chunks = array_chunk($assignments, 80);
+        $chunks = array_chunk($assignments->toArray(), 80);
 
         foreach ($chunks as $chunk) {
             $cases = [];
