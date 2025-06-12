@@ -352,13 +352,13 @@ class Constraint extends Model
             ->icon('heroicon-o-funnel')
             ->form(function () use ($calendar) {
                 $constraints = $calendar->getEventsByRole();
-                $soldiersConstraints = array_filter($constraints->toArray(), fn ($constraint) => $constraint['soldier_id'] !== null);
+                $soldiersConstraints = array_filter($constraints->toArray(), fn ($constraint) => $constraint['soldier_id'] != null);
 
                 return [
                     Select::make('soldier_id')
                         ->label(__('Soldier'))
                         ->options(fn (): array => collect($soldiersConstraints)->mapWithKeys(fn ($constraint) => [
-                            $constraint['soldier_id'] => optional(User::where('userable_id', $constraint['soldier_id'])->first())->displayName,
+                            $constraint['soldier_id'] => optional(User::where('userable_id', $constraint['soldier_id'])->first())->displayName ?? __('Unknown Soldier')
                         ])->toArray())
                         ->multiple(),
                 ];
@@ -371,7 +371,6 @@ class Constraint extends Model
                 $calendar->refreshRecords();
             });
     }
-
     public static function filter($events, $filterData)
     {
         return $events
