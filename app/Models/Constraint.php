@@ -382,10 +382,12 @@ class Constraint extends Model
     public static function activeFilters($calendar)
     {
         if ($calendar->filter) {
-            $activeFilter = collect($calendar->filterData['soldier_id'])->map(fn ($soldier_id) => User::where('userable_id', $soldier_id)->first()->displayName
-            );
+            $activeFilter = collect($calendar->filterData['soldier_id'])->map(function ($soldier_id) {
+                $user = User::where('userable_id', $soldier_id)->first();
+                return $user ? $user->displayName : __('Unknown soldier');
+            });
         }
-
+    
         return $activeFilter->toArray();
     }
 
