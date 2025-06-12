@@ -38,6 +38,7 @@ class Charts
 
     protected function getData($course, $month = null, $year = null)
     {
+        set_time_limit(0);
         $month = $month ? Carbon::createFromDate($year, $month, 1) : now()->addMonth();
         $shifts = Shift::whereNotNull('soldier_id')
             ->get()
