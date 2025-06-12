@@ -358,8 +358,7 @@ class Constraint extends Model
                     Select::make('soldier_id')
                         ->label(__('Soldier'))
                         ->options(fn (): array => collect($soldiersConstraints)->mapWithKeys(fn ($constraint) => [
-                            $constraint['soldier_id'] => User::where('userable_id', $constraint['soldier_id'])
-                                ->first()?->displayName,
+                            $constraint['soldier_id'] => optional(User::where('userable_id', $constraint['soldier_id'])->first())->displayName,
                         ])->toArray())
                         ->multiple(),
                 ];

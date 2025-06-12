@@ -771,7 +771,6 @@ class Shift extends Model
 
     public static function getFilters($calendar)
     {
-        set_time_limit(0);
         return Action::make('Filters')
             ->iconButton()
             ->label(__('Filter'))

@@ -50,33 +50,9 @@ class CalendarWidget extends FullCalendarWidget
     public $startDate;
 
     public $fetchInfo;
-    public function deleteUnCommanders()
-    {
-        $teamCommanders =  User::whereHas(
-            'roles',
-            fn ($query) => $query->where('name', 'team-commander')
-        )->get();
-        $teamCommanders->map(function(User $user){
-            $team = Team::where('commander_id', $user->userable_id)->first();
-            if(!$team){
-                $user->removeRole('team-commander');
-            }
-        });
-        $departmentCommanders =  User::whereHas(
-            'roles',
-            fn ($query) => $query->where('name', 'department-commander')
-        )->get();
-        $departmentCommanders->map(function(User $user){
-            $department = Department::where('commander_id', $user->userable_id)->first();
-            if(!$department){
-                $user->removeRole('department-commander');
-            }
-        });
-    }
-    
+   
     public function fetchEvents(array $fetchInfo): array
     {
-        $this->deleteUnCommanders();
         $this->fetchInfo = $fetchInfo;
         $this->currentMonth = Carbon::parse($fetchInfo['start'])->addDays(7)->year.'-'.Carbon::parse($fetchInfo['start'])->addDays(7)->month;
 
