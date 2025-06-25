@@ -171,8 +171,7 @@ class DepartmentResource extends Resource
     {
         Team::where('commander_id', $commander_id)
             ->update(['commander_id' => null]);
-        $user = User::where('userable_id', $commander_id)->first();
-        $user->removeRole('team-commander');
+        User::where('userable_id', $commander_id)->first()->removeRole('team-commander');
     }
 
     protected static function unAssignDepartmentCommander($commander_id): void

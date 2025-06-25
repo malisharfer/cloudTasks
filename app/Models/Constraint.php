@@ -358,7 +358,7 @@ class Constraint extends Model
                     Select::make('soldier_id')
                         ->label(__('Soldier'))
                         ->options(fn (): array => collect($soldiersConstraints)->mapWithKeys(fn ($constraint) => [
-                            $constraint['soldier_id'] => optional(User::where('userable_id', $constraint['soldier_id'])->first())->displayName ?? __('Unknown Soldier')
+                            $constraint['soldier_id'] => optional(User::where('userable_id', $constraint['soldier_id'])->first())->displayName ?? __('Unknown Soldier'),
                         ])->toArray())
                         ->multiple(),
                 ];
@@ -371,6 +371,7 @@ class Constraint extends Model
                 $calendar->refreshRecords();
             });
     }
+
     public static function filter($events, $filterData)
     {
         return $events
@@ -383,10 +384,11 @@ class Constraint extends Model
         if ($calendar->filter) {
             $activeFilter = collect($calendar->filterData['soldier_id'])->map(function ($soldier_id) {
                 $user = User::where('userable_id', $soldier_id)->first();
+
                 return $user ? $user->displayName : __('Unknown soldier');
             });
         }
-    
+
         return $activeFilter->toArray();
     }
 

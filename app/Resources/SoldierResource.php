@@ -62,9 +62,7 @@ class SoldierResource extends Resource
             ->columns([
                 TextColumn::make('user')
                     ->label(__('Full name'))
-                    ->formatStateUsing(
-                        fn ($record) => $record->user->last_name.' '.$record->user->first_name
-                    )
+                    ->formatStateUsing(fn ($record) => $record->user->last_name.' '.$record->user->first_name)
                     ->searchable(query: function ($query, $search) {
                         $query->whereHas('user', function ($query) use ($search) {
                             $query->where('first_name', 'like', "%{$search}%")
@@ -156,7 +154,6 @@ class SoldierResource extends Resource
                 NumberFilter::make('max_alerts')->label(__('Max alerts')),
                 NumberFilter::make('max_in_parallel')->label(__('Max in parallel')),
                 NumberFilter::make('capacity')->label(__('Capacity')),
-                NumberFilter::make('capacity_hold')->label(__('Capacity hold')),
                 SelectFilter::make('gender')
                     ->label(__('Gender'))
                     ->options([

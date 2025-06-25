@@ -27,7 +27,7 @@ class Helpers
         );
     }
 
-    public static function kind(Shift $shift)
+    protected static function kind(Shift $shift)
     {
         if ($shift->is_weekend === true) {
             return TaskKind::WEEKEND->value;
@@ -129,10 +129,8 @@ class Helpers
                     ->when(! $inParallel, fn ($query) => $query->where('kind', '!=', TaskKind::INPARALLEL->value));
             })
             ->where(function ($query) use ($range) {
-                $query->where(function ($subQuery) use ($range) {
-                    $subQuery->where('start_date', '<=', $range->end)
-                        ->where('start_date', '>=', $range->start);
-                });
+                $query->where('start_date', '<=', $range->end)
+                    ->where('start_date', '>=', $range->start);
             })
             ->get()
             ->map(fn (Shift $shift): ShiftService => self::buildShift($shift));
@@ -146,13 +144,8 @@ class Helpers
         return self::buildConstraints($constraints, $newRange);
     }
 
-    // public static function updateShiftTable($assignments)
-    // {
-    //     collect($assignments)->map(fn (Assignment $assignment) => Shift::where('id', $assignment->shiftId)->update(['soldier_id' => $assignment->soldierId]));
-    // }
     public static function updateShiftTable($assignments)
     {
-        set_time_limit(0);
         if (empty($assignments)) {
             return;
         }

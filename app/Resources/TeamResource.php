@@ -117,9 +117,7 @@ class TeamResource extends Resource
                     ->sortable(),
                 TextColumn::make('commander.user')
                     ->label(__('Commander'))
-                    ->formatStateUsing(function ($state) {
-                        return $state->last_name.' '.$state->first_name;
-                    })
+                    ->formatStateUsing(fn ($state) => $state->last_name.' '.$state->first_name)
                     ->label(__('Commander'))
                     ->searchable(
                         query: function ($query, $search) {
@@ -169,12 +167,14 @@ class TeamResource extends Resource
                         ])
                         ->closeModalByClickingAway(false)
                         ->action(function (array $data, Team $record): void {
-                            collect($record->members)
-                                ->map(fn (Soldier $soldier) => ! collect($data['members'])->contains($soldier->id) ?
-                                    Soldier::where('id', $soldier->id)->update(['team_id' => null]) : null);
+                            $memberIds = collect($record->members)->pluck('id') ?? collect([]);
+                            $newMembers = $data['members'] ?? collect();
+                            Soldier::whereIn('id', $memberIds)
+                                ->whereNotIn('id', $newMembers)
+                                ->update(['team_id' => null]);
 
-                            collect($data['members'])->map(fn ($soldier_id) => Soldier::where('id', $soldier_id)
-                                ->update(['team_id' => $record->id]));
+                            Soldier::whereIn('id', $newMembers)
+                                ->update(['team_id' => $record->id]);
                         }),
                     Action::make('View members')
                         ->label(__('View members'))

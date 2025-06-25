@@ -47,14 +47,14 @@ class Shift extends Model
         return $this->belongsTo(Task::class);
     }
 
-    public function soldier()
+    public function soldier(): BelongsTo
     {
         return $this->belongsTo(Soldier::class);
     }
 
     private function getTaskParallelWeight()
     {
-        return $this->task?->parallel_weight;
+        return $this->task()->withTrashed()->first()->parallel_weight;
     }
 
     public function getTaskNameAttribute()
@@ -62,13 +62,13 @@ class Shift extends Model
         $user_name = User::where('userable_id', $this->soldier_id)->get(['first_name', 'last_name']);
 
         return $this->soldier_id == auth()->user()->userable_id
-            ? $this->task?->name
-            : $this->task?->name.' '.$user_name->first()?->first_name.' '.$user_name->first()?->last_name;
+            ? $this->task()->withTrashed()->first()->name
+            : $this->task()->withTrashed()->first()->name.' '.$user_name->first()?->first_name.' '.$user_name->first()?->last_name;
     }
 
     public function getTaskColorAttribute()
     {
-        return $this->task?->color;
+        return $this->task()->withTrashed()->first()->color;
     }
 
     public static function getSchema(): array
@@ -149,9 +149,9 @@ class Shift extends Model
         $manual_assignment = new ManualAssignment($shift, $soldierType);
 
         return
-            ! $manual_assignment->getSoldiers() ?
-            __('No suitable soldiers') :
-            __('Select a soldier');
+         ! $manual_assignment->getSoldiers() ?
+              __('No suitable soldiers') :
+          __('Select a soldier');
     }
 
     public static function afterSave($shift, $record)
@@ -194,8 +194,6 @@ class Shift extends Model
 
     public static function exchangeAction(): Action
     {
-        $hasMatchingShifts = false;
-
         return Action::make('Exchange')
             ->label(__('Exchange assignment'))
             ->cancelParentActions()
@@ -204,12 +202,10 @@ class Shift extends Model
             ->modalSubmitAction(false)
             ->modalCloseButton(false)
             ->form(
-                function ($record) use (&$hasMatchingShifts) {
+                function ($record) {
                     session()->put('selected_shift', false);
-
                     $changeAssignment = new ChangeAssignment($record);
                     $data = $changeAssignment->getMatchingShifts();
-                    $hasMatchingShifts = $data['shifts']->isNotEmpty();
                     $sections = collect($data['shifts'])
                         ->groupBy(fn ($data) => $data['shift']->soldier_id)
                         ->map(
@@ -284,11 +280,6 @@ class Shift extends Model
                 if ($arguments['cancel'] ?? false) {
                     $livewire->dispatch('filament-fullcalendar--refresh');
                 }
-            })
-            ->hidden(function ($record) use ($hasMatchingShifts) {
-                if ($record->soldier_id) {
-                    return $hasMatchingShifts;
-                }
             });
     }
 
@@ -301,7 +292,6 @@ class Shift extends Model
 
     protected static function getOption($shift, $hasConcurrent)
     {
-
         return $hasConcurrent ?
         '📌 '.__('Task').': '.Shift::find($shift->id)->task()->withTrashed()->first()->name.'. '.__('Time').': '.__('From').' '.$shift->start_date.' '.__('To').' '.$shift->end_date :
         __('Task').': '.Shift::find($shift->id)->task()->withTrashed()->first()->name.'. '.__('Time').': '.__('From').' '.$shift->start_date.' '.__('To').' '.$shift->end_date;
@@ -575,7 +565,7 @@ class Shift extends Model
                 session()->put('selected_soldier', false);
                 if ($arguments['change'] ?? false) {
                     collect($arguments['role'])->contains('shifts-assignment')
-                        || collect($arguments['role'])->contains('manager') ?
+                    || collect($arguments['role'])->contains('manager') ?
                         self::shiftsAssignmentChange($record, $data['soldier']) :
                         self::commanderChange($record, $data['soldier']);
 
@@ -591,10 +581,10 @@ class Shift extends Model
             });
     }
 
-    protected static function shiftsAssignmentChange(Shift $shift, $soldierId)
+    protected static function shiftsAssignmentChange($shift, $soldierId)
     {
         self::shiftsAssignmentSendChangeNotifications($shift, $soldierId);
-        $shift->update(['soldier_id' => $soldierId]);
+        Shift::where('id', $shift->id)->update(['soldier_id' => $soldierId]);
     }
 
     protected static function shiftsAssignmentSendChangeNotifications($shift, $soldierId)
@@ -752,9 +742,7 @@ class Shift extends Model
 
     protected static function getShiftsAssignments()
     {
-        return User::whereHas(
-            'roles',
-            fn ($query) => $query->where('name', 'shifts-assignment')
+        return User::whereHas('roles', fn ($query) => $query->where('name', 'shifts-assignment')
         )->get();
     }
 

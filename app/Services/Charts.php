@@ -2,114 +2,144 @@
 
 namespace App\Services;
 
-use App\Enums\ConstraintType;
 use App\Enums\TaskKind;
-use App\Models\Constraint as ConstraintModel;
 use App\Models\Shift;
 use App\Models\Soldier;
-use App\Models\User;
 use Carbon\Carbon;
 
 class Charts
 {
-    protected $data;
+    protected $course;
 
-    protected $labels;
+    protected $date;
 
-    public function __construct()
+    protected $kind;
+
+    public function __construct($course, $year, $month, $kind)
     {
-        $this->data = collect([]);
-        $this->labels = collect([]);
+        $this->course = $course;
+        $this->kind = $kind;
+        $this->date = Carbon::create($year, $month, 1);
     }
 
-    public function organizeChartData($filter, $course, $month, $year): array
+    public function getData()
     {
-        $soldiersData = $this->getData($course, $month, $year);
-        $soldiersData->map(function ($soldier) use ($filter) {
-            $this->data->push($soldier[$filter]);
-            $this->labels->push($soldier['first_name'].' '.$soldier['last_name']);
+        $data = collect([]);
+        $shifts = $this->getShifts();
+        $soldiersIds = Soldier::where('course', $this->course)->pluck('id');
+        $shifts->each(function ($shifts, $soldierId) use (&$soldiersIds, &$data) {
+            $soldiersIds = $soldiersIds->reject(function ($id) use ($soldierId) {
+                return $id == $soldierId;
+            });
+            $data->push($this->getMaxAndDone($soldierId, false, $shifts));
+        });
+        $soldiersIds->each(function ($soldierId) use (&$data) {
+            $data->push($this->getMaxAndDone($soldierId, true));
         });
 
-        return [
-            'data' => $this->data,
-            'labels' => $this->labels,
-        ];
+        return $data
+            ->groupBy(fn ($soldierData) => $soldierData->first()->get('max'))
+            ->map(
+                fn ($items) => $items->map(fn ($item) => collect([$item->keys()->first() => $item->get($item->keys()->first())->get('done')]))
+                    ->reduce(function ($carry, $value) {
+                        return $carry->merge($value);
+                    }, collect())
+            )
+            ->sortByDesc(fn ($item) => $item->count());
     }
 
-    protected function getData($course, $month = null, $year = null)
+    protected function getShifts()
     {
-        set_time_limit(0);
-        $month = $month ? Carbon::createFromDate($year, $month, 1) : now()->addMonth();
-        $shifts = Shift::whereNotNull('soldier_id')
-            ->get()
-            ->filter(function (Shift $shift) use ($month): bool {
-                $range = new Range(
-                    $shift->start_date,
-                    $shift->end_date,
-                );
-
-                return $range->isSameMonth(new Range($month->copy()->startOfMonth(), $month->copy()->endOfMonth()));
+        return Shift::whereNotNull('soldier_id')
+            ->whereHas('soldier', function ($query) {
+                $query->where('course', (int) $this->course);
             })
+            ->where(function ($query) {
+                $query->where('start_date', '<=', $this->date->copy()->endOfMonth())
+                    ->where('start_date', '>=', $this->date->copy()->startOfMonth());
+            })
+            ->where(function ($query) {
+                $query->when($this->kind == TaskKind::WEEKEND->value, function ($query) {
+                    $query->where('is_weekend', true)
+                        ->orWhereHas('task', function ($subQuery) {
+                            $subQuery->withTrashed()->where('kind', $this->kind);
+                        });
+                })
+                    ->when($this->kind == 'points', function ($query) {
+                        $query->whereNotNull('parallel_weight')
+                            ->orWhereHas('task', function ($query) {
+                                $query->withTrashed()->where('parallel_weight', '>', 0);
+                            });
+                    })
+                    ->when($this->kind != TaskKind::WEEKEND->value && $this->kind != 'points', function ($query) {
+                        $query
+                            ->where(function ($query) {
+                                $query
+                                    ->whereNull('is_weekend')
+                                    ->orWhere('is_weekend', false);
+                            })
+                            ->whereHas('task', function ($subQuery) {
+                                $subQuery->withTrashed()->where('kind', $this->kind);
+                            });
+                    });
+            })
+            ->get()
             ->groupBy('soldier_id');
-        $soldiersDetails = collect([]);
-        $shifts->each(function ($shifts, $soldier_id) use (&$soldiersDetails) {
-            $user = User::where('userable_id', $soldier_id)->first();
-            $constraints = ConstraintModel::where('soldier_id', $soldier_id)->get();
-            $soldier = Soldier::where('id', $soldier_id)->first();
-            $soldiersDetails->push([
-                'first_name' => $user->first_name,
-                'last_name' => $user->last_name,
-                'course' => $soldier->course,
-                'nights' => $this->howMuchNights($shifts),
-                'weekends' => $this->howMuchWeekends($shifts),
-                'shifts' => $shifts->count(),
-                'points' => $this->howMuchPoints($shifts),
-                'constraints' => $constraints,
-                'lowConstraintsRejected' => $this->howMuchLowConstraintsRejected($constraints, $shifts),
-            ]);
-        });
-        $soldiersDetails = $soldiersDetails->filter(function ($soldierDetail) use ($course) {
-            return $soldierDetail['course'] === (int) $course;
-        });
-
-        return $soldiersDetails;
-
     }
 
-    protected function howMuchNights($shifts)
+    protected function getMaxAndDone($soldierId, $isZero, $shifts = null)
     {
-        return $shifts->filter(fn ($shift) => $shift->task()->withTrashed()->first()->kind === TaskKind::NIGHT->value)->count();
+        $soldier = Soldier::find($soldierId);
+
+        return collect([
+            $soldier->user->displayName => collect([
+                'done' => $isZero ? 0 : $this->howMuch($shifts),
+                'max' => $this->max($soldier),
+            ]),
+        ]);
     }
 
-    protected function howMuchWeekends($shifts)
+    protected function howMuch($shifts)
     {
-        return $shifts->filter(fn ($shift) => $shift->is_weekend != null ? $shift->is_weekend : ($shift->task()->withTrashed()->first()->kind === TaskKind::WEEKEND->value))->count();
+        return match ($this->kind) {
+            'points' => $this->howMuchPoints($shifts),
+            TaskKind::WEEKEND->value => $this->howMuchWeekends($shifts),
+            TaskKind::NIGHT->value => $this->howMuchBy(TaskKind::NIGHT->value, $shifts),
+            TaskKind::REGULAR->value => $this->howMuchBy(TaskKind::REGULAR->value, $shifts),
+            TaskKind::ALERT->value => $this->howMuchBy(TaskKind::ALERT->value, $shifts),
+            TaskKind::INPARALLEL->value => $this->howMuchBy(TaskKind::INPARALLEL->value, $shifts),
+        };
     }
 
     protected function howMuchPoints($shifts)
     {
-        return collect($shifts)->sum(fn ($shift) => $shift->parallel_weight != null ? $shift->parallel_weight : $shift->task()->withTrashed()->first()->parallel_weight);
+        return $shifts
+            ->sum(fn (Shift $shift) => $shift->parallel_weight != null ? $shift->parallel_weight : $shift->task()->withTrashed()->first()->parallel_weight);
     }
 
-    protected function howMuchLowConstraintsRejected($constraints, $shifts): int
+    protected function howMuchWeekends($shifts)
     {
-        $count = 0;
-        $constraints->filter(
-            fn (ConstraintModel $constraint) => ConstraintType::getPriority()[$constraint->constraint_type->value] == 2
-        )
-            ->map(
-                function ($constraint) use ($count, $shifts) {
-                    $shifts->map(function ($shift) use ($constraint, $count) {
-                        $range = new Range(
-                            $shift->start_date,
-                            $shift->end_date,
-                        );
-                        $range->isConflict(new Range($constraint->start_date, $constraint->end_date)) ?
-                            $count++ : $count;
-                    });
-                }
-            );
+        return $shifts
+            ->filter(fn (Shift $shift) => $shift->is_weekend != null ? $shift->is_weekend : ($shift->task()->withTrashed()->first()->kind == TaskKind::WEEKEND->value))
+            ->sum(fn (Shift $shift) => $shift->parallel_weight != null ? $shift->parallel_weight : $shift->task()->withTrashed()->first()->parallel_weight);
+    }
 
-        return $count;
+    protected function howMuchBy($taskKind, $shifts)
+    {
+        return $shifts
+            ->filter(fn (Shift $shift) => $shift->task()->withTrashed()->first()->kind == $taskKind)
+            ->count();
+    }
+
+    protected function max(Soldier $soldier)
+    {
+        return match ($this->kind) {
+            'points' => $soldier->capacity,
+            TaskKind::WEEKEND->value => $soldier->max_weekends,
+            TaskKind::NIGHT->value => $soldier->max_nights,
+            TaskKind::REGULAR->value => $soldier->max_shifts,
+            TaskKind::ALERT->value => $soldier->max_alerts,
+            TaskKind::INPARALLEL->value => $soldier->max_in_parallel,
+        };
     }
 }

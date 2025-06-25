@@ -104,6 +104,8 @@ class Soldier extends Model
         static::deleting(function ($record) {
             $record->user->delete();
             Shift::where('soldier_id', $record->id)->update(['soldier_id' => null]);
+            Constraint::where('soldier_id', $record->id)
+                ->delete();
         });
     }
 }

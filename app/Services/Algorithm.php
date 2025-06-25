@@ -29,10 +29,8 @@ class Algorithm
                     ->where('kind', '!=', TaskKind::INPARALLEL->value);
             })
             ->where(function ($query) use ($startOfMonth, $endOfMonth) {
-                $query->where(function ($subQuery) use ($startOfMonth, $endOfMonth) {
-                    $subQuery->where('start_date', '<=', $endOfMonth)
-                        ->where('start_date', '>=', $startOfMonth);
-                });
+                $query->where('start_date', '<=', $endOfMonth)
+                    ->where('start_date', '>=', $startOfMonth);
             })
             ->get()
             ->map(fn (Shift $shift): ShiftService => Helpers::buildShift($shift));
@@ -42,7 +40,7 @@ class Algorithm
     {
         return Soldier::with('constraints')
             ->where('is_reservist', false)
-            // ->whereJsonLength('qualifications', '>', 0)
+            ->whereJsonLength('qualifications', '>', 0)
             ->get()
             ->map(function (Soldier $soldier) {
                 $constraints = Helpers::buildConstraints($soldier->constraints, new Range($this->date->copy()->startOfMonth(), $this->date->copy()->endOfMonth()));

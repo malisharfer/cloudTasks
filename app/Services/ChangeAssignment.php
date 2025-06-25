@@ -33,7 +33,7 @@ class ChangeAssignment
     public function getMatchingSoldiers()
     {
         return Soldier::where('id', '!=', $this->soldier->id)
-            // ->whereJsonLength('qualifications', '>', 0)
+            ->whereJsonContains('qualifications', $this->shift->taskType)
             ->get()
             ->map(function ($soldier) {
                 $constraints = $this->getConstraints($soldier);
@@ -43,8 +43,7 @@ class ChangeAssignment
 
                 return Helpers::buildSoldier($soldier, $constraints, $soldierShifts, [], $concurrentsShifts);
             })
-            ->filter(fn (SoldierService $soldier) => $soldier->isQualified($this->shift->taskType)
-                && $soldier->isAvailableBySpaces($this->shift->getShiftSpaces($soldier->shifts))
+            ->filter(fn (SoldierService $soldier) => $soldier->isAvailableBySpaces($this->shift->getShiftSpaces($soldier->shifts))
                 && ! $this->isConflictWithConstraints($soldier, $this->shift->range)
                 && $soldier->isAvailableByShifts($this->shift))
             ->mapWithKeys(fn (SoldierService $soldier) => ! $soldier->isAvailableByConcurrentsShifts($this->shift) ?

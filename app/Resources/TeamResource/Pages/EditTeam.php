@@ -77,23 +77,21 @@ class EditTeam extends EditRecord
     protected function assignRoles()
     {
         Soldier::where('id', $this->record->commander_id)->update(['team_id' => null]);
-        $user = User::where('userable_id', $this->record->commander_id)->first();
-        $user->assignRole('team-commander');
+        User::where('userable_id', $this->record->commander_id)->first()->assignRole('team-commander');
     }
 
     protected function unAssignMembers()
     {
-        $members = collect($this->data['members'])->pluck('id');
-
-        Soldier::where('team_id', $this->record->id)
-            ->whereNotIn('id', $members)
-            ->update(['team_id' => null]);
+        $members = $this->data['members'] ? collect($this->data['members']) : collect();
+        Soldier::where(function ($query) use ($members) {
+            $query->where('team_id', $this->record->id)
+                ->whereNotIn('id', $members);
+        })->update(['team_id' => null]);
     }
 
     protected function assignMembers()
     {
-        $members = collect($this->data['members']);
-
+        $members = $this->data['members'] ? collect($this->data['members']) : collect();
         Soldier::whereIn('id', $members)
             ->update(['team_id' => $this->record->id]);
     }

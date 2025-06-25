@@ -49,10 +49,8 @@ class ConcurrentTasks
                     ->where('kind', TaskKind::INPARALLEL->value);
             })
             ->where(function ($query) use ($startOfMonth, $endOfMonth) {
-                $query->where(function ($subQuery) use ($startOfMonth, $endOfMonth) {
-                    $subQuery->where('start_date', '<=', $endOfMonth)
-                        ->where('start_date', '>=', $startOfMonth);
-                });
+                $query->where('start_date', '<=', $endOfMonth)
+                    ->where('start_date', '>=', $startOfMonth);
             })
             ->get()
             ->map(fn (Shift $shift): ShiftService => Helpers::buildShift($shift));

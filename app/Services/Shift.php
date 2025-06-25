@@ -54,7 +54,23 @@ class Shift
 
     protected function getWeekendSpaces($shifts)
     {
-        return $this->isFullWeekend($shifts) ? [$this->range->getDayAfterWeekend()] : null;
+        $spaces = collect([]);
+        if ($this->isNight()) {
+            $spaces->push(...$this->range->getNightInWeekendSpaces());
+        }
+        if ($this->isFullWeekend($shifts)) {
+            $spaces->push($this->range->getDayAfterWeekend());
+        }
+
+        return $spaces?->toArray();
+    }
+
+    protected function isNight()
+    {
+        return ($this->range->start->hour >= 19
+            && $this->range->start->hour < 23) &&
+            ($this->range->end->hour > 6
+            && $this->range->end->hour < 9);
     }
 
     protected function isFullWeekend($shifts)

@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\TaskKind;
 use App\Models\Shift;
 use App\Models\Task;
 use Carbon\Carbon;
@@ -136,12 +135,8 @@ class RecurringEvents
                 $shift->end_date = $this->calculateEndDateTime($date);
                 $shift->task_id = $this->task['id'];
                 if ($holiday->isHoliday) {
-                    // $shift->is_weekend = 1;
                     $shiftType = $shift->task()->withTrashed()->first()->type;
-                    // $parallelWeight = Task::where([['type', $shiftType], ['kind', TaskKind::WEEKEND->value]])->pluck('parallel_weight')->first();
-                    // $parallelWeight ?
-                    // $shift->parallel_weight = $parallelWeight:
-                     (auth()->user() ? Notification::make()
+                    (auth()->user() ? Notification::make()
                         ->title(__('Update parallel weight of holiday shift'))
                         ->persistent()
                         ->body(

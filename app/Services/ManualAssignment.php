@@ -46,7 +46,8 @@ class ManualAssignment
     {
         $this->soldiers = Soldier::whereJsonContains('qualifications', $this->shift->taskType)
             ->where('is_reservist', true)
-            ->where('id', '!=', auth()->user()->userable_id)->get();
+            ->where('id', '!=', auth()->user()->userable_id)
+            ->get();
     }
 
     protected function filterMySoldiers()
@@ -55,19 +56,22 @@ class ManualAssignment
         $role = current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']));
         $members = collect();
 
-        if ($role === 'department-commander') {
-            $department = Department::whereHas('commander', function ($query) use ($currentUserId) {
-                $query->where('id', $currentUserId);
-            })->first();
+        switch ($role) {
+            case 'department-commander':
+                $department = Department::whereHas('commander', function ($query) use ($currentUserId) {
+                    $query->where('id', $currentUserId);
+                })->first();
 
-            $memberIds = $department?->teams->flatMap(fn (Team $team) => $team->members->pluck('id')) ?? collect();
-            $commanderIds = $department?->teams->pluck('commander_id') ?? collect();
+                $memberIds = $department?->teams->flatMap(fn (Team $team) => $team->members->pluck('id')) ?? collect();
+                $commanderIds = $department?->teams->pluck('commander_id') ?? collect();
 
-            $members = $memberIds->merge($commanderIds)->unique();
-        } elseif ($role === 'team-commander') {
-            $members = Team::whereHas('commander', function ($query) use ($currentUserId) {
-                $query->where('id', $currentUserId);
-            })->first()?->members->pluck('id') ?? collect([]);
+                $members = $memberIds->merge($commanderIds)->unique();
+                break;
+            case 'team-commander':
+                $members = Team::whereHas('commander', function ($query) use ($currentUserId) {
+                    $query->where('id', $currentUserId);
+                })->first()?->members->pluck('id') ?? collect([]);
+                break;
         }
 
         $this->soldiers = Soldier::whereJsonContains('qualifications', $this->shift->taskType)

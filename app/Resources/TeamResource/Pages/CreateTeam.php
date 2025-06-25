@@ -85,7 +85,7 @@ class CreateTeam extends CreateRecord
     {
         $teamId = Team::latest()->pluck('id')->first();
 
-        if ($teamId) {
+        if ($teamId && $this->data['members']) {
             Soldier::whereIn('id', $this->data['members'])
                 ->update(['team_id' => $teamId]);
         }

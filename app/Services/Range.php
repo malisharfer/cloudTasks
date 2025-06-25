@@ -57,16 +57,29 @@ class Range
 
     public function getNightSpaces()
     {
-        return [$this->getDayBeforeNight(), $this->getDayAfterNight()];
+        $startHour = $this->start->hour;
+        $endTomorrow = $this->end->copy()->addDay();
+        if ($startHour >= '20' && $startHour <= '23') {
+            return [
+                new Range(Carbon::create($this->start->year, $this->start->month, $this->start->day, 00, 00), $this->start),
+                new Range($this->end, Carbon::create($endTomorrow->year, $endTomorrow->month, $endTomorrow->day, 7, 59)),
+            ];
+        }
+        if ($startHour >= '0' && $startHour <= '1') {
+            $startYesterday = $this->start->copy()->subDay();
+
+            return [
+                new Range(Carbon::create($startYesterday->year, $startYesterday->month, $startYesterday->day, 00, 00), $this->start),
+                new Range($this->end, Carbon::create($endTomorrow->year, $endTomorrow->month, $endTomorrow->day, 7, 59)),
+            ];
+        }
     }
 
-    public function getDayBeforeNight(): Range
+    public function getNightInWeekendSpaces()
     {
-        return new Range($this->start->copy()->subHours(12), $this->start->copy());
-    }
-
-    public function getDayAfterNight(): Range
-    {
-        return new Range($this->end->copy(), $this->end->copy()->addHours(12));
+        return [
+            new Range($this->start->copy()->setHour(8)->setMinutes(30), $this->start->copy()),
+            new Range($this->end->copy(), $this->end->copy()->setHour(19)->setMinutes(59)),
+        ];
     }
 }

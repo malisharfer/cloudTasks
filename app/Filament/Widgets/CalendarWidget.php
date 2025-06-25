@@ -3,12 +3,12 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\ConstraintType;
+use App\Exports\AssignmentJustice;
 use App\Exports\ShiftsExport;
 use App\Models\Constraint;
 use App\Models\Department;
 use App\Models\Shift;
 use App\Models\Task;
-use App\Models\User;
 use App\Models\Team;
 use App\Services\Algorithm;
 use App\Services\Holidays;
@@ -50,7 +50,7 @@ class CalendarWidget extends FullCalendarWidget
     public $startDate;
 
     public $fetchInfo;
-   
+
     public function fetchEvents(array $fetchInfo): array
     {
         $this->fetchInfo = $fetchInfo;
@@ -112,9 +112,7 @@ class CalendarWidget extends FullCalendarWidget
         $query = ($this->type === 'my_soldiers') ? match ($role) {
             'manager', 'shifts-assignment' => $query->where('soldier_id', '!=', $current_user_id)
                 ->orWhereNull('soldier_id'),
-            'department-commander' => $query->where(function ($query) use ($current_user_id) {
-                $query->where('soldier_id', '!=', $current_user_id);
-            })
+            'department-commander' => $query->where('soldier_id', '!=', $current_user_id)
                 ->where(function ($query) use ($current_user_id) {
                     $query->whereNull('soldier_id')
                         ->orWhereIn('soldier_id', Department::whereHas('commander', function ($query) use ($current_user_id) {
@@ -123,21 +121,22 @@ class CalendarWidget extends FullCalendarWidget
                         ->orWhereIn('soldier_id', Department::whereHas('commander', function ($query) use ($current_user_id) {
                             $query->where('id', $current_user_id);
                         })->first()?->teams->pluck('commander_id') ?? collect([]));
-                }),
-            'team-commander' => $query->where(function ($query) use ($current_user_id) {
-                $query->where('soldier_id', '!=', $current_user_id);
-            })->where(function ($query) use ($current_user_id) {
-                $query->whereNull('soldier_id')
-                    ->orWhereIn('soldier_id', Team::whereHas('commander', function ($query) use ($current_user_id) {
-                        $query->where('id', $current_user_id);
-                    })->first()?->members->pluck('id') ?? collect([]));
-            }),
-        } :  $query->where('soldier_id', '=', $current_user_id);
+                })->orWhereNull('soldier_id'),
+            'team-commander' => $query->where('soldier_id', '!=', $current_user_id)
+                ->where(function ($query) use ($current_user_id) {
+                    $query->whereNull('soldier_id')
+                        ->orWhereIn('soldier_id', Team::whereHas('commander', function ($query) use ($current_user_id) {
+                            $query->where('id', $current_user_id);
+                        })->first()?->members->pluck('id') ?? collect([]));
+                })
+                ->orWhereNull('soldier_id'),
+        } : $query->where('soldier_id', '=', $current_user_id);
 
         return $query->where('start_date', '>=', $this->fetchInfo['start'])
             ->where('end_date', '<=', $this->fetchInfo['end'])
             ->get();
     }
+
     protected function events($events): Collection
     {
         return $this->filter ? $this->model::filter($events, $this->filterData) : $events;
@@ -173,6 +172,7 @@ class CalendarWidget extends FullCalendarWidget
                 $actions = [
                     ActionGroup::make([
                         $this->downloadAssignmentsAction(),
+                        $this->downloadAssignmentJustice(),
                         Action::make('Create shifts')
                             ->action(fn () => $this->runEvents())
                             ->label(__('Create shifts'))
@@ -261,12 +261,23 @@ class CalendarWidget extends FullCalendarWidget
             ]).'.xlsx'));
     }
 
+    protected function downloadAssignmentJustice()
+    {
+        return Action::make('Download assignment justice')
+            ->label(__('Download the assignment justice'))
+            ->icon('heroicon-o-arrow-down-tray')
+            ->action(fn () => Excel::download(new AssignmentJustice($this->currentMonth), __('File name', [
+                'name' => auth()->user()->displayName,
+                'month' => $this->currentMonth,
+            ]).'.xlsx'));
+    }
+
     protected function resetShifts()
     {
         $this->startDate = (Carbon::now()->format('m') == Carbon::parse($this->currentMonth)->format('m'))
             ? Carbon::now()->addDay()->format('Y-m-d')
             : Carbon::parse($this->currentMonth)->startOfMonth()->format('Y-m-d');
-        Shift::with('task')->whereNotNull('soldier_id')
+        Shift::whereNotNull('soldier_id')
             ->whereBetween('start_date', [$this->startDate, (Carbon::parse($this->currentMonth)->endOfMonth()->addDay())->format('Y-m-d')])
             ->update(['soldier_id' => null]);
         $this->refreshRecords();
@@ -334,15 +345,13 @@ class CalendarWidget extends FullCalendarWidget
     {
         return [
             EditAction::make()
-                ->fillForm(
-                    fn (Model $record, array $arguments) => method_exists($this->model, 'fillForm')
+                ->fillForm(fn (Model $record, array $arguments) => method_exists($this->model, 'fillForm')
                     ? (new $this->model)->fillForm($record, $arguments)
                     : [
                         ...$record->getAttributes(),
                         'start_date' => $arguments['event']['start'] ?? $record->start_date,
                         'end_date' => $arguments['event']['end'] ?? $record->end_date,
-                    ]
-                )
+                    ])
                 ->visible(function (Model $record, $arguments) {
                     if ($record->start_date < now()) {
                         return false;
@@ -468,15 +477,13 @@ class CalendarWidget extends FullCalendarWidget
     protected function viewAction(): Action
     {
         return ViewAction::make()
-            ->fillForm(
-                fn (Model $record, array $arguments) => method_exists($this->model, 'fillForm')
+            ->fillForm(fn (Model $record, array $arguments) => method_exists($this->model, 'fillForm')
                 ? (new $this->model)->fillForm($record, $arguments)
                 : [
                     ...$record->getAttributes(),
                     'start_date' => $arguments['event']['start'] ?? $record->start_date,
                     'end_date' => $arguments['event']['end'] ?? $record->end_date,
-                ]
-            )
+                ])
             ->modalFooterActions(
                 function (ViewAction $action, FullCalendarWidget $livewire) {
                     if (
