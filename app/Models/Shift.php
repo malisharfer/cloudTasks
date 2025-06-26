@@ -278,7 +278,8 @@ class Shift extends Model
                     $livewire->dispatch('filament-fullcalendar--refresh');
                 }
                 if ($arguments['cancel'] ?? false) {
-                    $livewire->dispatch('filament-fullcalendar--refresh');
+                    // $livewire->dispatch('filament-fullcalendar--refresh');
+                    $livewire->dispatch('close-modal');
                 }
             });
     }
@@ -576,7 +577,8 @@ class Shift extends Model
                     $livewire->dispatch('filament-fullcalendar--refresh');
                 }
                 if ($arguments['cancel'] ?? false) {
-                    $livewire->dispatch('filament-fullcalendar--refresh');
+                    // $livewire->dispatch('filament-fullcalendar--refresh');
+                    $livewire->dispatch('close-modal');
                 }
             });
     }

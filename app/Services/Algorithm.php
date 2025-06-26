@@ -19,7 +19,8 @@ class Algorithm
 
     protected function getShiftWithTasks()
     {
-        $startOfMonth = max($this->date->copy()->startOfMonth(), Carbon::tomorrow());
+        // $startOfMonth = max($this->date->copy()->startOfMonth(), Carbon::tomorrow());
+        $startOfMonth = $this->date->copy()->startOfMonth();
         $endOfMonth = $this->date->copy()->endOfMonth();
 
         return Shift::with('task')
