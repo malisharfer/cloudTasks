@@ -133,8 +133,8 @@ class CalendarWidget extends FullCalendarWidget
                 ->orWhereNull('soldier_id'),
         } : $query->where('soldier_id', '=', $current_user_id);
 
-        return $query->where('start_date', '>=', $this->fetchInfo['start'])
-            ->where('end_date', '<=', $this->fetchInfo['end'])
+        return $query->where('start_date', '>=', Carbon::create($this->fetchInfo['start'])->setTimezone('Asia/Jerusalem'))
+            ->where('end_date', '<=', Carbon::create($this->fetchInfo['end'])->setTimezone('Asia/Jerusalem'))
             ->get();
     }
 
@@ -277,7 +277,8 @@ class CalendarWidget extends FullCalendarWidget
     protected function resetShifts()
     {
         $this->startDate = (Carbon::now()->format('m') == Carbon::parse($this->currentMonth)->format('m'))
-            ? Carbon::now()->addDay()->format('Y-m-d')
+            // ? Carbon::now()->addDay()->format('Y-m-d')
+            ? Carbon::now()->startOfMonth()->format('Y-m-d')
             : Carbon::parse($this->currentMonth)->startOfMonth()->format('Y-m-d');
         Shift::whereNotNull('soldier_id')
             ->whereBetween('start_date', [$this->startDate, (Carbon::parse($this->currentMonth)->endOfMonth()->addDay())->format('Y-m-d')])
