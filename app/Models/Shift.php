@@ -766,8 +766,6 @@ class Shift extends Model
             ->label(__('Filter'))
             ->icon('heroicon-o-funnel')
             ->form(function () use ($calendar) {
-                $shifts = $calendar->getEventsByRole();
-                $soldiersShifts = array_filter($shifts->toArray(), fn ($shift) => $shift['soldier_id'] !== null);
 
                 return [
                     section::make([
@@ -801,10 +799,8 @@ class Shift extends Model
                     ]),
                     Select::make('soldier_id')
                         ->label(__('Soldier'))
-                        ->options(fn (): array => collect($soldiersShifts)->mapWithKeys(fn ($shift) => [
-                            $shift['soldier_id'] => User::where('userable_id', $shift['soldier_id'])
-                                ->first()?->displayName,
-                        ])->toArray())
+                        ->options(fn(): array => Cache::remember('users', 30 * 60, fn() => User::all())->mapWithKeys(fn($user) => [$user->userable_id => $user->displayName])
+                            ->toArray())
                         ->multiple()
                         ->live()
                         ->reactive()

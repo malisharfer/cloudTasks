@@ -53,7 +53,7 @@ class CalendarWidget extends FullCalendarWidget
 
     public function fetchEvents(array $fetchInfo): array
     {
-        set_time_limit(0);
+        // set_time_limit(0);
         $this->fetchInfo = $fetchInfo;
         $this->currentMonth = Carbon::parse($fetchInfo['start'])->addDays(7)->year.'-'.Carbon::parse($fetchInfo['start'])->addDays(7)->month;
 
@@ -140,7 +140,9 @@ class CalendarWidget extends FullCalendarWidget
 
     protected function events($events): Collection
     {
-        return $this->filter ? $this->model::filter($events, $this->filterData) : $events;
+        return $this->type === 'my_soldiers'
+            ? ($this->filter ? $this->model::filter($events, $this->filterData) : collect())
+            : ($this->filter ? $this->model::filter($events, $this->filterData) : $events);
     }
 
     public function getFormSchema(): array
