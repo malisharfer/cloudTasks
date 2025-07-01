@@ -53,7 +53,7 @@ class CalendarWidget extends FullCalendarWidget
 
     public function fetchEvents(array $fetchInfo): array
     {
-        // set_time_limit(0);
+        set_time_limit(0);
         $this->fetchInfo = $fetchInfo;
         $this->currentMonth = Carbon::parse($fetchInfo['start'])->addDays(7)->year.'-'.Carbon::parse($fetchInfo['start'])->addDays(7)->month;
 
