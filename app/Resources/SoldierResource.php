@@ -307,6 +307,23 @@ class SoldierResource extends Resource
         redirect()->route('filament.app.resources.soldiers.edit', ['record' => $replica->id]);
     }
 
+    // public static function getEloquentQuery(): Builder
+    // {
+    //     if (auth()->user()->hasRole('manager') || auth()->user()->hasRole('shifts-assignment')) {
+    //         return parent::getEloquentQuery()->where('id', '!=', auth()->user()->userable_id);
+    //     }
+
+    //     return parent::getEloquentQuery()
+    //         ->whereIn('team_id', Department::whereHas('commander', function ($query) {
+    //             $query->where('id', auth()->user()->userable_id);
+    //         })->first()?->teams->pluck('id') ?? collect([]))
+    //         ->orWhereIn('id', Department::whereHas('commander', function ($query) {
+    //             $query->where('id', auth()->user()->userable_id);
+    //         })->first()?->teams->pluck('commander_id') ?? collect([]))
+    //         ->orWhere('team_id', Team::whereHas('commander', function ($query) {
+    //             $query->where('id', auth()->user()->userable_id);
+    //         })->value('id') ?? collect([]));
+    // }
     public static function getEloquentQuery(): Builder
     {
         if (auth()->user()->hasRole('manager') || auth()->user()->hasRole('shifts-assignment')) {
@@ -314,15 +331,19 @@ class SoldierResource extends Resource
         }
 
         return parent::getEloquentQuery()
-            ->whereIn('team_id', Department::whereHas('commander', function ($query) {
-                $query->where('id', auth()->user()->userable_id);
-            })->first()?->teams->pluck('id') ?? collect([]))
-            ->orWhereIn('id', Department::whereHas('commander', function ($query) {
-                $query->where('id', auth()->user()->userable_id);
-            })->first()?->teams->pluck('commander_id') ?? collect([]))
-            ->orWhere('team_id', Team::whereHas('commander', function ($query) {
-                $query->where('id', auth()->user()->userable_id);
-            })->value('id') ?? collect([]));
+            ->when(auth()->user()->hasRole('department-commander'), function ($query) {
+                $query->whereIn('team_id', Department::whereHas('commander', function ($query) {
+                    $query->where('id', auth()->user()->userable_id);
+                })->first()?->teams->pluck('id') ?? collect([]))
+                    ->orWhereIn('id', Department::whereHas('commander', function ($query) {
+                        $query->where('id', auth()->user()->userable_id);
+                    })->first()?->teams->pluck('commander_id') ?? collect([]));
+            })
+            ->when(auth()->user()->hasRole('team-commander'), function ($query) {
+                $query->where('team_id', Team::whereHas('commander', function ($query) {
+                    $query->where('id', auth()->user()->userable_id);
+                })->value('id') ?? collect([]));
+            });
     }
 
     public static function getPages(): array
