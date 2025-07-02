@@ -53,13 +53,15 @@ class CalendarWidget extends FullCalendarWidget
 
     public function fetchEvents(array $fetchInfo): array
     {
-        set_time_limit(0);
+        // set_time_limit(0);
         $this->fetchInfo = $fetchInfo;
         $this->currentMonth = Carbon::parse($fetchInfo['start'])->addDays(7)->year.'-'.Carbon::parse($fetchInfo['start'])->addDays(7)->month;
 
-        $events = $this->getEventsByRole();
+        // $events = $this->getEventsByRole();
 
-        $eventDays = self::events($events)
+        // $eventDays = self::events($events)
+        $events = self::events();
+        $eventDays = $events
             ->map(fn (Model $event) => [
                 'id' => $event[$this->keys[0]],
                 'title' => $event[$this->keys[1]],
@@ -103,46 +105,58 @@ class CalendarWidget extends FullCalendarWidget
         return [$holiday->isHoliday, $holiday->holidayName];
     }
 
-    public function getEventsByRole()
+    // public function getEventsByRole()
+    // {
+    //     $current_user_id = auth()->user()->userable_id;
+    //     $role = current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']));
+    //     $query = $this->model == Shift::class ?
+    //     $this->model::with(['task', 'soldier'])
+    //     : $this->model::with('soldier');
+    //     $query = ($this->type === 'my_soldiers') ? match ($role) {
+    //         'manager', 'shifts-assignment' => $query->where('soldier_id', '!=', $current_user_id)
+    //             ->orWhereNull('soldier_id'),
+    //         'department-commander' => $query->where('soldier_id', '!=', $current_user_id)
+    //             ->where(function ($query) use ($current_user_id) {
+    //                 $query->whereNull('soldier_id')
+    //                     ->orWhereIn('soldier_id', Department::whereHas('commander', function ($query) use ($current_user_id) {
+    //                         $query->where('id', $current_user_id);
+    //                     })->first()?->teams->flatMap(fn (Team $team) => $team->members->pluck('id'))->toArray() ?? collect([]))
+    //                     ->orWhereIn('soldier_id', Department::whereHas('commander', function ($query) use ($current_user_id) {
+    //                         $query->where('id', $current_user_id);
+    //                     })->first()?->teams->pluck('commander_id') ?? collect([]));
+    //             })->orWhereNull('soldier_id'),
+    //         'team-commander' => $query->where('soldier_id', '!=', $current_user_id)
+    //             ->where(function ($query) use ($current_user_id) {
+    //                 $query->whereNull('soldier_id')
+    //                     ->orWhereIn('soldier_id', Team::whereHas('commander', function ($query) use ($current_user_id) {
+    //                         $query->where('id', $current_user_id);
+    //                     })->first()?->members->pluck('id') ?? collect([]));
+    //             })
+    //             ->orWhereNull('soldier_id'),
+    //     } : $query->where('soldier_id', '=', $current_user_id);
+
+    //     return $query->where('start_date', '>=', Carbon::create($this->fetchInfo['start'])->setTimezone('Asia/Jerusalem'))
+    //         ->where('end_date', '<=', Carbon::create($this->fetchInfo['end'])->setTimezone('Asia/Jerusalem'))
+    //         ->get();
+    // }
+
+    public function getMyEvents()
     {
         $current_user_id = auth()->user()->userable_id;
-        $role = current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']));
         $query = $this->model == Shift::class ?
-        $this->model::with(['task', 'soldier'])
-        : $this->model::with('soldier');
-        $query = ($this->type === 'my_soldiers') ? match ($role) {
-            'manager', 'shifts-assignment' => $query->where('soldier_id', '!=', $current_user_id)
-                ->orWhereNull('soldier_id'),
-            'department-commander' => $query->where('soldier_id', '!=', $current_user_id)
-                ->where(function ($query) use ($current_user_id) {
-                    $query->whereNull('soldier_id')
-                        ->orWhereIn('soldier_id', Department::whereHas('commander', function ($query) use ($current_user_id) {
-                            $query->where('id', $current_user_id);
-                        })->first()?->teams->flatMap(fn (Team $team) => $team->members->pluck('id'))->toArray() ?? collect([]))
-                        ->orWhereIn('soldier_id', Department::whereHas('commander', function ($query) use ($current_user_id) {
-                            $query->where('id', $current_user_id);
-                        })->first()?->teams->pluck('commander_id') ?? collect([]));
-                })->orWhereNull('soldier_id'),
-            'team-commander' => $query->where('soldier_id', '!=', $current_user_id)
-                ->where(function ($query) use ($current_user_id) {
-                    $query->whereNull('soldier_id')
-                        ->orWhereIn('soldier_id', Team::whereHas('commander', function ($query) use ($current_user_id) {
-                            $query->where('id', $current_user_id);
-                        })->first()?->members->pluck('id') ?? collect([]));
-                })
-                ->orWhereNull('soldier_id'),
-        } : $query->where('soldier_id', '=', $current_user_id);
+            $this->model::with(['task', 'soldier'])
+            : $this->model::with('soldier');
+        $query = $query->where('soldier_id', '=', $current_user_id);
 
         return $query->where('start_date', '>=', Carbon::create($this->fetchInfo['start'])->setTimezone('Asia/Jerusalem'))
             ->where('end_date', '<=', Carbon::create($this->fetchInfo['end'])->setTimezone('Asia/Jerusalem'))
             ->get();
     }
-
-    protected function events($events): Collection
+    protected function events(): Collection
     {
         return $this->type === 'my_soldiers'
-            ? ($this->filter ? $this->model::filter($events, $this->filterData) : collect())
-            : ($this->filter ? $this->model::filter($events, $this->filterData) : $events);
+        ? ($this->filter ? $this->model::filter($this->fetchInfo, $this->filterData) : collect())
+        : $this->getMyEvents();
     }
 
     public function getFormSchema(): array

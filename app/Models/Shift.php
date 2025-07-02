@@ -835,21 +835,74 @@ class Shift extends Model
                 $calendar->refreshRecords();
             });
     }
-
-    public static function filter($events, $filterData)
+    public static function getEventsByRole()
     {
-        return $events
-            ->when($filterData['reservists'], fn ($query) => $query
-                ->whereIn('soldier_id', Soldier::where('is_reservist', true)->pluck('id')->toArray()))
+        $current_user_id = auth()->user()->userable_id;
+        $role = current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']));
+        $query = Shift::with(['task', 'soldier']);
+        $query = match ($role) {
+            'manager', 'shifts-assignment' => $query->where(function ($query) use ($current_user_id) {
+                $query->where('soldier_id', '!=', $current_user_id)
+                    ->orWhereNull('soldier_id');
+            }),
+            'department-commander' => $query->where(function ($query) use ($current_user_id) {
+                $query->where('soldier_id', '!=', $current_user_id)
+                    ->where(function ($query) use ($current_user_id) {
+                        $query->whereNull('soldier_id')
+                            ->orWhereIn('soldier_id', Department::whereHas('commander', function ($query) use ($current_user_id) {
+                                $query->where('id', $current_user_id);
+                            })->first()?->teams->flatMap(fn (Team $team) => $team->members->pluck('id'))->toArray() ?? collect([]))
+                            ->orWhereIn('soldier_id', Department::whereHas('commander', function ($query) use ($current_user_id) {
+                                $query->where('id', $current_user_id);
+                            })->first()?->teams->pluck('commander_id') ?? collect([]));
+                    })->orWhereNull('soldier_id');
+            }),
+            'team-commander' => $query->where(function ($query) use ($current_user_id) {
+                $query->where('soldier_id', '!=', $current_user_id)
+                    ->where(function ($query) use ($current_user_id) {
+                        $query->whereNull('soldier_id')
+                            ->orWhereIn('soldier_id', Team::whereHas('commander', function ($query) use ($current_user_id) {
+                                $query->where('id', $current_user_id);
+                            })->first()?->members->pluck('id') ?? collect([]));
+                    })
+                    ->orWhereNull('soldier_id');
+            }),
+        };
+
+        return $query;
+
+    }
+    public static function filter($fetchInfo, $filterData)
+    {
+        $query = self::getEventsByRole();
+
+        return $query
+            ->where(function ($query) use ($fetchInfo) {
+                $query->where('start_date', '>=', Carbon::create($fetchInfo['start'])->setTimezone('Asia/Jerusalem'))
+                    ->where('end_date', '<=', Carbon::create($fetchInfo['end'])->setTimezone('Asia/Jerusalem'));
+            })->when($filterData['reservists'], fn ($query) => $query
+            ->whereIn('soldier_id', Soldier::where('is_reservist', true)->pluck('id')->toArray()))
             ->when($filterData['unassigned_shifts'], fn ($query) => $query
                 ->where('soldier_id', null))
             ->when(! empty($filterData['soldier_id']), fn ($query) => $query
                 ->whereIn('soldier_id', $filterData['soldier_id']))
-            ->filter(fn ($event) => $filterData['kind'] ? $event->task()->withTrashed()->first()->kind == $filterData['kind'] : true)
-            ->filter(fn ($event) => empty($filterData['type']) || collect($filterData['type'])->contains($event->task()->withTrashed()->first()->type))
-            ->filter(fn ($event) => empty($filterData['course']) || ($event->soldier_id && collect($filterData['course'])->contains(Soldier::find($event->soldier_id)->course)));
+            ->when($filterData['kind'], function ($query) use ($filterData) {
+                $query->whereHas('task', function ($query) use ($filterData) {
+                    $query->withTrashed()->where('kind', $filterData['kind']);
+                });
+            })
+            ->when(! empty($filterData['type']), function ($query) use ($filterData) {
+                $query->whereHas('task', function ($query) use ($filterData) {
+                    $query->withTrashed()->whereIn('type', collect($filterData['type']));
+                });
+            })
+            ->when(! empty($filterData['course']), function ($query) use ($filterData) {
+                $query->whereHas('soldier', function ($query) use ($filterData) {
+                    $query->whereIn('course', collect($filterData['course']));
+                });
+            })->get();
     }
-
+    
     public static function activeFilters($calendar)
     {
         if (! $calendar->filter) {
