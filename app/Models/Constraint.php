@@ -350,48 +350,109 @@ class Constraint extends Model
             ->iconButton()
             ->label(__('Filter'))
             ->icon('heroicon-o-funnel')
-            ->form(function () use ($calendar) {
-                $constraints = $calendar->getEventsByRole();
-                $soldiersConstraints = array_filter($constraints->toArray(), fn ($constraint) => $constraint['soldier_id'] != null);
-
-                return [
-                    Select::make('soldier_id')
-                        ->label(__('Soldier'))
-                        ->options(fn (): array => collect($soldiersConstraints)->mapWithKeys(fn ($constraint) => [
-                            $constraint['soldier_id'] => optional(User::where('userable_id', $constraint['soldier_id'])->first())->displayName ?? __('Unknown Soldier'),
-                        ])->toArray())
-                        ->multiple(),
-                ];
-            })
+            ->form(fn () => [
+                Select::make('soldier_id')
+                    ->label(__('Soldier'))
+                    ->options(fn (): array => Cache::remember('users', 30 * 60, fn () => User::all())->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
+                        ->toArray())
+                    ->multiple(),
+                Select::make('constraint_type')
+                    ->label(__('Constraint Name'))
+                    ->options(fn () => collect(ConstraintType::cases())->mapWithKeys(fn ($type) => [$type->value => $type->getLabel()]))
+                    ->multiple(),
+            ])
             ->modalSubmitActionLabel(__('Filter'))
             ->modalCancelAction(false)
             ->action(function (array $data) use ($calendar) {
-                $calendar->filterData = $data;
-                $calendar->filter = $data['soldier_id'] === [] ? false : true;
+                if (! empty($data['soldier_id']) || ! empty($data['constraint_type'])) {
+                    $calendar->filterData = $data;
+                    $calendar->filter = true;
+                } else {
+                    $calendar->filter = false;
+                    $calendar->filterData = [];
+                }
                 $calendar->refreshRecords();
             });
     }
 
-    public static function filter($events, $filterData)
+    public static function getEventsByRole()
     {
-        return $events
-            ->whereIn('soldier_id', $filterData['soldier_id'])
-            ->values();
+        $current_user_id = auth()->user()->userable_id;
+        $role = current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']));
+        $query = Constraint::with('soldier');
+        $query = match ($role) {
+            'manager', 'shifts-assignment' => $query->where(function ($query) use ($current_user_id) {
+                $query->where('soldier_id', '!=', $current_user_id)
+                    ->orWhereNull('soldier_id');
+            }),
+            'department-commander' => $query->where(function ($query) use ($current_user_id) {
+                $query->where('soldier_id', '!=', $current_user_id)
+                    ->where(function ($query) use ($current_user_id) {
+                        $query->whereNull('soldier_id')
+                            ->orWhereIn('soldier_id', Department::whereHas('commander', function ($query) use ($current_user_id) {
+                                $query->where('id', $current_user_id);
+                            })->first()?->teams->flatMap(fn (Team $team) => $team->members->pluck('id'))->toArray() ?? collect([]))
+                            ->orWhereIn('soldier_id', Department::whereHas('commander', function ($query) use ($current_user_id) {
+                                $query->where('id', $current_user_id);
+                            })->first()?->teams->pluck('commander_id') ?? collect([]));
+                    })->orWhereNull('soldier_id');
+            }),
+            'team-commander' => $query->where(function ($query) use ($current_user_id) {
+                $query->where('soldier_id', '!=', $current_user_id)
+                    ->where(function ($query) use ($current_user_id) {
+                        $query->whereNull('soldier_id')
+                            ->orWhereIn('soldier_id', Team::whereHas('commander', function ($query) use ($current_user_id) {
+                                $query->where('id', $current_user_id);
+                            })->first()?->members->pluck('id') ?? collect([]));
+                    })
+                    ->orWhereNull('soldier_id');
+            }),
+        };
+
+        return $query;
+
+    }
+
+    public static function filter($fetchInfo, $filterData)
+    {
+        $query = self::getEventsByRole();
+
+        return $query
+            ->where(function ($query) use ($fetchInfo) {
+                $query->where('start_date', '>=', Carbon::create($fetchInfo['start'])->setTimezone('Asia/Jerusalem'))
+                    ->where('end_date', '<=', Carbon::create($fetchInfo['end'])->setTimezone('Asia/Jerusalem'));
+            })
+            ->when(! empty($filterData['soldier_id']), function ($query) use ($filterData) {
+                $query->whereIn('soldier_id', $filterData['soldier_id']);
+            })
+            ->when(! empty($filterData['constraint_type']), function ($query) use ($filterData) {
+                $query->whereIn('constraint_type', collect($filterData['constraint_type']));
+            })
+            ->get();
     }
 
     public static function activeFilters($calendar)
     {
-        if ($calendar->filter) {
-            $activeFilter = collect($calendar->filterData['soldier_id'])->map(function ($soldier_id) {
-                $user = User::where('userable_id', $soldier_id)->first();
-
-                return $user ? $user->displayName : __('Unknown soldier');
-            });
+        if (! $calendar->filter) {
+            return [];
+        }
+        $data = $calendar->filterData;
+        $labels = collect([]);
+        if (! empty($data['soldier_id'])) {
+            $soldiers = collect($data['soldier_id'])
+                ->map(fn ($id) => Soldier::find($id)->user->displayName)
+                ->implode(', ');
+            $labels->push(__('Soldiers').': '.$soldiers);
+        }
+        if (! empty($data['constraint_type'])) {
+            $types = collect($data['constraint_type'])
+                ->map(fn ($type) => ConstraintType::from($type)->getLabel())
+                ->implode(', ');
+            $labels->push(__('Constraint Name').': '.$types);
         }
 
-        return $activeFilter->toArray();
+        return $labels->toArray();
     }
-
     public static function getTitle(): string
     {
         return __('Constraint');
