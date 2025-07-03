@@ -332,12 +332,14 @@ class SoldierResource extends Resource
 
         return parent::getEloquentQuery()
             ->when(auth()->user()->hasRole('department-commander'), function ($query) {
-                $query->whereIn('team_id', Department::whereHas('commander', function ($query) {
-                    $query->where('id', auth()->user()->userable_id);
-                })->first()?->teams->pluck('id') ?? collect([]))
-                    ->orWhereIn('id', Department::whereHas('commander', function ($query) {
+                $query->where(function ($query) {
+                    $query->whereIn('team_id', Department::whereHas('commander', function ($query) {
                         $query->where('id', auth()->user()->userable_id);
-                    })->first()?->teams->pluck('commander_id') ?? collect([]));
+                    })->first()?->teams->pluck('id') ?? collect([]))
+                        ->orWhereIn('id', Department::whereHas('commander', function ($query) {
+                            $query->where('id', auth()->user()->userable_id);
+                        })->first()?->teams->pluck('commander_id') ?? collect([]));
+                });
             })
             ->when(auth()->user()->hasRole('team-commander'), function ($query) {
                 $query->where('team_id', Team::whereHas('commander', function ($query) {

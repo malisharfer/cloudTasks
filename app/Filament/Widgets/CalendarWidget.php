@@ -204,7 +204,8 @@ class CalendarWidget extends FullCalendarWidget
                         Action::make('Reset assignment')
                             ->action(fn () => $this->resetShifts())
                             ->label(__('Reset assignment'))
-                            ->icon('heroicon-o-arrow-path'),
+                            ->icon('heroicon-o-arrow-path')
+                            ->color('danger'),
                     ])
                         ->visible(in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())
                             || in_array('manager', auth()->user()->getRoleNames()->toArray())),
@@ -293,12 +294,11 @@ class CalendarWidget extends FullCalendarWidget
     protected function resetShifts()
     {
         $this->startDate = (Carbon::now()->format('m') == Carbon::parse($this->currentMonth)->format('m'))
-            // ? Carbon::now()->addDay()->format('Y-m-d')
             ? Carbon::now()->startOfMonth()->format('Y-m-d')
+            // ? Carbon::now()->addDay()->format('Y-m-d')
             : Carbon::parse($this->currentMonth)->startOfMonth()->format('Y-m-d');
-        Shift::whereNotNull('soldier_id')
-            ->whereBetween('start_date', [$this->startDate, (Carbon::parse($this->currentMonth)->endOfMonth()->addDay())->format('Y-m-d')])
-            ->update(['soldier_id' => null]);
+        Shift::whereBetween('start_date', [$this->startDate, (Carbon::parse($this->currentMonth)->endOfMonth()->addDay())->format('Y-m-d')])
+            ->delete();
         $this->refreshRecords();
     }
 
