@@ -92,9 +92,15 @@ class ListSoldiers extends ListRecords
                     }
                     if (! empty($updateData)) {
                         $soldiers = Soldier::where('course', $selectedCourse)->get();
-                        $soldiers->map(function ($soldier) use ($updateData) {
+                        $soldiers->map(function (Soldier $soldier) use ($updateData) {
                             collect($updateData)->map(function ($value, $key) use ($soldier) {
-                                $soldier->{$key} = $value;
+                                if ($key == 'qualifications') {
+                                    $qualifications = collect($soldier->qualifications);
+                                    $qualifications->push(...$value);
+                                    $soldier->qualifications = $qualifications;
+                                } else {
+                                    $soldier->{$key} = $value;
+                                }
                             });
                             $soldier->save();
                         });
