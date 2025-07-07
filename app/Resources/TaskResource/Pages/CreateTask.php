@@ -76,6 +76,7 @@ class CreateTask extends CreateRecord
                 ->visible(
                     fn (Get $get) => $get('recurring.type') == 'One time'
                             && $get('recurring.date')
+
                 ),
         ];
     }

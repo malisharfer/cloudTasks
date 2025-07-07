@@ -188,10 +188,10 @@ it('should return the matching shifts for exchanging', function () {
     $expectedShifts = collect([$shift1->id, $shift4->id]);
     $changeAssignment = new ChangeAssignment($shiftForExchange);
     $result = $changeAssignment->getMatchingShifts();
-    expect($result->count())->toBe(2);
+    expect($result['shifts']->count())->toBe(2);
     $shiftsIds = collect([]);
-    $result->map(function ($shift) use (&$shiftsIds) {
-        $shiftsIds->push($shift->pluck('id')->first());
+    $result['shifts']->each(function ($shift) use (&$shiftsIds) {
+        $shiftsIds->push($shift['shift']->id);
     });
     expect($expectedShifts)->toEqual($shiftsIds);
 });

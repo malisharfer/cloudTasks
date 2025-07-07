@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\Availability;
 use App\Enums\TaskKind;
 
 class Schedule
@@ -10,49 +11,262 @@ class Schedule
 
     public $soldiers;
 
+    public $shiftsData;
+
+    public $soldiersDict;
+
     public $assignments;
+
+    public $SHIFT_DUMBBELLS;
+
+    public $SOLDIER_DUMBBELLS;
 
     public function __construct($shifts, $soldiers)
     {
-        $this->soldiers = collect($soldiers);
         $this->shifts = collect($shifts);
+        $this->soldiers = collect($soldiers);
+        $this->shiftsData = collect([]);
+        $this->soldiersDict = collect([]);
         $this->assignments = collect([]);
-    }
-
-    public function schedule()
-    {
-        $this->assignPointedShifts();
-        $this->assignNotPointedShifts();
-        $this->saveAssignments();
-    }
-
-    protected function assignPointedShifts()
-    {
-        $pointedShifts = $this->shifts->filter(fn (Shift $shift): bool => $shift->points > 0);
-        $soldiers = $this->soldiers->filter(fn (Soldier $soldier) => $soldier->pointsMaxData->remaining() > 0);
-        $pointedSchedule = new PointedSchedule($soldiers, $pointedShifts);
-        $assignments = $pointedSchedule->schedule();
-        $this->assignments->push(...$assignments);
-    }
-
-    protected function assignNotPointedShifts()
-    {
-        $taskKinds = collect([
-            TaskKind::NIGHT->value => 1,
-            TaskKind::REGULAR->value => 3,
-            TaskKind::ALERT->value => 1,
+        $this->SHIFT_DUMBBELLS = collect([
+            'POINTS_RATIO' => 0.29,
+            'SHIFTS_RATIO' => 0.39,
+            'WEEKENDS_RATIO' => 0.04,
+            'NIGHTS_RATIO' => 0.04,
+            'SHIFT_AVAILABILITY' => 0.23,
+            'BLOCK_POINTS' => 0.05,
         ]);
-        $taskKinds->each(function ($gap, $taskKind) {
-            $shifts = $this->shifts->filter(fn (Shift $shift): bool => $shift->kind == $taskKind &&
-                $shift->points == 0);
-            $notPointedSchedule = new NotPointedSchedule($taskKind, $this->soldiers, $shifts, $gap);
-            $assignments = $notPointedSchedule->schedule();
-            $this->assignments->push(...$assignments);
+        $this->SOLDIER_DUMBBELLS = collect([
+            'LOW_CONSTRAINT' => 0.45,
+            'POINTS_RELATIVE_LOAD' => 0.4,
+            'SHIFTS_RELATIVE_LOAD' => 0.08,
+            'NIGHT_RELATIVE_LOAD' => 0.01,
+            'WEEKEND_RELATIVE_LOAD' => 0.01,
+            'MULTITASKING_VALUE' => 0.05,
+        ]);
+    }
+
+    public function schedule(): void
+    {
+        $this->initShiftsData();
+        $this->initSoldiersData();
+        $this->assignShifts();
+        Helpers::updateShiftTable($this->assignments);
+    }
+
+    protected function initShiftsData(): void
+    {
+        $groupedShifts = collect($this->shifts)->groupBy('taskType');
+        $groupedShifts->each(function ($shifts, $taskType) {
+            $this->addShiftsDataByTask($taskType, collect($shifts));
         });
     }
 
-    protected function saveAssignments()
+    protected function addShiftsDataByTask(string $taskType, $shifts): void
     {
-        Helpers::updateShiftTable($this->assignments);
+        $soldiers = $this->soldiers->filter(function (Soldier $soldier) use ($taskType): bool {
+            return $soldier->isQualified($taskType);
+        });
+        $taskWeight = $this->getTaskWeight($shifts, $soldiers);
+        $shifts->map(fn ($shift) => $this->addShiftData($shift, $soldiers, $taskWeight));
+    }
+
+    protected function getTaskWeight($shifts, $soldiers): array
+    {
+        $requiredPoints = collect($shifts)->sum('points');
+        $requiredNights = collect($shifts)->filter(fn (Shift $shift) => ($shift->kind === TaskKind::NIGHT->value))->count();
+        $requiredWeekends = collect($shifts)
+            ->filter(fn (Shift $shift) => ($shift->kind === TaskKind::WEEKEND->value))
+            ->sum(fn (Shift $shift) => $shift->points);
+        $requiredShifts = count($shifts);
+
+        $availablePoints = collect($soldiers)->sum(fn (Soldier $soldier) => $soldier->pointsMaxData->remaining());
+
+        $availableNights = collect($soldiers)->sum(fn (Soldier $soldier) => $soldier->nightsMaxData->remaining());
+
+        $availableWeekends = collect($soldiers)->sum(fn (Soldier $soldier) => $soldier->weekendsMaxData->remaining());
+
+        $availableShifts = collect($soldiers)->sum(fn (Soldier $soldier) => $soldier->shiftsMaxData->remaining());
+
+        $weight = collect([
+            'POINTS_RATIO' => $this->getRatio($requiredPoints, $availablePoints),
+            'NIGHTS_RATIO' => $this->getRatio($requiredNights, $availableNights),
+            'WEEKENDS_RATIO' => $this->getRatio($requiredWeekends, $availableWeekends),
+            'SHIFTS_RATIO' => $this->getRatio($requiredShifts, $availableShifts),
+        ]);
+
+        $weight->each(function ($value, $key) use (&$weight) {
+            $weight[$key] = $value * $this->SHIFT_DUMBBELLS[$key];
+        });
+
+        return $weight->all();
+    }
+
+    protected function addShiftData(Shift $shift, $soldiers, $taskWeight)
+    {
+        $potentialSoldiers = $this->getPotentialSoldiers($soldiers, $shift->range);
+        $shiftData = new ShiftData(
+            $shift,
+            $potentialSoldiers,
+            $this->getShiftWeight(
+                $taskWeight,
+                $shift,
+                $soldiers->count(),
+                $potentialSoldiers->count()
+            )
+        );
+        $this->shiftsData->push($shiftData);
+    }
+
+    protected function getRatio(float $required, float $available): float
+    {
+        return $available == 0 ? 0 : (float) $this->maximumOne((float) $required / $available);
+    }
+
+    protected function maximumOne(float $number): float
+    {
+        return $number > 1 ? 1 : $number;
+    }
+
+    protected function getPotentialSoldiers($soldiers, Range $range)
+    {
+        $potentialSoldiers = $soldiers->filter(function (Soldier $soldier) use ($range) {
+            return $soldier->isAvailableByConstraints($range) != Availability::NO;
+        })->map(function (Soldier $soldier) use ($range): PotentialSoldierData {
+            $availability = $soldier->isAvailableByConstraints($range);
+
+            return new PotentialSoldierData(
+                $soldier->id,
+                $availability == Availability::BETTER_NOT
+            );
+        });
+
+        return $potentialSoldiers;
+    }
+
+    protected function getShiftWeight($taskWeight, Shift $shift, int $soldiersCount, int $availableSoldiersCount): float
+    {
+        $weight = $taskWeight['SHIFTS_RATIO'] + $shift->points > 0 ? $taskWeight['POINTS_RATIO'] : 0;
+
+        match ($shift->kind) {
+            TaskKind::WEEKEND->value => $weight += $taskWeight['WEEKENDS_RATIO'],
+            TaskKind::NIGHT->value => $weight += $taskWeight['NIGHTS_RATIO'],
+            default => null
+        };
+
+        $weight += $this->getShiftAvailabilityRatio($soldiersCount, $availableSoldiersCount)
+            * $this->SHIFT_DUMBBELLS['SHIFT_AVAILABILITY'];
+
+        $weight += $this->getShiftBlockPoints($shift->points) * $this->SHIFT_DUMBBELLS['BLOCK_POINTS'];
+
+        return $weight;
+    }
+
+    protected function getShiftAvailabilityRatio(int $soldiersCount, int $availableSoldiers): float
+    {
+        if ($availableSoldiers == 0) {
+            return 0;
+        }
+
+        return (float) ($soldiersCount - $availableSoldiers) / $soldiersCount;
+    }
+
+    protected function getShiftBlockPoints(float $points): float
+    {
+        if ($points == 0) {
+            return 0;
+        }
+
+        return (float) $points / 3;
+    }
+
+    protected function initSoldiersData(): void
+    {
+        $this->soldiers->map(fn (Soldier $soldier) => $this->soldiersDict->put($soldier->id, $soldier));
+    }
+
+    protected function assignShifts()
+    {
+        $sortedShifts = $this->getSortedShiftsList();
+        collect($sortedShifts)->map(fn (ShiftData $shift) => $this->assignShift($shift));
+    }
+
+    protected function getSortedShiftsList()
+    {
+        return $this->shiftsData->sortByDesc('weight');
+    }
+
+    protected function assignShift(ShiftData $shiftData)
+    {
+        $soldiers = $this->getPotentialSoldiersData($shiftData);
+        foreach ($soldiers as $soldier) {
+            $success = $this->tryAssign($soldier, $shiftData->shift);
+            if ($success) {
+                return;
+            }
+        }
+    }
+
+    protected function getPotentialSoldiersData(ShiftData $shiftData)
+    {
+        $soldiers = collect([]);
+        collect($shiftData->potentialSoldiers)->map(function (PotentialSoldierData $potentialSoldierData) use (&$soldiers, $shiftData) {
+            $soldiers->push($this->getSoldierAndWeight($potentialSoldierData, $shiftData->shift));
+        });
+
+        return $this->getSortedPotentialSoldiers($soldiers);
+    }
+
+    protected function getSoldierAndWeight(PotentialSoldierData $potentialSoldierData, Shift $shift)
+    {
+        $soldier = $this->soldiersDict[$potentialSoldierData->soldierId];
+        $weightDict = [
+            'LOW_CONSTRAINT' => $potentialSoldierData->isLowConstraint ? 1 : 0,
+            'POINTS_RELATIVE_LOAD' => $shift->points > 0 ? $soldier->pointsMaxData->calculatedRelativeLoad() : 0,
+            'SHIFTS_RELATIVE_LOAD' => $soldier->shiftsMaxData->calculatedRelativeLoad(),
+            'NIGHT_RELATIVE_LOAD' => $shift->kind !== TaskKind::NIGHT->value ? 0 : $soldier->nightsMaxData->calculatedRelativeLoad(),
+            'WEEKEND_RELATIVE_LOAD' => $shift->kind !== TaskKind::WEEKEND->value ? 0 : $soldier->weekendsMaxData->calculatedRelativeLoad(),
+            'MULTITASKING_VALUE' => $this->getMultitaskingValue(
+                $soldier->qualifications->count()
+            ),
+        ];
+        $weight = $this->getTotalWeight($weightDict);
+
+        return [$soldier, $weight];
+    }
+
+    protected function getMultitaskingValue(int $qualificationsNumber): float
+    {
+        return (float) (1 - ((float) (1 / $qualificationsNumber)));
+    }
+
+    protected function getTotalWeight($weightData): float
+    {
+        $weight = 0;
+        collect($weightData)->map(function ($value, $key) use (&$weight) {
+            $weight += (float) ($value * $this->SOLDIER_DUMBBELLS[$key]);
+        });
+
+        return $weight;
+    }
+
+    protected function getSortedPotentialSoldiers($soldiers)
+    {
+        $sortedSoldiers = $soldiers->sortBy(fn ($item) => $item[1]);
+
+        return $sortedSoldiers->map(fn ($soldier) => $soldier[0]);
+    }
+
+    protected function tryAssign(Soldier $soldier, Shift $shift): bool
+    {
+        $spaces = $shift->getShiftSpaces($soldier->shifts);
+        if ($soldier->isAbleTake($shift, $spaces)) {
+            $soldier->assign($shift, $spaces);
+            $this->assignments->push(new Assignment($shift->id, $soldier->id));
+
+            return true;
+        }
+
+        return false;
     }
 }

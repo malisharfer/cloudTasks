@@ -29,7 +29,14 @@ class ListSoldiers extends ListRecords
                             ->label(__('Course'))
                             ->options(Soldier::select('course')->distinct()->orderBy('course')->pluck('course', 'course')->all())
                             ->required(),
-                    ]),
+                        Select::make('type')
+                            ->label(__('Type'))
+                            ->options([
+                                'survival' => __('Survival'),
+                                'collection' => __('Collection'),
+                            ])
+                            ->required(),
+                    ])->columns(2),
                     Section::make([
                         TextInput::make('max_shifts')
                             ->label(__('Max shifts'))
@@ -81,7 +88,6 @@ class ListSoldiers extends ListRecords
                     ]),
                 ])
                 ->action(function (array $data) {
-                    $selectedCourse = $data['course'];
                     $updateData = [];
                     $fields = ['max_shifts', 'max_nights', 'max_weekends', 'max_alerts', 'max_in_parallel', 'capacity', 'qualifications'];
 
@@ -91,16 +97,11 @@ class ListSoldiers extends ListRecords
                         }
                     }
                     if (! empty($updateData)) {
-                        $soldiers = Soldier::where('course', $selectedCourse)->get();
-                        $soldiers->map(function (Soldier $soldier) use ($updateData) {
+                        $soldiers = Soldier::where('course', $data['course'])
+                            ->where('type', $data['type'])->get();
+                        $soldiers->map(function ($soldier) use ($updateData) {
                             collect($updateData)->map(function ($value, $key) use ($soldier) {
-                                if ($key == 'qualifications') {
-                                    $qualifications = collect($soldier->qualifications);
-                                    $qualifications->push(...$value);
-                                    $soldier->qualifications = $qualifications;
-                                } else {
-                                    $soldier->{$key} = $value;
-                                }
+                                $soldier->{$key} = $value;
                             });
                             $soldier->save();
                         });

@@ -10,6 +10,7 @@ class SoldierFactory extends Factory
     {
         return [
             'team_id' => null,
+            'type' => array_rand(['survival', 'collection']),
             'gender' => fake()->boolean(),
             'is_permanent' => fake()->boolean(),
             'enlist_date' => fake()->dateTime(),

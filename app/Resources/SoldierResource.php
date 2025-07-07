@@ -60,16 +60,23 @@ class SoldierResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('user')
+                TextColumn::make('user.displayName')
                     ->label(__('Full name'))
-                    ->formatStateUsing(fn ($record) => $record->user->last_name.' '.$record->user->first_name)
+                    ->formatStateUsing(
+                        fn ($record) => $record->user->last_name.' '.$record->user->first_name
+                    )
                     ->searchable(query: function ($query, $search) {
                         $query->whereHas('user', function ($query) use ($search) {
                             $query->where('first_name', 'like', "%{$search}%")
                                 ->orWhere('last_name', 'like', "%{$search}%");
                         });
                     })
-                    ->sortable(),
+                    ->sortable(['first_name', 'last_name']),
+                TextColumn::make('type')
+                    ->formatStateUsing(
+                        fn ($record) => $record->type == 'collection' ? __('Collection') : __('Survival')
+                    )
+                    ->label(__('Type')),
                 BooleanColumn::make('is_reservist')
                     ->label(__('Reservist')),
                 BadgeColumn::make('gender')
@@ -124,9 +131,11 @@ class SoldierResource extends Resource
                                             ->whereMonth('end_date', $now->month);
                                     });
                             })
-                            ->with(['task' => function ($query) {
-                                $query->withTrashed();
-                            }])
+                            ->with([
+                                'task' => function ($query) {
+                                    $query->withTrashed();
+                                },
+                            ])
                             ->get()
                             ->sum(fn (Shift $shift) => $shift->parallel_weight ?? $shift->task->parallel_weight);
                     })
@@ -192,6 +201,13 @@ class SoldierResource extends Resource
                     ->label(__('Is trainee'))
                     ->query(fn (Builder $query): Builder => $query->where('is_trainee', true))
                     ->toggle(),
+                SelectFilter::make('type')
+                    ->label(__('Type'))
+                    ->options([
+                        'survival' => __('Survival'),
+                        'collection' => __('Collection'),
+                    ])
+                    ->default(null),
                 Filter::make('enlist_date')
                     ->form([
                         Fieldset::make('Enlist date')
@@ -217,6 +233,7 @@ class SoldierResource extends Resource
                     ),
 
             ], FiltersLayout::Modal)
+            ->defaultSort('user.displayName')
             ->filtersFormColumns(4)
             ->deferFilters()
             ->filtersTriggerAction(
@@ -307,23 +324,6 @@ class SoldierResource extends Resource
         redirect()->route('filament.app.resources.soldiers.edit', ['record' => $replica->id]);
     }
 
-    // public static function getEloquentQuery(): Builder
-    // {
-    //     if (auth()->user()->hasRole('manager') || auth()->user()->hasRole('shifts-assignment')) {
-    //         return parent::getEloquentQuery()->where('id', '!=', auth()->user()->userable_id);
-    //     }
-
-    //     return parent::getEloquentQuery()
-    //         ->whereIn('team_id', Department::whereHas('commander', function ($query) {
-    //             $query->where('id', auth()->user()->userable_id);
-    //         })->first()?->teams->pluck('id') ?? collect([]))
-    //         ->orWhereIn('id', Department::whereHas('commander', function ($query) {
-    //             $query->where('id', auth()->user()->userable_id);
-    //         })->first()?->teams->pluck('commander_id') ?? collect([]))
-    //         ->orWhere('team_id', Team::whereHas('commander', function ($query) {
-    //             $query->where('id', auth()->user()->userable_id);
-    //         })->value('id') ?? collect([]));
-    // }
     public static function getEloquentQuery(): Builder
     {
         if (auth()->user()->hasRole('manager') || auth()->user()->hasRole('shifts-assignment')) {
@@ -381,6 +381,14 @@ class SoldierResource extends Resource
     public static function soldierDetails(): array
     {
         return [
+            Select::make('type')
+                ->label(__('Type'))
+                ->options([
+                    'survival' => __('Survival'),
+                    'collection' => __('Collection'),
+                ])
+                ->placeholder(__('Select soldier type'))
+                ->required(),
             ToggleButtons::make('gender')
                 ->options([
                     1 => __('Male'),

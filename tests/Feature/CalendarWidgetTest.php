@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\ConstraintType;
+use App\Enums\TaskKind;
 use App\Filament\Widgets\CalendarWidget;
 use App\Models\Constraint;
 use App\Models\Shift;
@@ -149,9 +150,11 @@ it('should list events by the commanders soldiers events', function () {
 
     $user1 = User::factory()->create(['userable_id' => Soldier::factory()->create(['team_id' => $team->id])->id]);
     $user2 = User::factory()->create(['userable_id' => Soldier::factory()->create(['team_id' => $team->id])->id]);
+    $user3 = User::factory()->create(['userable_id' => Soldier::factory()->create(['team_id' => $team->id])->id]);
 
-    Shift::factory()->create(['soldier_id' => $user1->userable_id, 'task_id' => Task::factory()->create()->id]);
-    Shift::factory()->create(['soldier_id' => $user2->userable_id, 'task_id' => Task::factory()->create()->id]);
+    Shift::factory()->count(4)->create(['soldier_id' => $user1->userable_id, 'task_id' => Task::factory()->create(['kind' => TaskKind::REGULAR->value])->id]);
+    Shift::factory()->count(6)->create(['soldier_id' => $user2->userable_id, 'task_id' => Task::factory()->create(['kind' => TaskKind::REGULAR->value])->id]);
+    Shift::factory()->count(7)->create(['soldier_id' => $user3->userable_id, 'task_id' => Task::factory()->create(['kind' => TaskKind::ALERT->value])->id]);
     Shift::factory()->create(['soldier_id' => User::factory()->create()->userable_id, 'task_id' => Task::factory()->create()->id]);
     Shift::factory()->count(5)->create(['soldier_id' => $user->userable_id, 'task_id' => Task::factory()->create()->id]);
 
@@ -166,9 +169,12 @@ it('should list events by the commanders soldiers events', function () {
         ]),
         'type' => 'my_soldiers',
     ])
+        ->mountAction('Filters')
+        ->setActionData(['reservists' => false, 'unassigned_shifts' => false, 'kind' => TaskKind::ALERT->value, 'soldier_id' => [], 'type' => [], 'course' => []])
+        ->callMountedAction()
         ->call('fetchEvents', ['start' => Carbon::yesterday(), 'end' => Carbon::now()->addDays(2), 'timezone' => 'Asia\/Jerusalem']);
 
-    expect($calendar->effects['returns'][0])->toHaveCount(count: 2);
+    expect($calendar->effects['returns'][0])->toHaveCount(7);
 });
 
 it('should refresh the fullcalendar', function () {
@@ -213,8 +219,8 @@ it('should filter the unassigned shifts', function () {
     $task2 = Task::factory()->create(['type' => 'clean']);
     Shift::factory()->count(5)->create(['soldier_id' => 1, 'task_id' => $task1->id]);
     Shift::factory()->count(5)->create(['soldier_id' => 1, 'task_id' => $task2->id]);
-    Shift::factory()->count(5)->create(['task_id' => $task1->id]);
-    Shift::factory()->count(5)->create(['task_id' => $task2->id]);
+    Shift::factory()->count(6)->create(['soldier_id' => null, 'task_id' => $task1->id]);
+    Shift::factory()->count(2)->create(['soldier_id' => null, 'task_id' => $task2->id]);
 
     $calendar = livewire(CalendarWidget::class, [
         'model' => Shift::class,
@@ -229,7 +235,8 @@ it('should filter the unassigned shifts', function () {
         'fetchInfo' => ['start' => Carbon::yesterday(), 'end' => Carbon::now()->addDays(5), 'timezone' => 'Asia\/Jerusalem'],
     ])
         ->mountAction('Filters')
-        ->callMountedAction(['Unassigned shifts' => true])
+        ->setActionData(['reservists' => false, 'unassigned_shifts' => true, 'kind' => null, 'soldier_id' => [], 'type' => [], 'course' => []])
+        ->callMountedAction()
         ->call('fetchEvents', ['start' => Carbon::yesterday(), 'end' => Carbon::now()->addDays(5), 'timezone' => 'Asia\/Jerusalem']);
-    expect($calendar->effects['returns'][0])->toHaveCount(10);
+    expect($calendar->effects['returns'][0])->toHaveCount(8);
 });

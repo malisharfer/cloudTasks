@@ -6,10 +6,8 @@ use App\Enums\ConstraintType;
 use App\Exports\AssignmentJustice;
 use App\Exports\ShiftsExport;
 use App\Models\Constraint;
-use App\Models\Department;
 use App\Models\Shift;
 use App\Models\Task;
-use App\Models\Team;
 use App\Services\Algorithm;
 use App\Services\Holidays;
 use App\Services\Range;
@@ -53,14 +51,11 @@ class CalendarWidget extends FullCalendarWidget
 
     public function fetchEvents(array $fetchInfo): array
     {
-        // set_time_limit(0);
         $this->fetchInfo = $fetchInfo;
         $this->currentMonth = Carbon::parse($fetchInfo['start'])->addDays(7)->year.'-'.Carbon::parse($fetchInfo['start'])->addDays(7)->month;
 
-        // $events = $this->getEventsByRole();
-
-        // $eventDays = self::events($events)
         $events = self::events();
+
         $eventDays = $events
             ->map(fn (Model $event) => [
                 'id' => $event[$this->keys[0]],
@@ -98,65 +93,31 @@ class CalendarWidget extends FullCalendarWidget
         return array_merge($eventDays, $specialDays);
     }
 
-    private function getHolidays($month, $day, $year): array
+    protected function events(): Collection
     {
-        $holiday = new Holidays($month, $day, $year);
-
-        return [$holiday->isHoliday, $holiday->holidayName];
+        return $this->type === 'my_soldiers'
+            ? ($this->filter ? $this->model::filter($this->fetchInfo, $this->filterData) : collect())
+            : $this->getMyEvents();
     }
-
-    // public function getEventsByRole()
-    // {
-    //     $current_user_id = auth()->user()->userable_id;
-    //     $role = current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']));
-    //     $query = $this->model == Shift::class ?
-    //     $this->model::with(['task', 'soldier'])
-    //     : $this->model::with('soldier');
-    //     $query = ($this->type === 'my_soldiers') ? match ($role) {
-    //         'manager', 'shifts-assignment' => $query->where('soldier_id', '!=', $current_user_id)
-    //             ->orWhereNull('soldier_id'),
-    //         'department-commander' => $query->where('soldier_id', '!=', $current_user_id)
-    //             ->where(function ($query) use ($current_user_id) {
-    //                 $query->whereNull('soldier_id')
-    //                     ->orWhereIn('soldier_id', Department::whereHas('commander', function ($query) use ($current_user_id) {
-    //                         $query->where('id', $current_user_id);
-    //                     })->first()?->teams->flatMap(fn (Team $team) => $team->members->pluck('id'))->toArray() ?? collect([]))
-    //                     ->orWhereIn('soldier_id', Department::whereHas('commander', function ($query) use ($current_user_id) {
-    //                         $query->where('id', $current_user_id);
-    //                     })->first()?->teams->pluck('commander_id') ?? collect([]));
-    //             })->orWhereNull('soldier_id'),
-    //         'team-commander' => $query->where('soldier_id', '!=', $current_user_id)
-    //             ->where(function ($query) use ($current_user_id) {
-    //                 $query->whereNull('soldier_id')
-    //                     ->orWhereIn('soldier_id', Team::whereHas('commander', function ($query) use ($current_user_id) {
-    //                         $query->where('id', $current_user_id);
-    //                     })->first()?->members->pluck('id') ?? collect([]));
-    //             })
-    //             ->orWhereNull('soldier_id'),
-    //     } : $query->where('soldier_id', '=', $current_user_id);
-
-    //     return $query->where('start_date', '>=', Carbon::create($this->fetchInfo['start'])->setTimezone('Asia/Jerusalem'))
-    //         ->where('end_date', '<=', Carbon::create($this->fetchInfo['end'])->setTimezone('Asia/Jerusalem'))
-    //         ->get();
-    // }
 
     public function getMyEvents()
     {
-        $current_user_id = auth()->user()->userable_id;
+        $currentUserId = auth()->user()->userable_id;
         $query = $this->model == Shift::class ?
             $this->model::with(['task', 'soldier'])
             : $this->model::with('soldier');
-        $query = $query->where('soldier_id', '=', $current_user_id);
+        $query = $query->where('soldier_id', '=', $currentUserId);
 
         return $query->where('start_date', '>=', Carbon::create($this->fetchInfo['start'])->setTimezone('Asia/Jerusalem'))
             ->where('end_date', '<=', Carbon::create($this->fetchInfo['end'])->setTimezone('Asia/Jerusalem'))
             ->get();
     }
-    protected function events(): Collection
+
+    private function getHolidays($month, $day, $year): array
     {
-        return $this->type === 'my_soldiers'
-        ? ($this->filter ? $this->model::filter($this->fetchInfo, $this->filterData) : collect())
-        : $this->getMyEvents();
+        $holiday = new Holidays($month, $day, $year);
+
+        return [$holiday->isHoliday, $holiday->holidayName];
     }
 
     public function getFormSchema(): array
@@ -166,7 +127,6 @@ class CalendarWidget extends FullCalendarWidget
 
     protected function headerActions(): array
     {
-        // set_time_limit(0);
         $this->currentMonth ?? $this->currentMonth = Carbon::now()->year.'-'.Carbon::now()->month;
         if ($this->lastFilterData != $this->filterData) {
             $this->refreshRecords();
@@ -202,10 +162,20 @@ class CalendarWidget extends FullCalendarWidget
                             ->icon('heroicon-o-play')
                             ->visible($hasActiveTasks),
                         Action::make('Reset assignment')
+                            ->color('danger')
                             ->action(fn () => $this->resetShifts())
                             ->label(__('Reset assignment'))
-                            ->icon('heroicon-o-arrow-path')
-                            ->color('danger'),
+                            ->requiresConfirmation()
+                            ->modalHeading(__('Reset assignment'))
+                            ->modalDescription(__('Are you sure? This cannot be undone!'))
+                            ->modalSubmitActionLabel(__('Yes, reset it'))
+                            ->icon('heroicon-o-arrow-path'),
+                        Action::make('Delete shifts')
+                            ->color('danger')
+                            ->action(fn () => $this->deleteShifts())
+                            ->label(__('Delete shifts'))
+                            ->requiresConfirmation()
+                            ->icon('heroicon-o-x-circle'),
                     ])
                         ->visible(in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())
                             || in_array('manager', auth()->user()->getRoleNames()->toArray())),
@@ -291,17 +261,6 @@ class CalendarWidget extends FullCalendarWidget
             ]).'.xlsx'));
     }
 
-    protected function resetShifts()
-    {
-        $this->startDate = (Carbon::now()->format('m') == Carbon::parse($this->currentMonth)->format('m'))
-            ? Carbon::now()->startOfMonth()->format('Y-m-d')
-            // ? Carbon::now()->addDay()->format('Y-m-d')
-            : Carbon::parse($this->currentMonth)->startOfMonth()->format('Y-m-d');
-        Shift::whereBetween('start_date', [$this->startDate, (Carbon::parse($this->currentMonth)->endOfMonth()->addDay())->format('Y-m-d')])
-            ->delete();
-        $this->refreshRecords();
-    }
-
     protected function runEvents()
     {
         $recurringEvents = new RecurringEvents($this->currentMonth);
@@ -313,6 +272,27 @@ class CalendarWidget extends FullCalendarWidget
     {
         $algorithm = new Algorithm($this->currentMonth);
         $algorithm->run();
+        $this->refreshRecords();
+    }
+
+    protected function resetShifts()
+    {
+        $this->startDate = (Carbon::now()->format('m') == Carbon::parse($this->currentMonth)->format('m'))
+            ? Carbon::now()->addDay()->format('Y-m-d')
+            : Carbon::parse($this->currentMonth)->startOfMonth()->format('Y-m-d');
+        Shift::whereNotNull('soldier_id')
+            ->whereBetween('start_date', [$this->startDate, (Carbon::parse($this->currentMonth)->endOfMonth()->addDay())->format('Y-m-d')])
+            ->update(['soldier_id' => null]);
+        $this->refreshRecords();
+    }
+
+    protected function deleteShifts()
+    {
+        $this->startDate = (Carbon::now()->format('m') == Carbon::parse($this->currentMonth)->format('m'))
+            ? Carbon::now()->addDay()->format('Y-m-d')
+            : Carbon::parse($this->currentMonth)->startOfMonth()->format('Y-m-d');
+        Shift::whereBetween('start_date', [$this->startDate, (Carbon::parse($this->currentMonth)->endOfMonth()->addDay())->format('Y-m-d')])
+            ->delete();
         $this->refreshRecords();
     }
 
@@ -364,13 +344,15 @@ class CalendarWidget extends FullCalendarWidget
     {
         return [
             EditAction::make()
-                ->fillForm(fn (Model $record, array $arguments) => method_exists($this->model, 'fillForm')
+                ->fillForm(
+                    fn (Model $record, array $arguments) => method_exists($this->model, 'fillForm')
                     ? (new $this->model)->fillForm($record, $arguments)
                     : [
                         ...$record->getAttributes(),
                         'start_date' => $arguments['event']['start'] ?? $record->start_date,
                         'end_date' => $arguments['event']['end'] ?? $record->end_date,
-                    ])
+                    ]
+                )
                 ->visible(function (Model $record, $arguments) {
                     if ($record->start_date < now()) {
                         return false;
@@ -496,13 +478,15 @@ class CalendarWidget extends FullCalendarWidget
     protected function viewAction(): Action
     {
         return ViewAction::make()
-            ->fillForm(fn (Model $record, array $arguments) => method_exists($this->model, 'fillForm')
+            ->fillForm(
+                fn (Model $record, array $arguments) => method_exists($this->model, 'fillForm')
                 ? (new $this->model)->fillForm($record, $arguments)
                 : [
                     ...$record->getAttributes(),
                     'start_date' => $arguments['event']['start'] ?? $record->start_date,
                     'end_date' => $arguments['event']['end'] ?? $record->end_date,
-                ])
+                ]
+            )
             ->modalFooterActions(
                 function (ViewAction $action, FullCalendarWidget $livewire) {
                     if (

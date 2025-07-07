@@ -2,12 +2,14 @@
 
 namespace App\Services;
 
+use App\Enums\Availability;
 use App\Models\Department;
 use App\Models\Shift;
 use App\Models\Soldier;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\Soldier as SoldierService;
+use Illuminate\Support\Facades\Cache;
 
 class ManualAssignment
 {
@@ -33,6 +35,7 @@ class ManualAssignment
 
     protected function initSoldiersData($departmentName)
     {
+        $this->soldiers = Cache::remember('users', 30 * 60, fn () => User::all());
         match ($this->soldierType) {
             'reserves' => $this->filterReserves(),
             'my_soldiers' => $this->filterMySoldiers(),
@@ -44,69 +47,60 @@ class ManualAssignment
 
     protected function filterReserves()
     {
-        $this->soldiers = Soldier::whereJsonContains('qualifications', $this->shift->taskType)
-            ->where('is_reservist', true)
-            ->where('id', '!=', auth()->user()->userable_id)
-            ->get();
+        $this->soldiers = $this->soldiers
+            ->filter(function ($user) {
+                $soldier = $this->getSoldierBy($user->userable_id);
+
+                return $soldier->is_reservist && $soldier->id != auth()->user()->userable_id;
+            });
     }
 
     protected function filterMySoldiers()
     {
-        $currentUserId = auth()->user()->userable_id;
-        $role = current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']));
-        $members = collect();
+        $this->soldiers = $this->soldiers
+            ->filter(function ($user) {
+                $currentUserId = auth()->user()->userable_id;
+                $role = current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']));
+                $soldier = $this->getSoldierBy($user->userable_id);
 
-        switch ($role) {
-            case 'department-commander':
-                $department = Department::whereHas('commander', function ($query) use ($currentUserId) {
-                    $query->where('id', $currentUserId);
-                })->first();
-
-                $memberIds = $department?->teams->flatMap(fn (Team $team) => $team->members->pluck('id')) ?? collect();
-                $commanderIds = $department?->teams->pluck('commander_id') ?? collect();
-
-                $members = $memberIds->merge($commanderIds)->unique();
-                break;
-            case 'team-commander':
-                $members = Team::whereHas('commander', function ($query) use ($currentUserId) {
-                    $query->where('id', $currentUserId);
-                })->first()?->members->pluck('id') ?? collect([]);
-                break;
-        }
-
-        $this->soldiers = Soldier::whereJsonContains('qualifications', $this->shift->taskType)
-            ->where('is_reservist', false)
-            ->where('id', '!=', $currentUserId)
-            ->whereIn('id', $members)
-            ->get();
+                return match ($role) {
+                    'department-commander' => $soldier?->team?->department?->commander_id == $currentUserId
+                    && $soldier?->id != $currentUserId,
+                    'team-commander' => $soldier?->team?->commander_id == $currentUserId
+                    && $soldier?->id != $currentUserId
+                };
+            });
     }
 
     protected function filterDepartment($departmentName)
     {
-        $department = Department::where('name', $departmentName)->first();
-        $this->soldiers = Soldier::whereJsonContains('qualifications', $this->shift->taskType)
-            ->where('is_reservist', false)
-            ->where('id', '!=', auth()->user()->userable_id)
-            ->where(function (Soldier $query) use ($department) {
-                $query->whereIn('id', $department?->teams->flatMap(fn (Team $team) => $team->members->pluck('id')) ?? collect())
-                    ->orWhereIn('id', $department?->teams->pluck('commander_id') ?? collect())
-                    ->orWhere('id', $department?->commander_id);
-            })->get();
+        $this->soldiers = $this->soldiers
+            ->filter(function ($user) use ($departmentName) {
+                $soldier = Soldier::where('id', '=', $user->userable_id)->first();
+                $department = Department::where('name', $departmentName)->first();
+
+                return $soldier?->team?->department?->name == $departmentName
+                || collect($department->teams)->filter(fn (Team $team): bool => $team->commander_id === $soldier->id)->isNotEmpty()
+                || $soldier->id == $department->commander_id;
+            });
     }
 
     protected function filterMatching()
     {
-        $this->soldiers = Soldier::whereJsonContains('qualifications', $this->shift->taskType)
-            ->where('is_reservist', false)
-            ->where('id', '!=', auth()->user()->userable_id)
-            ->get();
+        $this->soldiers = $this->soldiers
+            ->filter(function ($user) {
+                $soldier = $this->getSoldierBy($user->userable_id);
+
+                return ! $soldier->is_reservist && $soldier->id != auth()->user()->userable_id;
+            });
     }
 
     protected function getSoldiersDetails()
     {
         $this->soldiers = $this->soldiers
             ->map(
-                function (Soldier $soldier) {
+                function (User $user) {
+                    $soldier = $this->getSoldierBy($user->userable_id);
                     $constraints = $this->getConstraints($soldier);
                     $soldiersShifts = $this->getSoldiersShifts($soldier->id, false);
 
@@ -121,6 +115,11 @@ class ManualAssignment
             );
     }
 
+    protected function getSoldierBy($userable_id)
+    {
+        return Soldier::where('id', $userable_id)->first();
+    }
+
     public function amIAvailable(): bool
     {
         $me = Soldier::find(auth()->user()->userable_id);
@@ -131,12 +130,13 @@ class ManualAssignment
 
         $capacityHold = Helpers::capacityHold($myShifts);
 
-        $concurrentsShifts = $this->getSoldiersShifts($me->id, true);
+        $soldier = Helpers::buildSoldier($me, $constraints, $myShifts, $capacityHold);
 
-        $soldier = Helpers::buildSoldier($me, $constraints, $myShifts, $capacityHold, $concurrentsShifts);
-
-        return $soldier->isAbleTake($this->shift, true)
-            && $soldier->isAvailableByConcurrentsShifts($this->shift);
+        return $soldier->isQualified($this->shift->taskType)
+            && $soldier->isAvailableByMaxes($this->shift)
+            && $soldier->isAvailableByConstraints($this->shift->range) != Availability::NO
+            && $soldier->isAvailableByShifts($this->shift)
+            && $soldier->isAvailableBySpaces($this->shift->getShiftSpaces($soldier->shifts));
     }
 
     protected function getConstraints(Soldier $soldier)
@@ -151,7 +151,13 @@ class ManualAssignment
 
     protected function getAvailableSoldiers()
     {
-        $availableSoldiers = $this->soldiers->filter(fn (SoldierService $soldier) => $soldier->isAbleTake($this->shift, true));
+        $availableSoldiers = $this->soldiers->filter(
+            fn (SoldierService $soldier) => $soldier->isQualified($this->shift->taskType)
+            && $soldier->isAvailableByMaxes($this->shift)
+            && $soldier->isAvailableByConstraints($this->shift->range) != Availability::NO
+            && $soldier->isAvailableByShifts($this->shift)
+            && $soldier->isAvailableBySpaces($this->shift->getShiftSpaces($soldier->shifts))
+        );
 
         $soldiersWithConcurrentsShifts = collect([]);
         $availableSoldiers->map(function (SoldierService $soldier) use ($soldiersWithConcurrentsShifts) {

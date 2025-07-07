@@ -42,7 +42,7 @@ class Range
         $endDayIndex = $this->end->dayOfWeek;
         $checkDayIndex = date('N', strtotime($dayInWeek->value));
         if ($startDayIndex <= $endDayIndex) {
-            return $this->start->copy()->diffInDays($this->end->copy()) > 5 || ($checkDayIndex >= $startDayIndex && $checkDayIndex <= $endDayIndex);
+            return $this->start->diffInDays($this->end) > 5 || ($checkDayIndex >= $startDayIndex && $checkDayIndex <= $endDayIndex);
         }
 
         return $checkDayIndex >= $startDayIndex || $checkDayIndex <= $endDayIndex;
@@ -50,36 +50,23 @@ class Range
 
     public function getDayAfterWeekend(): Range
     {
-        $nextDayAfterWeekend = $this->end->englishDayOfWeek == DaysInWeek::SUNDAY->value ? $this->end->copy() : $this->end->copy()->next(DaysInWeek::SUNDAY->value)->setTime(8, 0);
+        $nextDayAfterWeekend = $this->end->next(DaysInWeek::SUNDAY->value)->setTime(8, 0);
 
         return new Range($nextDayAfterWeekend, $nextDayAfterWeekend->copy()->addDay());
     }
 
     public function getNightSpaces()
     {
-        $startHour = $this->start->hour;
-        $endTomorrow = $this->end->copy()->addDay();
-        if ($startHour >= '20' && $startHour <= '23') {
-            return [
-                new Range(Carbon::create($this->start->year, $this->start->month, $this->start->day, 00, 00), $this->start),
-                new Range($this->end, Carbon::create($endTomorrow->year, $endTomorrow->month, $endTomorrow->day, 7, 59)),
-            ];
-        }
-        if ($startHour >= '0' && $startHour <= '1') {
-            $startYesterday = $this->start->copy()->subDay();
-
-            return [
-                new Range(Carbon::create($startYesterday->year, $startYesterday->month, $startYesterday->day, 00, 00), $this->start),
-                new Range($this->end, Carbon::create($endTomorrow->year, $endTomorrow->month, $endTomorrow->day, 7, 59)),
-            ];
-        }
+        return [$this->getDayBeforeNight(), $this->getDayAfterNight()];
     }
 
-    public function getNightInWeekendSpaces()
+    public function getDayBeforeNight(): Range
     {
-        return [
-            new Range($this->start->copy()->setHour(8)->setMinutes(30), $this->start->copy()),
-            new Range($this->end->copy(), $this->end->copy()->setHour(19)->setMinutes(59)),
-        ];
+        return new Range($this->start->copy()->subHours(12), $this->start);
+    }
+
+    public function getDayAfterNight(): Range
+    {
+        return new Range($this->end, $this->end->copy()->addHours(12));
     }
 }

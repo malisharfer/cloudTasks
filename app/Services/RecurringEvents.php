@@ -114,10 +114,8 @@ class RecurringEvents
     protected function createPeriod()
     {
         return $this->task->recurring['type'] == 'Daily range' ?
-            // CarbonPeriod::between(max($this->task['recurring']['start_date'], Carbon::tomorrow()), $this->task['recurring']['end_date']) :
-            // CarbonPeriod::between(max($this->month->copy()->startOfMonth(), Carbon::tomorrow()), $this->month->copy()->endOfMonth());
-            CarbonPeriod::between($this->task['recurring']['start_date'], $this->task['recurring']['end_date']) :
-            CarbonPeriod::between($this->month->copy()->startOfMonth(), $this->month->copy()->endOfMonth());
+            CarbonPeriod::between(max($this->task['recurring']['start_date'], Carbon::tomorrow()), $this->task['recurring']['end_date']) :
+            CarbonPeriod::between(max($this->month->copy()->startOfMonth(), Carbon::tomorrow()), $this->month->copy()->endOfMonth());
     }
 
     protected function createShifts(array $dates)

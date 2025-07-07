@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ConstraintType;
+use App\Traits\EventsByRole;
 use Cache;
 use Carbon\Carbon;
 use Filament\Actions\Action;
@@ -21,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Constraint extends Model
 {
+    use EventsByRole;
     use HasFactory;
 
     protected $fillable = [
@@ -375,47 +377,9 @@ class Constraint extends Model
             });
     }
 
-    public static function getEventsByRole()
-    {
-        $current_user_id = auth()->user()->userable_id;
-        $role = current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']));
-        $query = Constraint::with('soldier');
-        $query = match ($role) {
-            'manager', 'shifts-assignment' => $query->where(function ($query) use ($current_user_id) {
-                $query->where('soldier_id', '!=', $current_user_id)
-                    ->orWhereNull('soldier_id');
-            }),
-            'department-commander' => $query->where(function ($query) use ($current_user_id) {
-                $query->where('soldier_id', '!=', $current_user_id)
-                    ->where(function ($query) use ($current_user_id) {
-                        $query->whereNull('soldier_id')
-                            ->orWhereIn('soldier_id', Department::whereHas('commander', function ($query) use ($current_user_id) {
-                                $query->where('id', $current_user_id);
-                            })->first()?->teams->flatMap(fn (Team $team) => $team->members->pluck('id'))->toArray() ?? collect([]))
-                            ->orWhereIn('soldier_id', Department::whereHas('commander', function ($query) use ($current_user_id) {
-                                $query->where('id', $current_user_id);
-                            })->first()?->teams->pluck('commander_id') ?? collect([]));
-                    })->orWhereNull('soldier_id');
-            }),
-            'team-commander' => $query->where(function ($query) use ($current_user_id) {
-                $query->where('soldier_id', '!=', $current_user_id)
-                    ->where(function ($query) use ($current_user_id) {
-                        $query->whereNull('soldier_id')
-                            ->orWhereIn('soldier_id', Team::whereHas('commander', function ($query) use ($current_user_id) {
-                                $query->where('id', $current_user_id);
-                            })->first()?->members->pluck('id') ?? collect([]));
-                    })
-                    ->orWhereNull('soldier_id');
-            }),
-        };
-
-        return $query;
-
-    }
-
     public static function filter($fetchInfo, $filterData)
     {
-        $query = self::getEventsByRole();
+        $query = self::getEventsByRole(Constraint::with('soldier'));
 
         return $query
             ->where(function ($query) use ($fetchInfo) {
@@ -453,6 +417,7 @@ class Constraint extends Model
 
         return $labels->toArray();
     }
+
     public static function getTitle(): string
     {
         return __('Constraint');

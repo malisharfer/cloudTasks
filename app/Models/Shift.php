@@ -7,6 +7,7 @@ use App\Enums\TaskKind;
 use App\Filament\Notifications\MyNotification;
 use App\Services\ChangeAssignment;
 use App\Services\ManualAssignment;
+use App\Traits\EventsByRole;
 use Cache;
 use Carbon\Carbon;
 use Filament\Actions\Action;
@@ -28,6 +29,7 @@ use Livewire\Component;
 
 class Shift extends Model
 {
+    use EventsByRole;
     use HasFactory;
 
     protected $fillable = [
@@ -54,7 +56,7 @@ class Shift extends Model
 
     private function getTaskParallelWeight()
     {
-        return $this->task()->withTrashed()->first()->parallel_weight;
+        return $this->task?->parallel_weight;
     }
 
     public function getTaskNameAttribute()
@@ -62,13 +64,13 @@ class Shift extends Model
         $user_name = User::where('userable_id', $this->soldier_id)->get(['first_name', 'last_name']);
 
         return $this->soldier_id == auth()->user()->userable_id
-            ? $this->task()->withTrashed()->first()->name
-            : $this->task()->withTrashed()->first()->name.' '.$user_name->first()?->first_name.' '.$user_name->first()?->last_name;
+            ? $this->task?->name
+            : $this->task?->name.' '.$user_name->first()?->first_name.' '.$user_name->first()?->last_name;
     }
 
     public function getTaskColorAttribute()
     {
-        return $this->task()->withTrashed()->first()->color;
+        return $this->task?->color;
     }
 
     public static function getSchema(): array
@@ -278,8 +280,7 @@ class Shift extends Model
                     $livewire->dispatch('filament-fullcalendar--refresh');
                 }
                 if ($arguments['cancel'] ?? false) {
-                    // $livewire->dispatch('filament-fullcalendar--refresh');
-                    $livewire->dispatch('close-modal');
+                    $livewire->dispatch('filament-fullcalendar--refresh');
                 }
             });
     }
@@ -577,8 +578,7 @@ class Shift extends Model
                     $livewire->dispatch('filament-fullcalendar--refresh');
                 }
                 if ($arguments['cancel'] ?? false) {
-                    // $livewire->dispatch('filament-fullcalendar--refresh');
-                    $livewire->dispatch('close-modal');
+                    $livewire->dispatch('filament-fullcalendar--refresh');
                 }
             });
     }
@@ -765,63 +765,60 @@ class Shift extends Model
             ->iconButton()
             ->label(__('Filter'))
             ->icon('heroicon-o-funnel')
-            ->form(function () use ($calendar) {
-
-                return [
-                    section::make([
-                        Toggle::make('reservists')
-                            ->label(__('Reservists'))
-                            ->live()
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, $set) {
-                                if ($state) {
-                                    $set('unassigned_shifts', false);
-                                }
-                            }),
-                        Toggle::make('unassigned_shifts')
-                            ->label(__('Unassigned shifts'))
-                            ->live()
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, $set) {
-                                if ($state) {
-                                    $set('reservists', false);
-                                    $set('soldier_id', null);
-                                    $set('course', null);
-                                }
-                            }),
-                    ])->columns(2),
-                    section::make([
-                        Radio::make('kind')
-                            ->label(__('Kind'))
-                            ->options(collect(TaskKind::cases())->mapWithKeys(fn ($kind) => [$kind->value => $kind->getLabel()]))
-                            ->inlineLabel(false)
-                            ->inline(),
-                    ]),
-                    Select::make('soldier_id')
-                        ->label(__('Soldier'))
-                        ->options(fn(): array => Cache::remember('users', 30 * 60, fn() => User::all())->mapWithKeys(fn($user) => [$user->userable_id => $user->displayName])
-                            ->toArray())
-                        ->multiple()
+            ->form(fn () => [
+                section::make([
+                    Toggle::make('reservists')
+                        ->label(__('Reservists'))
                         ->live()
                         ->reactive()
-                        ->hidden(fn (Get $get) => $get('unassigned_shifts') || $get('course')),
-                    Select::make('type')
-                        ->label(__('Type'))
-                        ->options(Task::select('type')
-                            ->distinct()
-                            ->orderBy('type')
-                            ->pluck('type', 'type')
-                            ->all())
-                        ->multiple(),
-                    Select::make('course')
-                        ->options(Soldier::select('course')->distinct()->orderBy('course')->pluck('course', 'course')->all())
-                        ->label(__('Course'))
-                        ->multiple()
+                        ->afterStateUpdated(function ($state, $set) {
+                            if ($state) {
+                                $set('unassigned_shifts', false);
+                            }
+                        }),
+                    Toggle::make('unassigned_shifts')
+                        ->label(__('Unassigned shifts'))
                         ->live()
                         ->reactive()
-                        ->hidden(fn (Get $get) => $get('unassigned_shifts') || $get('soldier_id')),
-                ];
-            })
+                        ->afterStateUpdated(function ($state, $set) {
+                            if ($state) {
+                                $set('reservists', false);
+                                $set('soldier_id', null);
+                                $set('course', null);
+                            }
+                        }),
+                ])->columns(2),
+                section::make([
+                    Radio::make('kind')
+                        ->label(__('Kind'))
+                        ->options(collect(TaskKind::cases())->mapWithKeys(fn ($kind) => [$kind->value => $kind->getLabel()]))
+                        ->inlineLabel(false)
+                        ->inline(),
+                ]),
+                Select::make('soldier_id')
+                    ->label(__('Soldier'))
+                    ->options(fn (): array => Cache::remember('users', 30 * 60, fn () => User::all())->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
+                        ->toArray())
+                    ->multiple()
+                    ->live()
+                    ->reactive()
+                    ->hidden(fn (Get $get) => $get('unassigned_shifts') || $get('course')),
+                Select::make('type')
+                    ->label(__('Type'))
+                    ->options(Task::select('type')
+                        ->distinct()
+                        ->orderBy('type')
+                        ->pluck('type', 'type')
+                        ->all())
+                    ->multiple(),
+                Select::make('course')
+                    ->options(Soldier::select('course')->distinct()->orderBy('course')->pluck('course', 'course')->all())
+                    ->label(__('Course'))
+                    ->multiple()
+                    ->live()
+                    ->reactive()
+                    ->hidden(fn (Get $get) => $get('unassigned_shifts') || $get('soldier_id')),
+            ])
             ->modalCancelAction(false)
             ->modalSubmitActionLabel(__('Filter'))
             ->action(function (array $data) use ($calendar) {
@@ -835,46 +832,10 @@ class Shift extends Model
                 $calendar->refreshRecords();
             });
     }
-    public static function getEventsByRole()
-    {
-        $current_user_id = auth()->user()->userable_id;
-        $role = current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']));
-        $query = Shift::with(['task', 'soldier']);
-        $query = match ($role) {
-            'manager', 'shifts-assignment' => $query->where(function ($query) use ($current_user_id) {
-                $query->where('soldier_id', '!=', $current_user_id)
-                    ->orWhereNull('soldier_id');
-            }),
-            'department-commander' => $query->where(function ($query) use ($current_user_id) {
-                $query->where('soldier_id', '!=', $current_user_id)
-                    ->where(function ($query) use ($current_user_id) {
-                        $query->whereNull('soldier_id')
-                            ->orWhereIn('soldier_id', Department::whereHas('commander', function ($query) use ($current_user_id) {
-                                $query->where('id', $current_user_id);
-                            })->first()?->teams->flatMap(fn (Team $team) => $team->members->pluck('id'))->toArray() ?? collect([]))
-                            ->orWhereIn('soldier_id', Department::whereHas('commander', function ($query) use ($current_user_id) {
-                                $query->where('id', $current_user_id);
-                            })->first()?->teams->pluck('commander_id') ?? collect([]));
-                    })->orWhereNull('soldier_id');
-            }),
-            'team-commander' => $query->where(function ($query) use ($current_user_id) {
-                $query->where('soldier_id', '!=', $current_user_id)
-                    ->where(function ($query) use ($current_user_id) {
-                        $query->whereNull('soldier_id')
-                            ->orWhereIn('soldier_id', Team::whereHas('commander', function ($query) use ($current_user_id) {
-                                $query->where('id', $current_user_id);
-                            })->first()?->members->pluck('id') ?? collect([]));
-                    })
-                    ->orWhereNull('soldier_id');
-            }),
-        };
 
-        return $query;
-
-    }
     public static function filter($fetchInfo, $filterData)
     {
-        $query = self::getEventsByRole();
+        $query = self::getEventsByRole(Shift::with(['task', 'soldier']));
 
         return $query
             ->where(function ($query) use ($fetchInfo) {
@@ -902,7 +863,7 @@ class Shift extends Model
                 });
             })->get();
     }
-    
+
     public static function activeFilters($calendar)
     {
         if (! $calendar->filter) {

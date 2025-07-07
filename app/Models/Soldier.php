@@ -16,6 +16,7 @@ class Soldier extends Model
     use HasFactory;
 
     protected $fillable = [
+        'type',
         'gender',
         'is_permanent',
         'enlist_date',

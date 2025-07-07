@@ -83,7 +83,7 @@ class ChartWidget extends BarChartWidget
                     callbacks: {
                         label: function(context) {
                             const soldierIndex = context.dataIndex;
-                            const soldierName = context.dataset.labels ? context.dataset.labels[soldierIndex] : __('Unknown Soldier');
+                            const soldierName = context.dataset.labels ? context.dataset.labels[soldierIndex] : 'Unknown Soldier';
                             const value = context.parsed.y;
 
                             return soldierName + ': ' + value;

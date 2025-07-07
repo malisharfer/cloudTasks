@@ -9,8 +9,6 @@ class Shift
 {
     public $id;
 
-    public $taskId;
-
     public $taskType;
 
     public $range;
@@ -19,28 +17,16 @@ class Shift
 
     public $kind;
 
-    public $isAssigned;
-
     public $inParalelTasks;
 
-    public $isAttached;
-
-    public function __construct($id, int $taskId, string $taskType, $start, $end, float $points, $kind, $inParalelTasks = [])
+    public function __construct($id, string $taskType, $start, $end, float $points, $kind, $inParalelTasks = [])
     {
         $this->id = $id;
-        $this->taskId = $taskId;
         $this->taskType = $taskType;
         $this->range = new Range($start, $end);
         $this->points = $points;
         $this->kind = $kind;
-        $this->isAssigned = false;
         $this->inParalelTasks = $inParalelTasks;
-        $this->isAttached = false;
-    }
-
-    public function isAssigned(): bool
-    {
-        return $this->isAssigned;
     }
 
     public function getShiftSpaces($shifts)
@@ -54,23 +40,7 @@ class Shift
 
     protected function getWeekendSpaces($shifts)
     {
-        $spaces = collect([]);
-        if ($this->isNight()) {
-            $spaces->push(...$this->range->getNightInWeekendSpaces());
-        }
-        if ($this->isFullWeekend($shifts)) {
-            $spaces->push($this->range->getDayAfterWeekend());
-        }
-
-        return $spaces?->toArray();
-    }
-
-    protected function isNight()
-    {
-        return ($this->range->start->hour >= 19
-            && $this->range->start->hour < 23) &&
-            ($this->range->end->hour > 6
-            && $this->range->end->hour < 9);
+        return $this->isFullWeekend($shifts) ? [$this->range->getDayAfterWeekend()] : null;
     }
 
     protected function isFullWeekend($shifts)
@@ -97,7 +67,7 @@ class Shift
 
     protected function isAttached($shifts, $range, DaysInWeek $dayInWeek): bool
     {
-        $expectedDate = $dayInWeek == DaysInWeek::FRIDAY ? $range->start->copy()->subDay()->startOfDay() : $range->end->copy()->addDay()->startOfDay();
+        $expectedDate = $dayInWeek == DaysInWeek::FRIDAY ? $range->start->subDay()->startOfDay() : $range->end->addDay()->startOfDay();
 
         return $shifts ? collect($shifts)->contains(
             function ($shift) use ($expectedDate): bool {

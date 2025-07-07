@@ -17,7 +17,6 @@ class Helpers
     {
         return new ShiftService(
             $shift->id,
-            $shift->task_id,
             $shift->task()->withTrashed()->first()->type,
             $shift->start_date,
             $shift->end_date,
@@ -43,7 +42,6 @@ class Helpers
     {
         return new SoldierService(
             $soldier->id,
-            $soldier->course,
             new MaxData($soldier->capacity, $capacityHold['points'] ?? 0),
             new MaxData($soldier->max_shifts, $capacityHold['count'] ?? 0),
             new MaxData($soldier->max_nights, $capacityHold['sumNights'] ?? 0),
@@ -69,7 +67,7 @@ class Helpers
                 fn (Constraint $constraint): ConstraintService => new ConstraintService(
                     $constraint->start_date,
                     $constraint->end_date,
-                    ConstraintType::getPriority()[$constraint->constraint_type->value] == 1 ? Priority::HIGH : Priority::LOW,
+                    ConstraintType::getPriority()[$constraint->constraint_type->value] == 1 ? Priority::HIGH : Priority::LOW
                 )
             );
     }
@@ -112,25 +110,26 @@ class Helpers
         collect($shifts)->map(function (ShiftService $shift) use ($shifts, &$allSpaces) {
             $spaces = ($shift->kind === TaskKind::WEEKEND->value || $shift->kind === TaskKind::NIGHT->value) ? $shift->getShiftSpaces($shifts) : null;
             if (! empty($spaces)) {
-                collect($spaces)->map(fn (Range $space) => $allSpaces->push(new ShiftService(0, 0, '', $space->start, $space->end, 0, TaskKind::REGULAR->value, [])));
+                collect($spaces)->map(fn (Range $space) => $allSpaces->push(new ShiftService(0, '', $space->start, $space->end, 0, TaskKind::REGULAR->value, [])));
             }
         });
 
         return $allSpaces;
     }
 
-    public static function getSoldiersShifts($soldierId, $range, $inParallel)
+    public static function getSoldiersShifts($soldierId, $newRange, $inParallel)
     {
-        return Shift::with('task')
-            ->where('soldier_id', $soldierId)
+        return Shift::where('soldier_id', $soldierId)
             ->whereHas('task', function ($query) use ($inParallel) {
                 $query->withTrashed()
                     ->when($inParallel, fn ($query) => $query->where('kind', TaskKind::INPARALLEL->value))
                     ->when(! $inParallel, fn ($query) => $query->where('kind', '!=', TaskKind::INPARALLEL->value));
             })
-            ->where(function ($query) use ($range) {
-                $query->where('start_date', '<=', $range->end)
-                    ->where('start_date', '>=', $range->start);
+            ->where(function ($query) use ($newRange) {
+                $query->where(function ($subQuery) use ($newRange) {
+                    $subQuery->where('start_date', '<', $newRange->end)
+                        ->where('end_date', '>', $newRange->start);
+                });
             })
             ->get()
             ->map(fn (Shift $shift): ShiftService => self::buildShift($shift));
@@ -138,32 +137,14 @@ class Helpers
 
     public static function getConstraintBy(int $soldierId, $newRange)
     {
-        $constraints = Constraint::where('soldier_id', $soldierId)
+        $constraint = Constraint::where('soldier_id', $soldierId)
             ->get();
 
-        return self::buildConstraints($constraints, $newRange);
+        return self::buildConstraints($constraint, $newRange);
     }
 
     public static function updateShiftTable($assignments)
     {
-        set_time_limit(0);
-        if (empty($assignments)) {
-            return;
-        }
-
-        $chunks = array_chunk($assignments->toArray(), 80);
-
-        foreach ($chunks as $chunk) {
-            $cases = [];
-            $ids = [];
-
-            collect($chunk)->each(function ($assignment) use (&$ids, &$cases) {
-                $ids[] = $assignment->shiftId;
-                $cases[] = "WHEN id = {$assignment->shiftId} THEN {$assignment->soldierId}";
-            });
-
-            Shift::whereIn('id', $ids)
-                ->update(['soldier_id' => \DB::raw('CASE '.implode(' ', $cases).' END')]);
-        }
+        collect($assignments)->map(fn (Assignment $assignment) => Shift::where('id', $assignment->shiftId)->update(['soldier_id' => $assignment->soldierId]));
     }
 }

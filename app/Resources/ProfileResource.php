@@ -52,6 +52,14 @@ class ProfileResource extends Resource
                                     ->seconds(false),
                             ]),
                         Section::make([
+                            Select::make('type')
+                                ->label(__('Type'))
+                                ->options([
+                                    'survival' => __('Survival'),
+                                    'collection' => __('Collection'),
+                                ])
+                                ->placeholder(__('Select soldier type'))
+                                ->required(),
                             Select::make('qualifications')
                                 ->label(__('Qualifications'))
                                 ->placeholder(__('Select qualifications'))
@@ -136,14 +144,18 @@ class ProfileResource extends Resource
                     Stack::make([
                         TextColumn::make('user.first_name')
                             ->label(__('Full name'))
-                            ->formatStateUsing(fn ($record) => $record->user->last_name.' '.$record->user->first_name
+                            ->formatStateUsing(
+                                fn ($record) => $record->user->last_name.' '.$record->user->first_name
                             )->weight(FontWeight::SemiBold)->description(__('Full name'), 'above')->size(TextColumnSize::Large),
+                        TextColumn::make('type')
+                            ->formatStateUsing(
+                                fn ($record) => $record->type == 'collection' ? __('Collection') : __('Survival')
+                            )->weight(FontWeight::SemiBold)->description(__('Type'), 'above')->size(TextColumnSize::Large),
                         TextColumn::make('enlist_date')->weight(FontWeight::SemiBold)->description(__('Enlist date'), 'above')->size(TextColumnSize::Large)->date(),
                         TextColumn::make('course')->weight(FontWeight::SemiBold)->description(__('Course'), 'above')->size(TextColumnSize::Large),
                         TextColumn::make('max_shifts')->weight(FontWeight::SemiBold)->description(__('Max shifts'), 'above')->size(TextColumnSize::Large),
                     ]),
                     Stack::make([
-
                         TextColumn::make('max_nights')->weight(FontWeight::SemiBold)->description(__('Max nights'), 'above')->size(TextColumnSize::Large),
                         TextColumn::make('max_weekends')->weight(FontWeight::SemiBold)->description(__('Max weekends'), 'above')->size(TextColumnSize::Large),
                         TextColumn::make('max_alerts')->weight(FontWeight::SemiBold)->description(__('Max alerts'), 'above')->size(TextColumnSize::Large),
@@ -162,9 +174,11 @@ class ProfileResource extends Resource
                                                     ->whereMonth('end_date', $now->month);
                                             });
                                     })
-                                    ->with(['task' => function ($query) {
-                                        $query->withTrashed();
-                                    }])
+                                    ->with([
+                                        'task' => function ($query) {
+                                            $query->withTrashed();
+                                        },
+                                    ])
                                     ->get()
                                     ->sum(fn (Shift $shift) => $shift->parallel_weight ?? $shift->task->parallel_weight);
                             })
