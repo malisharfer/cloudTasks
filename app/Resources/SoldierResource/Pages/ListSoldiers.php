@@ -101,7 +101,13 @@ class ListSoldiers extends ListRecords
                             ->where('type', $data['type'])->get();
                         $soldiers->map(function ($soldier) use ($updateData) {
                             collect($updateData)->map(function ($value, $key) use ($soldier) {
-                                $soldier->{$key} = $value;
+                                if ($key == 'qualifications') {
+                                    $qualifications = collect($soldier->qualifications);
+                                    $qualifications->push(...$value);
+                                    $soldier->qualifications = $qualifications;
+                                } else {
+                                    $soldier->{$key} = $value;
+                                }
                             });
                             $soldier->save();
                         });
