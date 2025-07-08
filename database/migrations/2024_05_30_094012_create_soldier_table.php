@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('soldiers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('team_id')->nullable();
-            $table->string('type')->nullable();
+            $table->string('type');
             $table->boolean('gender');
             $table->boolean('is_permanent')->default(false);
             $table->dateTime('enlist_date')->nullable();

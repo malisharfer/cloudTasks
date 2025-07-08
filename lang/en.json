@@ -48,5 +48,11 @@
     "Commander approved edit constraint times":"Hello <strong>:soldierName</strong><br>Your request to move your <strong>:constraintName</strong> constraint<br>From <em>:startDate</em> - <em>:endDate</em><br>To <em>:toStartDate</em> - <em>:toEndDate</em><br>Has been approved and the change has been made.<br> Have a good day!",
     "Commander approved edit constraint type": "Hello <strong>:soldierName!</strong><br>Your request to edit your <strong>:constraintName</strong> constraint<br>At <em>:startDate</em> - <em>:endDate</em><br>To <strong>:toConstraintName</strong> constraint <br>At <em>:toStartDate</em> - <em>:toEndDate</em><br>Has been approved and the change has been made.<br> Have a good day!",
     "Commander deny edit constraint times":"Hello <strong>:soldierName</strong><br>Your request to move your <strong>:constraintName</strong> constraint<br>From <em>:startDate</em> - <em>:endDate</em><br>To <em>:toStartDate</em> - <em>:toEndDate</em><br>Has been rejected.<br> Have a good day!",
-    "Commander deny edit constraint type":"Hello <strong>:soldierName!</strong><br>Your request to edit your <strong>:constraintName</strong> constraint<br>At <em>:startDate</em> - <em>:endDate</em><br>To <strong>:toConstraintName</strong> constraint <br>At <em>:toStartDate</em> - <em>:toEndDate</em><br>Has been rejected.<br> Have a good day!"
+    "Commander deny edit constraint type":"Hello <strong>:soldierName!</strong><br>Your request to edit your <strong>:constraintName</strong> constraint<br>At <em>:startDate</em> - <em>:endDate</em><br>To <strong>:toConstraintName</strong> constraint <br>At <em>:toStartDate</em> - <em>:toEndDate</em><br>Has been rejected.<br> Have a good day!",
+    "The shifts were created":"The shifts for the <strong>:month</strong> have been created.",
+    "Shifts have been assigned":"The shifts for the <strong>:month</strong> have been assigned.",
+    "The assignment has been reset":"The assignment of <strong>:month</strong> has been reset.",
+    "The shifts have been deleted":"The shifts of <strong>:month</strong> have been deleted.",
+    "Reset assignment confirmation modal heading":"Reset assignment of <strong>:month</strong>",
+    "Delete shifts confirmation modal heading":"Delete shifts of <strong>:month</strong>"
 }

@@ -3,18 +3,13 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\ConstraintType;
-use App\Exports\AssignmentJustice;
 use App\Exports\ShiftsExport;
 use App\Models\Constraint;
 use App\Models\Shift;
-use App\Models\Task;
-use App\Services\Algorithm;
 use App\Services\Holidays;
 use App\Services\Range;
-use App\Services\RecurringEvents;
 use Carbon\Carbon;
 use Filament\Actions\Action;
-use Filament\Actions\ActionGroup;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
@@ -132,7 +127,6 @@ class CalendarWidget extends FullCalendarWidget
             $this->refreshRecords();
             $this->lastFilterData = $this->filterData;
         }
-        $actions = [];
         if ($this->type === 'my') {
             if ($this->model === Constraint::class) {
                 return [$this->createConstraintAction()];
@@ -144,46 +138,9 @@ class CalendarWidget extends FullCalendarWidget
                 if (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())) {
                     return [$this->createConstraintAction()];
                 }
-            } else {
-                $hasActiveTasks = Task::withTrashed()->whereNull('deleted_at')->exists();
-
-                $actions = [
-                    ActionGroup::make([
-                        $this->downloadAssignmentsAction(),
-                        $this->downloadAssignmentJustice(),
-                        Action::make('Create shifts')
-                            ->action(fn () => $this->runEvents())
-                            ->label(__('Create shifts'))
-                            ->icon('heroicon-o-clipboard-document-check')
-                            ->visible($hasActiveTasks),
-                        Action::make('Shifts assignment')
-                            ->action(fn () => $this->runAlgorithm())
-                            ->label(__('Shifts assignment and Parallel shifts'))
-                            ->icon('heroicon-o-play')
-                            ->visible($hasActiveTasks),
-                        Action::make('Reset assignment')
-                            ->color('danger')
-                            ->action(fn () => $this->resetShifts())
-                            ->label(__('Reset assignment'))
-                            ->requiresConfirmation()
-                            ->modalHeading(__('Reset assignment'))
-                            ->modalDescription(__('Are you sure? This cannot be undone!'))
-                            ->modalSubmitActionLabel(__('Yes, reset it'))
-                            ->icon('heroicon-o-arrow-path'),
-                        Action::make('Delete shifts')
-                            ->color('danger')
-                            ->action(fn () => $this->deleteShifts())
-                            ->label(__('Delete shifts'))
-                            ->requiresConfirmation()
-                            ->icon('heroicon-o-x-circle'),
-                    ])
-                        ->visible(in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())
-                            || in_array('manager', auth()->user()->getRoleNames()->toArray())),
-                ];
             }
             if ($this->filter) {
                 return array_merge(
-                    $actions ?? [],
                     self::activeFilters(),
                     [
                         self::resetFilters(),
@@ -193,13 +150,10 @@ class CalendarWidget extends FullCalendarWidget
                 );
             }
 
-            return array_merge(
-                $actions ?? [],
-                [
-                    $this->model::getFilters($this)
-                        ->closeModalByClickingAway(false),
-                ]
-            );
+            return [
+                $this->model::getFilters($this)
+                    ->closeModalByClickingAway(false),
+            ];
         }
     }
 
@@ -242,58 +196,12 @@ class CalendarWidget extends FullCalendarWidget
     protected function downloadAssignmentsAction()
     {
         return Action::make('Download')
-            ->label(__('Download to excel'))
+            ->label(__('Download to assignment'))
             ->icon('heroicon-o-arrow-down-tray')
             ->action(fn () => Excel::download(new ShiftsExport($this->currentMonth), __('File name', [
                 'name' => auth()->user()->displayName,
                 'month' => $this->currentMonth,
             ]).'.xlsx'));
-    }
-
-    protected function downloadAssignmentJustice()
-    {
-        return Action::make('Download assignment justice')
-            ->label(__('Download the assignment justice'))
-            ->icon('heroicon-o-arrow-down-tray')
-            ->action(fn () => Excel::download(new AssignmentJustice($this->currentMonth), __('File name', [
-                'name' => auth()->user()->displayName,
-                'month' => $this->currentMonth,
-            ]).'.xlsx'));
-    }
-
-    protected function runEvents()
-    {
-        $recurringEvents = new RecurringEvents($this->currentMonth);
-        $recurringEvents->recurringTask();
-        $this->refreshRecords();
-    }
-
-    protected function runAlgorithm()
-    {
-        $algorithm = new Algorithm($this->currentMonth);
-        $algorithm->run();
-        $this->refreshRecords();
-    }
-
-    protected function resetShifts()
-    {
-        $this->startDate = (Carbon::now()->format('m') == Carbon::parse($this->currentMonth)->format('m'))
-            ? Carbon::now()->addDay()->format('Y-m-d')
-            : Carbon::parse($this->currentMonth)->startOfMonth()->format('Y-m-d');
-        Shift::whereNotNull('soldier_id')
-            ->whereBetween('start_date', [$this->startDate, (Carbon::parse($this->currentMonth)->endOfMonth()->addDay())->format('Y-m-d')])
-            ->update(['soldier_id' => null]);
-        $this->refreshRecords();
-    }
-
-    protected function deleteShifts()
-    {
-        $this->startDate = (Carbon::now()->format('m') == Carbon::parse($this->currentMonth)->format('m'))
-            ? Carbon::now()->addDay()->format('Y-m-d')
-            : Carbon::parse($this->currentMonth)->startOfMonth()->format('Y-m-d');
-        Shift::whereBetween('start_date', [$this->startDate, (Carbon::parse($this->currentMonth)->endOfMonth()->addDay())->format('Y-m-d')])
-            ->delete();
-        $this->refreshRecords();
     }
 
     protected function resetFilters()
