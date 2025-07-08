@@ -11,10 +11,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('soldiers', function (Blueprint $table) {
-            $table->string('type');
+            $table->string('type')->default('collection'); 
         });
 
-        // DB::table('soldiers')->whereNull('type')->update(['type' => 'Regular']);
+        DB::table('soldiers')->whereNull('type')->update(['type' => 'collection']);
     }
 
 
