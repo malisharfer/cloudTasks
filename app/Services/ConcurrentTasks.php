@@ -40,8 +40,7 @@ class ConcurrentTasks
 
     protected function getShiftsWithTasks()
     {
-        // $startOfMonth = max($this->date->copy()->startOfMonth(), Carbon::tomorrow());
-        $startOfMonth = $this->date->copy()->startOfMonth();
+        $startOfMonth = max($this->date->copy()->startOfMonth(), Carbon::tomorrow());
         $endOfMonth = $this->date->copy()->endOfMonth();
 
         return Shift::whereNull('soldier_id')
