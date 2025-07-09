@@ -55,7 +55,7 @@ class FixedConstraints
     protected function createPeriod()
     {
         $month = Carbon::now()->addMonth();
-        return CarbonPeriod::between($month->copy()->startOfMonth(), $month->copy()->endOfMonth());  
+        return CarbonPeriod::between($month->copy()->startOfMonth(), $month->copy()->endOfMonth());
         // return CarbonPeriod::between(max($month->copy()->startOfMonth(), Carbon::tomorrow()), $month->copy()->endOfMonth());
     }
 }

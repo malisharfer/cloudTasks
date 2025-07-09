@@ -6,14 +6,14 @@ class ShiftData
 {
     public $shift;
 
-    public $potentialSoldiers;
-
     public $weight;
 
-    public function __construct(Shift $shift, $potentialSoldiers, float $weight)
+    public $potentialSoldiers;
+
+    public function __construct(Shift $shift, float $weight, $potentialSoldiers = [])
     {
         $this->shift = $shift;
-        $this->potentialSoldiers = collect($potentialSoldiers);
         $this->weight = $weight;
+        $this->potentialSoldiers = collect($potentialSoldiers);
     }
 }

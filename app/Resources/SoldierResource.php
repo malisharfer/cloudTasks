@@ -62,9 +62,7 @@ class SoldierResource extends Resource
             ->columns([
                 TextColumn::make('user.displayName')
                     ->label(__('Full name'))
-                    ->formatStateUsing(
-                        fn ($record) => $record->user->last_name.' '.$record->user->first_name
-                    )
+                    ->formatStateUsing(fn ($record) => $record->user->last_name.' '.$record->user->first_name)
                     ->searchable(query: function ($query, $search) {
                         $query->whereHas('user', function ($query) use ($search) {
                             $query->where('first_name', 'like', "%{$search}%")

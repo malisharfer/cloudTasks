@@ -56,7 +56,7 @@ class Shift extends Model
 
     private function getTaskParallelWeight()
     {
-        return $this->task?->parallel_weight;
+        return $this->task()->withTrashed()->first()->parallel_weight;
     }
 
     public function getTaskNameAttribute()
@@ -64,13 +64,13 @@ class Shift extends Model
         $user_name = User::where('userable_id', $this->soldier_id)->get(['first_name', 'last_name']);
 
         return $this->soldier_id == auth()->user()->userable_id
-            ? $this->task?->name
-            : $this->task?->name.' '.$user_name->first()?->first_name.' '.$user_name->first()?->last_name;
+            ? $this->task()->withTrashed()->first()->name
+            : $this->task()->withTrashed()->first()->name.' '.$user_name->first()?->first_name.' '.$user_name->first()?->last_name;
     }
 
     public function getTaskColorAttribute()
     {
-        return $this->task?->color;
+        return $this->task()->withTrashed()->first()->color;
     }
 
     public static function getSchema(): array
@@ -280,7 +280,7 @@ class Shift extends Model
                     $livewire->dispatch('filament-fullcalendar--refresh');
                 }
                 if ($arguments['cancel'] ?? false) {
-                    $livewire->dispatch('filament-fullcalendar--refresh');
+                    $livewire->dispatch('close-modal');
                 }
             });
     }
@@ -578,7 +578,7 @@ class Shift extends Model
                     $livewire->dispatch('filament-fullcalendar--refresh');
                 }
                 if ($arguments['cancel'] ?? false) {
-                    $livewire->dispatch('filament-fullcalendar--refresh');
+                    $livewire->dispatch('close-modal');
                 }
             });
     }
