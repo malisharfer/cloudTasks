@@ -23,15 +23,13 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 RUN curl -sL https://deb.nodesource.com/setup_16.x | bash - \
     && apt-get install -y nodejs
 
-# התקנה של frankenphp מתוך GitHub, ישירות ללא gzip
-RUN curl -sSL https://github.com/laravel/octane/releases/download/v2.6/frankenphp-linux-x86_64 -o /usr/local/bin/frankenphp && \
-    chmod +x /usr/local/bin/frankenphp
+# אם יש חבילה Composer עבור frankenphp, אפשר להתקין אותה כך
+# RUN composer global require frankenphp/package-name (לא בהכרח קיימת, זה תחליף אם תמצא)
 
-# התקנת Laravel Octane
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
-    composer global require laravel/octane
+# העתקת קובץ package.json
+COPY package.json /var/www/html/
 
-# התקנה של NPM dependencies
+# התקנת NPM dependencies
 WORKDIR /var/www/html
 RUN npm install
 
