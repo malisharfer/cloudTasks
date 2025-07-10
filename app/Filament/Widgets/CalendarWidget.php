@@ -252,17 +252,19 @@ class CalendarWidget extends FullCalendarWidget
     {
         return [
             EditAction::make()
-                ->fillForm(
-                    fn (Model $record, array $arguments) => method_exists($this->model, 'fillForm')
+                ->fillForm(fn (Model $record, array $arguments) => method_exists($this->model, 'fillForm')
                     ? (new $this->model)->fillForm($record, $arguments)
                     : [
                         ...$record->getAttributes(),
                         'start_date' => $arguments['event']['start'] ?? $record->start_date,
                         'end_date' => $arguments['event']['end'] ?? $record->end_date,
-                    ]
-                )
+                    ])
                 ->visible(function (Model $record, $arguments) {
                     if ($record->start_date < now()) {
+                        if (! empty($arguments['event']) && $arguments['type'] == 'drop') {
+                            $this->refreshRecords();
+                        }
+
                         return false;
                     }
                     if (! empty($arguments['event']) && $arguments['event']['start'] < now()) {
@@ -386,15 +388,13 @@ class CalendarWidget extends FullCalendarWidget
     protected function viewAction(): Action
     {
         return ViewAction::make()
-            ->fillForm(
-                fn (Model $record, array $arguments) => method_exists($this->model, 'fillForm')
+            ->fillForm(fn (Model $record, array $arguments) => method_exists($this->model, 'fillForm')
                 ? (new $this->model)->fillForm($record, $arguments)
                 : [
                     ...$record->getAttributes(),
                     'start_date' => $arguments['event']['start'] ?? $record->start_date,
                     'end_date' => $arguments['event']['end'] ?? $record->end_date,
-                ]
-            )
+                ])
             ->modalFooterActions(
                 function (ViewAction $action, FullCalendarWidget $livewire) {
                     if (

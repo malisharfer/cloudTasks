@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Enums\Availability;
 use App\Enums\DaysInWeek;
-use App\Enums\RotationResult;
 use App\Enums\TaskKind;
 
 class PointedSchedule
@@ -307,50 +306,50 @@ class PointedSchedule
     {
         $this->courses
             ->filter(fn (Course $course) => $course->max > 0)
-            ->map(function (Course $course) {
+            ->each(function (Course $course) {
+                if (collect($this->shiftsData)->contains(fn ($shifts): bool => collect($shifts)->count() > 0) && $course->max >= 2) {
+                    $this->assignShiftsForCourse($course, true);
+                }
+            })
+            ->each(function (Course $course) {
                 if (collect($this->shiftsData)->contains(fn ($shifts): bool => collect($shifts)->count() > 0)) {
-                    $this->assignShiftsForCourse($course);
+                    $this->assignShiftsForCourse($course, false);
                 }
             });
     }
 
-    protected function assignShiftsForCourse(Course $course)
+    protected function assignShiftsForCourse(Course $course, $isSingleRotation)
     {
         $rotationSize = $this->maximalRotationSize;
-        while ($course->remaining('pointsMaxData') > 0 && $rotationSize >= $this->minimalRotationSize) {
-            $rotationResult = $this->rotation($course->soldiers, $rotationSize);
-            match ($rotationResult) {
-                RotationResult::SUCCESS => [
-                    $this->saveRotationAssigments(),
-                ],
-                RotationResult::SUCCESS_WITH_GAP => [
-                    $this->saveRotationAssigments(),
-                    $rotationSize = 0,
-                ],
-                RotationResult::FAILED => [
-                    $this->clearRotationAsssigments(),
-                    $rotationSize /= 2,
-                ],
-            };
+        while (! $course->hasGap && $course->remaining('pointsMaxData') > 0 && $rotationSize >= $this->minimalRotationSize) {
+            $rotationResult = $this->rotation($course, $rotationSize);
+            if ($rotationResult) {
+                $this->saveRotationAssigments();
+            } else {
+                $this->clearRotationAsssigments();
+                $rotationSize /= 2;
+            }
+            if ($isSingleRotation) {
+                return;
+            }
         }
     }
 
-    protected function rotation($soldiers, $rotationSize): RotationResult
+    protected function rotation($course, $rotationSize)
     {
-        $isGapExists = false;
-        foreach ($soldiers as $soldier) {
+        foreach ($course->soldiers as $soldier) {
             $assignedPoints = $this->assignRotationShiftsToSoldier($soldier, $rotationSize);
 
             $gap = $rotationSize - $assignedPoints;
             if ($gap > $this->allowedGap) {
-                return RotationResult::FAILED;
+                return false;
             }
             if ($gap > 0) {
-                $isGapExists = true;
+                $course->hasGap = true;
             }
         }
 
-        return $isGapExists ? RotationResult::SUCCESS_WITH_GAP : RotationResult::SUCCESS;
+        return true;
     }
 
     protected function assignRotationShiftsToSoldier(Soldier $soldier, float $rotationSize)
