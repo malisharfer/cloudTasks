@@ -1,43 +1,70 @@
-# הגדרת התמונה הבסיסית
-FROM php:8.1-fpm
+ARG php_version=8.3
 
-# עדכון כלים בסיסיים
-RUN apt-get update && apt-get install -y \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    libzip-dev \
-    unzip \
+# FROM dunglas/frankenphp:1.1-php${php_version} AS base
+FROM dunglas/frankenphp:1.1.5-php${php_version} AS base
+
+WORKDIR /laravel
+SHELL ["/bin/bash", "-eou", "pipefail", "-c"]
+
+ENV SERVER_NAME=:80
+ARG user=laravel
+
+COPY ./ /laravel
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --chmod=755 /entrypoint.sh entrypoint.sh
+COPY --chmod=755 /common common
+COPY --chown=${user}:${user} /artisan artisan
+COPY .env.example .env
+COPY /php.ini "${PHP_INI_DIR}/php.ini"
+RUN php --ini \
+ && php -r "echo 'max_execution_time: ' . ini_get('max_execution_time') . PHP_EOL;"
+
+
+RUN apt-get update \
+  && apt-get satisfy -y --no-install-recommends \
+    "curl (>=7.88)" \
+    "supervisor (>=4.2)" \
+    "unzip (>=6.0)" \
+    "vim-tiny (>=2)" \
+  && apt-get install -y nodejs npm \
+  && npm install -g npm@7  \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN useradd \
+    --uid 1000 \
+    --shell /bin/bash \
+    "${user}" \
+  && setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/frankenphp \
+  && chown -R "${user}:${user}" \
+    /laravel \
+    /data/caddy \
+    /config/caddy \
+    /var/{log,run} \
+  && chmod -R a+rw \
+    /var/{log,run}
+
+RUN install-php-extensions \
+    bcmath \
+    bz2 \
     curl \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+    exif \
+    gd \
+    intl \
+    pcntl \
+    pdo_pgsql \
+    mbstring \
+    opcache \
+    redis \
+    sockets \
+    calendar\
+    zip
 
-# התקנה של הרחבות PHP דרושות
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd zip
-
-# התקנת Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-
-# התקנת Node.js ו-NPM
-RUN curl -sL https://deb.nodesource.com/setup_16.x | bash - \
-    && apt-get install -y nodejs
-
-# אם יש חבילה Composer עבור frankenphp, אפשר להתקין אותה כך
-# RUN composer global require frankenphp/package-name (לא בהכרח קיימת, זה תחליף אם תמצא)
-
-# העתקת קובץ package.json
-COPY package.json /var/www/html/
-
-# התקנת NPM dependencies
-WORKDIR /var/www/html
+RUN composer install
 RUN npm install
 
-# תיקון הרשאות
+USER ${user}
+
 RUN chmod -R a+rw storage
-
-# פתיחה של פורט 9000
-EXPOSE 9000
-
-# הגדרת הפקודה הראשונית
-CMD ["php-fpm"]
+    
+ENTRYPOINT ["/laravel/entrypoint.sh"]
