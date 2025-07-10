@@ -19,20 +19,19 @@ class Algorithm
 
     protected function getShiftWithTasks()
     {
-        // $startOfMonth = max($this->date->copy()->startOfMonth(), Carbon::tomorrow());
         $startOfMonth = $this->date->copy()->startOfMonth();
+        // $startOfMonth = max($this->date->copy()->startOfMonth(), Carbon::tomorrow());
         $endOfMonth = $this->date->copy()->endOfMonth();
 
-        return Shift::whereNull('soldier_id')
+        return Shift::with('task')
+            ->whereNull('soldier_id')
             ->whereHas('task', function ($query) {
                 $query->withTrashed()
                     ->where('kind', '!=', TaskKind::INPARALLEL->value);
             })
             ->where(function ($query) use ($startOfMonth, $endOfMonth) {
-                $query->where(function ($subQuery) use ($startOfMonth, $endOfMonth) {
-                    $subQuery->where('start_date', '<', $endOfMonth)
-                        ->where('end_date', '>', $startOfMonth);
-                });
+                $query->where('start_date', '<=', $endOfMonth)
+                    ->where('start_date', '>=', $startOfMonth);
             })
             ->get()
             ->map(fn (Shift $shift): ShiftService => Helpers::buildShift($shift));
@@ -54,8 +53,8 @@ class Algorithm
 
                 return Helpers::buildSoldier($soldier, $constraints, $shifts, $capacityHold);
             })
-            ->shuffle()
-            ->toArray();
+            ->filter(fn ($soldier) => $soldier->hasMaxes())
+            ->shuffle();
     }
 
     protected function getSoldiersShifts($soldierId, $inParallel)

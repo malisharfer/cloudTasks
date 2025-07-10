@@ -117,9 +117,7 @@ class TeamResource extends Resource
                     ->sortable(),
                 TextColumn::make('commander.user')
                     ->label(__('Commander'))
-                    ->formatStateUsing(function ($state) {
-                        return $state->last_name.' '.$state->first_name;
-                    })
+                    ->formatStateUsing(fn ($state) => $state->last_name.' '.$state->first_name)
                     ->label(__('Commander'))
                     ->searchable(
                         query: function ($query, $search) {

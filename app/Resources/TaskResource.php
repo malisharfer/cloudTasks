@@ -334,10 +334,7 @@ class TaskResource extends Resource
                         ->afterStateUpdated(fn (callable $set) => $set('soldier_id', null)),
                     Select::make('soldier_id')
                         ->label(__('Assign soldier'))
-                        ->options(
-                            fn (Get $get) => self::getSoldiers($get)
-
-                        )
+                        ->options(fn (Get $get) => self::getSoldiers($get))
                         ->default(null)
                         ->placeholder(fn (Get $get) => self::getSoldiers($get)->isEmpty() ? __('No suitable soldiers') : __('Select a soldier'))
                         ->visible(
