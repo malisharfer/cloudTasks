@@ -1,5 +1,5 @@
 ARG php_version=8.3
-FROM dunglas/frankenphp:1.2-php${php_version} AS base
+FROM dunglas/frankenphp:1.1-php${php_version} AS base
 
 WORKDIR /laravel
 SHELL ["/bin/bash", "-eou", "pipefail", "-c"]
@@ -7,10 +7,7 @@ SHELL ["/bin/bash", "-eou", "pipefail", "-c"]
 ENV SERVER_NAME=:80
 ARG user=laravel
 
-# הגדרת משתני סביבה למניעת עדכון FrankenPHP
-ENV OCTANE_SKIP_FRANKENPHP_UPGRADE=true
-ENV FRANKENPHP_VERSION=1.2.0
-
+# העתק קבצים
 COPY ./ /laravel
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 COPY --chmod=755 /entrypoint.sh entrypoint.sh
@@ -48,11 +45,8 @@ RUN install-php-extensions \
     calendar \
     zip
 
-# הורד ידנית את FrankenPHP בגרסה תואמת
-RUN curl -L "https://github.com/dunglas/frankenphp/releases/download/v1.2.0/frankenphp-linux-x86_64" -o /usr/local/bin/frankenphp-new \
-    && chmod +x /usr/local/bin/frankenphp-new \
-    && mv /usr/local/bin/frankenphp /usr/local/bin/frankenphp-old \
-    && mv /usr/local/bin/frankenphp-new /usr/local/bin/frankenphp
+# הורד FrankenPHP המעודכן מראש (בעוד יש לנו הרשאות root)
+RUN php artisan octane:install --server=frankenphp --no-interaction || true
 
 # צור משתמש
 RUN useradd \
