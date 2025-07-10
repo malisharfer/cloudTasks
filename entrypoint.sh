@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export OCTANE_SKIP_FRANKENPHP_INSTALL=1
+
 set -e
 
 : "${CONTAINER_MODE:=app}"
