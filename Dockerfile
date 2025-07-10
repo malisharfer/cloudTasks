@@ -15,33 +15,30 @@ COPY --chmod=755 /common common
 COPY --chown=${user}:${user} /artisan artisan
 COPY .env.example .env
 COPY /php.ini "${PHP_INI_DIR}/php.ini"
+
 RUN php --ini \
- && php -r "echo 'max_execution_time: ' . ini_get('max_execution_time') . PHP_EOL;"
+ && php -r "echo 'max_execution_time: ' . ini_get('max_execution_time') . PHP_EOL;" \
+ && apt-get update \
+ && apt-get install -y \
+    curl \
+    supervisor \
+    unzip \
+    vim-tiny \
+    nodejs \
+    npm \
+ && npm install -g npm@7 \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
 
-
-RUN apt-get update \
-  && apt-get satisfy -y --no-install-recommends \
-    "curl (>=7.88)" \
-    "supervisor (>=4.2)" \
-    "unzip (>=6.0)" \
-    "vim-tiny (>=2)" \
-  && apt-get install -y nodejs npm \
-  && npm install -g npm@7  \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
-
-RUN useradd \
-    --uid 1000 \
-    --shell /bin/bash \
-    "${user}" \
+RUN useradd --uid 1000 --shell /bin/bash "${user}" \
   && setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/frankenphp \
+  && chmod +x /usr/local/bin/frankenphp \
   && chown -R "${user}:${user}" \
     /laravel \
     /data/caddy \
     /config/caddy \
     /var/{log,run} \
-  && chmod -R a+rw \
-    /var/{log,run}
+  && chmod -R a+rw /var/{log,run}
 
 RUN install-php-extensions \
     bcmath \
@@ -56,7 +53,7 @@ RUN install-php-extensions \
     opcache \
     redis \
     sockets \
-    calendar\
+    calendar \
     zip
 
 RUN composer install
@@ -65,5 +62,5 @@ RUN npm install
 USER ${user}
 
 RUN chmod -R a+rw storage
-    
+
 ENTRYPOINT ["/laravel/entrypoint.sh"]
