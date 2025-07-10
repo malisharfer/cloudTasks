@@ -1,88 +1,45 @@
-# הגדרת גרסת PHP
-ARG php_version=8.3
+# הגדרת התמונה הבסיסית
+FROM php:8.1-fpm
 
-# שלב הבסיס עם גרסת FrankenPHP
-FROM dunglas/frankenphp:1.1-php${php_version} AS base
-
-WORKDIR /laravel
-SHELL ["/bin/bash", "-eou", "pipefail", "-c"]
-
-ENV SERVER_NAME=:80
-ARG user=laravel
-
-# העתקת קבצים חשובים לאפליקציה
-COPY ./ /laravel
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-COPY --chmod=755 /entrypoint.sh entrypoint.sh
-COPY --chmod=755 /common common
-COPY --chown=${user}:${user} /artisan artisan
-COPY .env.example .env
-COPY /php.ini "${PHP_INI_DIR}/php.ini"
-RUN php --ini \
- && php -r "echo 'max_execution_time: ' . ini_get('max_execution_time') . PHP_EOL;"
-
-# התקנה של תלותים נוספות
-RUN apt-get update \
-  && apt-get satisfy -y --no-install-recommends \
-    "curl (>=7.88)" \
-    "supervisor (>=4.2)" \
-    "unzip (>=6.0)" \
-    "vim-tiny (>=2)" \
-  && apt-get install -y nodejs npm \
-  && npm install -g npm@7  \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
-
-# יצירת משתמש חדש עם UID 1000
-RUN useradd \
-    --uid 1000 \
-    --shell /bin/bash \
-    "${user}" \
-  && setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/frankenphp \
-  && chown -R "${user}:${user}" \
-    /laravel \
-    /data/caddy \
-    /config/caddy \
-    /var/{log,run} \
-  && chmod -R a+rw \
-    /var/{log,run}
-
-# התקנה של הרחבות PHP הדרושות
-RUN install-php-extensions \
-    bcmath \
-    bz2 \
+# עדכון כלים בסיסיים
+RUN apt-get update && apt-get install -y \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    libzip-dev \
+    unzip \
     curl \
-    exif \
-    gd \
-    intl \
-    pcntl \
-    pdo_pgsql \
-    mbstring \
-    opcache \
-    redis \
-    sockets \
-    calendar \
-    zip
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-# התקנה של Composer ו-NPM
-RUN composer install
+# התקנה של הרחבות PHP דרושות
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install gd zip
+
+# התקנת Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# התקנת Node.js ו-NPM
+RUN curl -sL https://deb.nodesource.com/setup_16.x | bash - \
+    && apt-get install -y nodejs
+
+# התקנה של frankenphp מתוך GitHub, ישירות ללא gzip
+RUN curl -sSL https://github.com/laravel/octane/releases/download/v2.6/frankenphp-linux-x86_64 -o /usr/local/bin/frankenphp && \
+    chmod +x /usr/local/bin/frankenphp
+
+# התקנת Laravel Octane
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
+    composer global require laravel/octane
+
+# התקנה של NPM dependencies
+WORKDIR /var/www/html
 RUN npm install
 
-# שינוי הרשאות על תיקיית storage
+# תיקון הרשאות
 RUN chmod -R a+rw storage
 
-# התקנה אוטומטית של FrankenPHP מתוך GitHub
-RUN curl -sSL https://github.com/laravel/octane/releases/download/v2.6/frankenphp-linux-x86_64.tar.gz -o /tmp/frankenphp.tar.gz && \
-    mkdir -p /usr/local/bin && \
-    tar -xzvf /tmp/frankenphp.tar.gz -C /usr/local/bin && \
-    chmod +x /usr/local/bin/frankenphp && \
-    rm /tmp/frankenphp.tar.gz
+# פתיחה של פורט 9000
+EXPOSE 9000
 
-# שינוי למשתמש הלאראבל
-USER ${user}
-
-# שינוי הרשאות על תיקיית storage
-RUN chmod -R a+rw storage
-
-# הגדרת EntryPoint
-ENTRYPOINT ["/laravel/entrypoint.sh"]
+# הגדרת הפקודה הראשונית
+CMD ["php-fpm"]
