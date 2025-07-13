@@ -15,30 +15,30 @@ class Helpers
 {
     public static function buildShift(Shift $shift): ShiftService
     {
+        $task = $shift->task()->withTrashed()->first() ?? $shift->task;
+
         return new ShiftService(
             $shift->id,
-            $shift->task_id,
-            $shift->task()->withTrashed()->first()->type,
+            $task->type,
             $shift->start_date,
             $shift->end_date,
-            $shift->parallel_weight === null ? $shift->task()->withTrashed()->first()->parallel_weight : $shift->parallel_weight,
-            self::kind($shift),
-            $shift->task()->withTrashed()->first()->concurrent_tasks
+            $shift->parallel_weight === null ? $task->parallel_weight : $shift->parallel_weight,
+            self::kind($shift, $task),
+            $task->concurrent_tasks
         );
     }
 
-    protected static function kind(Shift $shift)
+    protected static function kind(Shift $shift, $task)
     {
         if ($shift->is_weekend === true) {
             return TaskKind::WEEKEND->value;
         }
-        if ($shift->is_weekend === false && $shift->task()->withTrashed()->first()->kind === TaskKind::WEEKEND->value) {
+        if ($shift->is_weekend === false && $task->kind === TaskKind::WEEKEND->value) {
             return TaskKind::REGULAR->value;
         }
 
-        return $shift->task()->withTrashed()->first()->kind;
+        return $task->kind;
     }
-
     public static function buildSoldier($soldier, $constraints, $shifts, array $capacityHold, $concurrentsShifts = []): SoldierService
     {
         return new SoldierService(
