@@ -1,4 +1,5 @@
 ARG php_version=8.3
+
 FROM dunglas/frankenphp:1.1-php${php_version} AS base
 
 WORKDIR /laravel
@@ -7,7 +8,6 @@ SHELL ["/bin/bash", "-eou", "pipefail", "-c"]
 ENV SERVER_NAME=:80
 ARG user=laravel
 
-# העתק קבצים
 COPY ./ /laravel
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 COPY --chmod=755 /entrypoint.sh entrypoint.sh
@@ -15,20 +15,34 @@ COPY --chmod=755 /common common
 COPY --chown=${user}:${user} /artisan artisan
 COPY .env.example .env
 COPY /php.ini "${PHP_INI_DIR}/php.ini"
+RUN php --ini \
+ && php -r "echo 'max_execution_time: ' . ini_get('max_execution_time') . PHP_EOL;"
 
-# התקן dependencies
+
 RUN apt-get update \
-    && apt-get satisfy -y --no-install-recommends \
-        "curl (>=7.88)" \
-        "supervisor (>=4.2)" \
-        "unzip (>=6.0)" \
-        "vim-tiny (>=2)" \
-    && apt-get install -y nodejs npm \
-    && npm install -g npm@7 \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+  && apt-get satisfy -y --no-install-recommends \
+    "curl (>=7.88)" \
+    "supervisor (>=4.2)" \
+    "unzip (>=6.0)" \
+    "vim-tiny (>=2)" \
+  && apt-get install -y nodejs npm \
+  && npm install -g npm@7  \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
-# התקן PHP extensions
+RUN useradd \
+    --uid 1000 \
+    --shell /bin/bash \
+    "${user}" \
+  && setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/frankenphp \
+  && chown -R "${user}:${user}" \
+    /laravel \
+    /data/caddy \
+    /config/caddy \
+    /var/{log,run} \
+  && chmod -R a+rw \
+    /var/{log,run}
+
 RUN install-php-extensions \
     bcmath \
     bz2 \
@@ -42,36 +56,14 @@ RUN install-php-extensions \
     opcache \
     redis \
     sockets \
-    calendar \
+    calendar\
     zip
 
-# הורד FrankenPHP המעודכן מראש (בעוד יש לנו הרשאות root)
-RUN php artisan octane:install --server=frankenphp --no-interaction || true
-
-# צור משתמש
-RUN useradd \
-    --uid 1000 \
-    --shell /bin/bash \
-    "${user}" \
-    && setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/frankenphp \
-    && chown -R "${user}:${user}" \
-        /laravel \
-        /data/caddy \
-        /config/caddy \
-        /var/{log,run} \
-    && chmod -R a+rw \
-        /var/{log,run}
-
-# התקן composer dependencies
-RUN composer install --no-dev --optimize-autoloader
-
-# התקן npm dependencies
+RUN composer install
 RUN npm install
 
-# החלף למשתמש רגיל
 USER ${user}
 
-# הרשאות storage
 RUN chmod -R a+rw storage
-
+    
 ENTRYPOINT ["/laravel/entrypoint.sh"]

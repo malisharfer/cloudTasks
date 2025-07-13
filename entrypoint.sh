@@ -67,21 +67,23 @@ _setup() {
 }
 
 _run() {
-   case "${CONTAINER_MODE}" in
+  case "${CONTAINER_MODE}" in
     app)
-            echo "🚀 Running octane..."
-            # הפעל את octane עם --no-interaction כדי לא לנסות לעדכן FrankenPHP
-            ${ARTISAN} queue:work -vv \
-                --no-interaction \
-                --tries="${CONTAINER_WORKER_TRIES}" \
-                --sleep="${CONTAINER_WORKER_SLEEP}" \
-                --timeout="${CONTAINER_WORKER_TIMEOUT}" \
-                --delay="${CONTAINER_WORKER_DELAY}" &
-            ${ARTISAN} schedule:work &
-            
-            # הפעל octane עם דגלים שימנעו עדכון FrankenPHP
-            exec ${ARTISAN} octane:frankenphp --host=0.0.0.0 --port="${CONTAINER_PORT}" --no-interaction
+      echo "🚀 Running octane..."
+      # ${ARTISAN} schedule:work &
+      # ${ARTISAN} octane:frankenphp --host=0.0.0.0 --port="${CONTAINER_PORT}" &
+      # ${ARTISAN} queue:
+      ${ARTISAN} queue:work -vv \
+        --no-interaction \
+        --tries="${CONTAINER_WORKER_TRIES}" \
+        --sleep="${CONTAINER_WORKER_SLEEP}" \
+        --timeout="${CONTAINER_WORKER_TIMEOUT}" \
+        --delay="${CONTAINER_WORKER_DELAY}" &
+      ${ARTISAN} schedule:work &
+      ${ARTISAN} octane:frankenphp --host=0.0.0.0 --port="${CONTAINER_PORT}" 
       ;;
+      # ${ARTISAN} serve --host=0.0.0.0 --port="${CONTAINER_PORT}" 
+      # ;;
     worker)
       echo "⏳ Running the queue..."
       exec "${ARTISAN}" queue:work 
