@@ -423,14 +423,14 @@ class TaskResource extends Resource
     {
         $task_date = Carbon::parse($get('recurring.date'));
         $task = new Task;
-        $task->id = null;
+        $task->id = 0;
         $task->type = $get('type');
         $task->kind = $get('kind');
         $task->concurrent_tasks = $get('concurrent_tasks') ?? [];
         $shift = new Shift;
         $shift->id = null;
-        $shift->task_id = null;
         $shift->task = $task;
+        $shift->task_id = 0;
         $shift->start_date = Carbon::parse($task_date->format('Y-m-d').' '.$get('start_hour'));
         $shift->end_date = $shift->start_date->copy()->addHours((float) ($get('duration')));
         $shift->parallel_weight = $get('parallel_weight');

@@ -19,6 +19,7 @@ class Helpers
 
         return new ShiftService(
             $shift->id,
+            $shift->task_id,
             $task->type,
             $shift->start_date,
             $shift->end_date,
