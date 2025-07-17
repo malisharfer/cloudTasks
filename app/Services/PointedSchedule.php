@@ -14,6 +14,8 @@ class PointedSchedule
 
     protected $courses;
 
+    protected $originalCourses;
+
     protected $shiftsData;
 
     protected $soldiersDict;
@@ -35,6 +37,7 @@ class PointedSchedule
         $this->soldiers = collect($soldiers);
         $this->shifts = collect($shifts);
         $this->courses = collect([]);
+        $this->originalCourses = collect([]);
         $this->soldiersDict = collect([]);
         $this->shiftsData = collect([]);
         $this->rotationAssignments = collect([]);
@@ -49,6 +52,7 @@ class PointedSchedule
             'shiftPointRatio' => 0.05,
             'isSingleShift' => 0.3,
             'isFullWeekend' => 0.7,
+            'youngRatio' => 1,
         ]);
         $this->minimalRotationSize = 0.5;
         $this->maximalRotationSize = 2;
@@ -57,12 +61,18 @@ class PointedSchedule
 
     public function schedule()
     {
+        $this->initOriginalCourses();
         $this->initSoldiersDict();
         $this->buildShifts();
         $this->initCourses();
         $this->assign();
 
         return $this->assignments;
+    }
+
+    protected function initOriginalCourses()
+    {
+        $this->originalCourses = $this->soldiers->groupBy('course')->sortDesc();
     }
 
     protected function initSoldiersDict()
@@ -113,7 +123,30 @@ class PointedSchedule
     {
         $soldiers = $this->soldiers->filter(fn (Soldier $soldier) => $soldier->isQualified($taskType));
         $taskWeight = $this->getTaskWeight($shifts, $soldiers);
+        $taskWeight['youngRatio'] = $this->getYoungRatio($taskType);
+
         $shifts->each(fn ($shift) => $this->addShiftData($shift, $soldiers, $taskWeight));
+    }
+
+    protected function getYoungRatio($taskType)
+    {
+        $ratios = collect([]);
+        $this->originalCourses->each(function ($soldiers, $course) use ($taskType, &$ratios) {
+            $total = $soldiers->count();
+            $qualified = $soldiers->filter(fn (Soldier $soldier) => $soldier->qualifications->contains($taskType))->count();
+            $ratios->push($qualified / $total);
+        });
+        for ($i = 0; $i < $ratios->count() - 1; $i++) {
+            $decrease = $ratios[$i] - $ratios[$i + 1];
+            if ($decrease < -0.4) {
+                return 0;
+            }
+            if ($decrease > 0.4) {
+                return $decrease / ($i + 1);
+            }
+        }
+
+        return 0;
     }
 
     protected function getTaskWeight($shifts, $soldiers): array
@@ -137,7 +170,7 @@ class PointedSchedule
     protected function getRequired($shifts)
     {
         return collect([
-            'points' => collect($shifts)->sum(callback: 'points'),
+            'points' => collect($shifts)->sum('points'),
             'weekends' => collect($shifts)
                 ->filter(fn (Shift $shift) => ($shift->kind == TaskKind::WEEKEND->value))
                 ->sum(fn (Shift $shift) => $shift->points),
@@ -230,6 +263,7 @@ class PointedSchedule
         };
         $weight += $shift->points >= 2 && ! $shift->isAttached ? $this->shiftDumbbells['isFullWeekend'] : 0;
         $weight += $shift->isAttached ? 0 : $this->shiftDumbbells['isSingleShift'];
+        $weight += $taskWeight['youngRatio'] * $this->shiftDumbbells['youngRatio'];
         $weight += $this->getShiftAvailabilityRatio($soldiersCount, $soldiersAvailability)
             * $this->shiftDumbbells['shiftAvailability'];
 
@@ -275,13 +309,12 @@ class PointedSchedule
             ->groupBy('course')
             ->map(function ($soldiers, $course) {
                 return $soldiers
-                    ->groupBy(fn ($soldier) => $soldier->pointsMaxData->max)
+                    ->groupBy(fn ($soldier) => number_format($soldier->pointsMaxData->max, 3, '.', ''))
                     ->each(function ($courseSoldiers, $capacity) use ($course) {
                         $this->courses->push($this->buildCourse($course, $capacity, $courseSoldiers));
                     });
             });
-        $this->courses = $this->courses->sortByDesc(fn (Course $course) => [$course->max, $course->number]);
-
+        $this->courses = $this->courses->sortByDesc(fn (Course $course) => [(float) $course->max, $course->number]);
     }
 
     protected function buildCourse($number, $capacity, $soldiers)
@@ -305,9 +338,9 @@ class PointedSchedule
     protected function assign()
     {
         $this->courses
-            ->filter(fn (Course $course) => $course->max > 0)
+            ->filter(fn (Course $course) => (float) $course->max > 0)
             ->each(function (Course $course) {
-                if (collect($this->shiftsData)->contains(fn ($shifts): bool => collect($shifts)->count() > 0) && $course->max >= 2) {
+                if (collect($this->shiftsData)->contains(fn ($shifts): bool => collect($shifts)->count() > 0) && (float) $course->max >= 2) {
                     $this->assignShiftsForCourse($course, true);
                 }
             })
@@ -324,9 +357,9 @@ class PointedSchedule
         while (! $course->hasGap && $course->remaining('pointsMaxData') > 0 && $rotationSize >= $this->minimalRotationSize) {
             $rotationResult = $this->rotation($course, $rotationSize);
             if ($rotationResult) {
-                $this->saveRotationAssigments();
+                $this->saveRotationAssignments();
             } else {
-                $this->clearRotationAsssigments();
+                $this->clearRotationAssignments();
                 $rotationSize /= 2;
             }
             if ($isSingleRotation) {
@@ -337,6 +370,7 @@ class PointedSchedule
 
     protected function rotation($course, $rotationSize)
     {
+        $hasGap = false;
         foreach ($course->soldiers as $soldier) {
             $assignedPoints = $this->assignRotationShiftsToSoldier($soldier, $rotationSize);
 
@@ -345,8 +379,11 @@ class PointedSchedule
                 return false;
             }
             if ($gap > 0) {
-                $course->hasGap = true;
+                $hasGap = true;
             }
+        }
+        if ($hasGap) {
+            $course->hasGap = true;
         }
 
         return true;
@@ -356,7 +393,7 @@ class PointedSchedule
     {
         $points = $this->assignRotation($soldier, $rotationSize, false);
         $remaining = $rotationSize - $points;
-        if ($remaining <= $this->allowedGap) {
+        if ($remaining == 0) {
             return $points;
         }
         $points += $this->assignRotation($soldier, $remaining, true);
@@ -393,7 +430,7 @@ class PointedSchedule
         foreach ($this->shiftsData[(string) $rotationSize] as $shift) {
             if ((! $shift->isAssigned()) && $soldier->isAbleTake($shift, $ignoreLowConstraint)) {
                 $potentialShifts->push($shift);
-                $this->addToRotationAssigments($soldier, $shift);
+                $this->addToRotationAssignments($soldier, $shift);
 
                 $counter++;
                 if ($counter == $shiftsCount) {
@@ -410,7 +447,7 @@ class PointedSchedule
         return collect($shifts)->sum(fn ($shift): float => $shift->points);
     }
 
-    protected function addToRotationAssigments(Soldier $soldier, Shift $shift)
+    protected function addToRotationAssignments(Soldier $soldier, Shift $shift)
     {
         $shift->isAssigned = true;
         if ($shift instanceof AttachedWeekends) {
@@ -427,7 +464,7 @@ class PointedSchedule
         }
     }
 
-    protected function saveRotationAssigments()
+    protected function saveRotationAssignments()
     {
         $this->assignments->push(...$this->rotationAssignments);
 
@@ -437,7 +474,7 @@ class PointedSchedule
         }));
     }
 
-    protected function clearRotationAsssigments()
+    protected function clearRotationAssignments()
     {
         $this->shiftsData->map(fn ($shiftData) => collect($shiftData)->map(fn ($shift) => $shift->isAssigned = false));
         $this->rotationAssignments->map(function (Assignment $assignment) {
