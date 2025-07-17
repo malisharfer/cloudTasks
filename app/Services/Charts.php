@@ -38,7 +38,7 @@ class Charts
         });
 
         return $data
-            ->groupBy(fn ($soldierData) => $soldierData->first()->get('max'))
+            ->groupBy(fn ($soldierData) => number_format($soldierData->first()->get('max'), 1, '.', ''))
             ->map(
                 fn ($items) => $items->map(fn ($item) => collect([$item->keys()->first() => $item->get($item->keys()->first())->get('done')]))
                     ->reduce(function ($carry, $value) {
