@@ -6,6 +6,7 @@ use App\Filament\Widgets\CalendarWidget;
 use App\Models\Shift;
 use App\Resources\MyShiftResource;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Contracts\Support\Htmlable;
 
 class ListMyShift extends ListRecords
 {
@@ -26,5 +27,15 @@ class ListMyShift extends ListRecords
                 'type' => 'my',
             ]),
         ];
+    }
+
+    public function getTitle(): string|Htmlable
+    {
+        return '';
+    }
+
+    public function getBreadcrumb(): string
+    {
+        return '';
     }
 }

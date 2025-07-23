@@ -89,7 +89,7 @@ class CalendarWidget extends FullCalendarWidget
 
     protected function events(): Collection
     {
-        return $this->type === 'my_soldiers'
+        return $this->type == 'soldiers'
             ? ($this->filter ? $this->model::filter($this->fetchInfo, $this->filterData) : collect())
             : $this->getMyEvents();
     }
@@ -390,7 +390,7 @@ class CalendarWidget extends FullCalendarWidget
                 function (ViewAction $action, FullCalendarWidget $livewire) {
                     if (
                         ($this->model == Shift::class && auth()->user()->getRoleNames()->count() === 1) ||
-                        ($this->model == Constraint::class && $this->type == 'my_soldiers' && ! auth()->user()->getRoleNames()->contains('shifts-assignment') && ! auth()->user()->getRoleNames()->contains('manager'))
+                        ($this->model == Constraint::class && $this->type == 'soldiers' && ! auth()->user()->getRoleNames()->contains('shifts-assignment') && ! auth()->user()->getRoleNames()->contains('manager'))
                     ) {
                         return $this->model === Shift::class ?
                             [...$this->getChangeActions()] :
@@ -419,7 +419,7 @@ class CalendarWidget extends FullCalendarWidget
     {
         if (
             ($this->model == Shift::class && $this->type == 'my' && auth()->user()->getRoleNames()->count() === 1) ||
-            ($this->model == Constraint::class && $this->type == 'my_soldiers' && ! auth()->user()->getRoleNames()->contains('shifts-assignment') && ! auth()->user()->getRoleNames()->contains('manager'))
+            ($this->model == Constraint::class && $this->type == 'soldiers' && ! auth()->user()->getRoleNames()->contains('shifts-assignment') && ! auth()->user()->getRoleNames()->contains('manager'))
         ) {
             $this->refreshRecords();
         } else {

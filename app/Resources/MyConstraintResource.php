@@ -11,7 +11,7 @@ class MyConstraintResource extends Resource
 {
     protected static ?string $model = Constraint::class;
 
-    protected static ?string $label = 'My Constraint';
+    protected static ?string $label = 'My';
 
     protected static ?string $slug = 'my-constraint';
 

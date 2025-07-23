@@ -44,7 +44,8 @@ class ConstraintResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->paginated(false);
+        return $table->paginated(false)
+            ->emptyState(fn () => null);
     }
 
     public static function getPages(): array

@@ -6,6 +6,7 @@ use App\Filament\Widgets\CalendarWidget;
 use App\Models\Constraint;
 use App\Resources\MyConstraintResource;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Contracts\Support\Htmlable;
 
 class ListMyConstraints extends ListRecords
 {
@@ -26,5 +27,15 @@ class ListMyConstraints extends ListRecords
                 'type' => 'my',
             ]),
         ];
+    }
+
+    public function getTitle(): string|Htmlable
+    {
+        return '';
+    }
+
+    public function getBreadcrumb(): string
+    {
+        return '';
     }
 }

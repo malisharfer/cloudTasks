@@ -6,6 +6,7 @@ use App\Filament\Widgets\CalendarWidget;
 use App\Models\Constraint;
 use App\Resources\ConstraintResource;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Contracts\Support\Htmlable;
 
 class ListConstraints extends ListRecords
 {
@@ -23,8 +24,18 @@ class ListConstraints extends ListRecords
                     'end_date',
                     'constraint_color',
                 ]),
-                'type' => 'my_soldiers',
+                'type' => 'soldiers',
             ]),
         ];
+    }
+
+    public function getTitle(): string|Htmlable
+    {
+        return '';
+    }
+
+    public function getBreadcrumb(): string
+    {
+        return '';
     }
 }

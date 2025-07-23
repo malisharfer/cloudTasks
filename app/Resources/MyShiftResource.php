@@ -11,7 +11,7 @@ class MyShiftResource extends Resource
 {
     protected static ?string $model = Shift::class;
 
-    protected static ?string $label = 'My Shifts';
+    protected static ?string $label = 'My';
 
     protected static ?string $slug = 'my-shifts';
 

@@ -151,9 +151,9 @@ class Shift extends Model
         $manual_assignment = new ManualAssignment($shift, $soldierType);
 
         return
-         ! $manual_assignment->getSoldiers() ?
-              __('No suitable soldiers') :
-          __('Select a soldier');
+            ! $manual_assignment->getSoldiers() ?
+            __('No suitable soldiers') :
+            __('Select a soldier');
     }
 
     public static function afterSave($shift, $record)
@@ -288,15 +288,15 @@ class Shift extends Model
     protected static function description($soldierId, $hasConcurrent)
     {
         return $hasConcurrent ?
-        __('Exchange with').' '.Soldier::find($soldierId)->user->displayName.' ('.__('The soldier is assigned a shift during the task').')' :
+            __('Exchange with').' '.Soldier::find($soldierId)->user->displayName.' ('.__('The soldier is assigned a shift during the task').')' :
             __('Exchange with').' '.Soldier::find($soldierId)->user->displayName;
     }
 
     protected static function getOption($shift, $hasConcurrent)
     {
         return $hasConcurrent ?
-        '📌 '.__('Task').': '.Shift::find($shift->id)->task()->withTrashed()->first()->name.'. '.__('Time').': '.__('From').' '.$shift->start_date.' '.__('To').' '.$shift->end_date :
-        __('Task').': '.Shift::find($shift->id)->task()->withTrashed()->first()->name.'. '.__('Time').': '.__('From').' '.$shift->start_date.' '.__('To').' '.$shift->end_date;
+            '📌 '.__('Task').': '.Shift::find($shift->id)->task()->withTrashed()->first()->name.'. '.__('Time').': '.__('From').' '.$shift->start_date.' '.__('To').' '.$shift->end_date :
+            __('Task').': '.Shift::find($shift->id)->task()->withTrashed()->first()->name.'. '.__('Time').': '.__('From').' '.$shift->start_date.' '.__('To').' '.$shift->end_date;
     }
 
     protected static function shiftsAssignmentExchange($record, $shift)
@@ -567,7 +567,7 @@ class Shift extends Model
                 session()->put('selected_soldier', false);
                 if ($arguments['change'] ?? false) {
                     collect($arguments['role'])->contains('shifts-assignment')
-                    || collect($arguments['role'])->contains('manager') ?
+                        || collect($arguments['role'])->contains('manager') ?
                         self::shiftsAssignmentChange($record, $data['soldier']) :
                         self::commanderChange($record, $data['soldier']);
 
@@ -744,7 +744,9 @@ class Shift extends Model
 
     protected static function getShiftsAssignments()
     {
-        return User::whereHas('roles', fn ($query) => $query->where('name', 'shifts-assignment')
+        return User::whereHas(
+            'roles',
+            fn ($query) => $query->where('name', 'shifts-assignment')
         )->get();
     }
 
@@ -835,9 +837,11 @@ class Shift extends Model
 
     public static function filter($fetchInfo, $filterData)
     {
-        $query = self::getEventsByRole(Shift::with(['task', 'soldier']));
-
-        return $query
+        return Shift::with(['task', 'soldier'])
+            ->where(function ($query) {
+                $query->where('soldier_id', '!=', auth()->user()->userable_id)
+                    ->orWhereNull('soldier_id');
+            })
             ->where(function ($query) use ($fetchInfo) {
                 $query->where('start_date', '>=', Carbon::create($fetchInfo['start'])->setTimezone('Asia/Jerusalem'))
                     ->where('end_date', '<=', Carbon::create($fetchInfo['end'])->setTimezone('Asia/Jerusalem'));

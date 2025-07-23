@@ -11,9 +11,9 @@ class ShiftResource extends Resource
 {
     protected static ?string $model = Shift::class;
 
-    protected static ?string $label = 'My Soldiers Shifts';
+    protected static ?string $label = 'All';
 
-    protected static ?string $slug = 'my-soldiers-shifts';
+    protected static ?string $slug = 'all-shifts';
 
     protected static ?int $navigationSort = 2;
 
@@ -24,17 +24,12 @@ class ShiftResource extends Resource
 
     public static function getModelLabel(): string
     {
-        return __('My Soldiers Shift');
+        return __('All soldiers shift');
     }
 
     public static function getPluralModelLabel(): string
     {
-        return __('My Soldiers Shifts');
-    }
-
-    public static function canAccess(): bool
-    {
-        return auth()->user()->getRoleNames()->count() > 1;
+        return __('All soldiers shifts');
     }
 
     public static function canCreate(): bool
