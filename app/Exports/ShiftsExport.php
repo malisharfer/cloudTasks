@@ -11,14 +11,13 @@ class ShiftsExport implements WithMultipleSheets
 {
     protected $month;
 
-    protected $shifts;
+    protected $query;
 
     public function __construct($month)
     {
         $this->month = $month;
-        $this->shifts = Shift::whereNotNull('soldier_id')
-            ->whereBetween('start_date', [Carbon::parse($this->month)->startOfMonth(), Carbon::parse($this->month)->endOfMonth()])
-            ->get();
+        $this->query = Shift::whereNotNull('soldier_id')
+            ->whereBetween('start_date', [Carbon::parse($this->month)->startOfMonth(), Carbon::parse($this->month)->endOfMonth()]);
     }
 
     public function sheets(): array
@@ -31,7 +30,9 @@ class ShiftsExport implements WithMultipleSheets
             ->toArray();
 
         return collect($tasksTypes)->map(function ($type) {
-            $shifts = $this->shifts->filter(fn (Shift $shift) => $shift->task()->withTrashed()->first()->type == $type['type']);
+            $shifts = $this->query->clone()->whereHas('task', function ($query) use ($type) {
+                $query->withTrashed()->where('type', $type['type']);
+            })->get();
 
             return new TaskTypeSheet($this->month, $type['type'], $shifts, $type['color']);
         })->toArray();
