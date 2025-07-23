@@ -40,6 +40,7 @@ class Helpers
 
         return $task->kind;
     }
+
     public static function buildSoldier($soldier, $constraints, $shifts, array $capacityHold, $concurrentsShifts = []): SoldierService
     {
         return new SoldierService(

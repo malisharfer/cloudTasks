@@ -2,74 +2,38 @@
 
 namespace App\Exports;
 
-use App\Enums\TaskKind;
 use App\Models\Shift;
-use App\Models\User;
-use Illuminate\Support\Carbon;
-use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithTitle;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use App\Models\Task;
+use Carbon\Carbon;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
-class ShiftsExport implements FromCollection, ShouldAutoSize, WithHeadings, WithStyles, WithTitle
+class ShiftsExport implements WithMultipleSheets
 {
-    protected $query;
-
     protected $month;
+
+    protected $shifts;
 
     public function __construct($month)
     {
         $this->month = $month;
-        $this->query = Shift::whereNotNull('soldier_id')
+        $this->shifts = Shift::whereNotNull('soldier_id')
             ->whereBetween('start_date', [Carbon::parse($this->month)->startOfMonth(), Carbon::parse($this->month)->endOfMonth()])
             ->get();
     }
 
-    public function collection()
+    public function sheets(): array
     {
-        return $this->query
-            ->sortBy('start_date')
-            ->map(function ($shift) {
-                $task = $shift->task()->withTrashed()->first();
+        $tasksTypes = Task::select('type', 'color')
+            ->get()
+            ->groupBy('type')
+            ->map(fn ($group) => $group->first())
+            ->values()
+            ->toArray();
 
-                return [
-                    __('Shift name') => $task->name,
-                    __('Shift type') => $task->type,
-                    __('Soldier') => User::where('userable_id', $shift->soldier_id)->first()?->displayName ?? __('Unknown'),
-                    __('Start date') => $shift->start_date,
-                    __('End date') => $shift->end_date,
-                    __('Kind') => TaskKind::from($task->kind)->getLabel(),
-                ];
-            });
-    }
+        return collect($tasksTypes)->map(function ($type) {
+            $shifts = $this->shifts->filter(fn (Shift $shift) => $shift->task()->withTrashed()->first()->type == $type['type']);
 
-    public function headings(): array
-    {
-        return [
-            __('Shift name'),
-            __('Shift type'),
-            __('Soldier'),
-            __('Start date'),
-            __('End date'),
-            __('Kind'),
-        ];
-    }
-
-    public function styles(Worksheet $sheet)
-    {
-        $sheet->setRightToLeft(true);
-        $sheet->getStyle('A1:F1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('D3D3D3');
-
-        return [
-            1 => ['font' => ['bold' => true]],
-        ];
-    }
-
-    public function title(): string
-    {
-        return $this->month;
+            return new TaskTypeSheet($this->month, $type['type'], $shifts, $type['color']);
+        })->toArray();
     }
 }

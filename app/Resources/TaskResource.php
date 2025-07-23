@@ -185,6 +185,7 @@ class TaskResource extends Resource
                     )
                     ->default(null),
                 NumberFilter::make('parallel_weight')
+                    ->isFloat(true)
                     ->label(__('Parallel weight')),
                 SelectFilter::make('kind')
                     ->label(__('Kind'))
@@ -357,6 +358,7 @@ class TaskResource extends Resource
             Select::make('kind')
                 ->label(__('Kind'))
                 ->live()
+                ->required()
                 ->placeholder(fn () => __('Select task kind'))
                 ->options(collect(TaskKind::cases())->mapWithKeys(fn ($type) => [$type->value => $type->getLabel()])),
             Select::make('concurrent_tasks')

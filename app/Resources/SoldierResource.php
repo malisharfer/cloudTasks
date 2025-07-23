@@ -157,10 +157,14 @@ class SoldierResource extends Resource
                 NumberFilter::make('course')->label(__('Course')),
                 NumberFilter::make('max_shifts')->label(__('Max shifts')),
                 NumberFilter::make('max_nights')->label(__('Max nights')),
-                NumberFilter::make('max_weekends')->label(__('Max weekends')),
+                NumberFilter::make('max_weekends')
+                    ->isFloat(true)
+                    ->label(__('Max weekends')),
                 NumberFilter::make('max_alerts')->label(__('Max alerts')),
                 NumberFilter::make('max_in_parallel')->label(__('Max in parallel')),
-                NumberFilter::make('capacity')->label(__('Capacity')),
+                NumberFilter::make('capacity')
+                    ->isFloat(true)
+                    ->label(__('Capacity')),
                 SelectFilter::make('gender')
                     ->label(__('Gender'))
                     ->options([

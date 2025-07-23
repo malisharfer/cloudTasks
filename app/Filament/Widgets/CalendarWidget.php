@@ -2,7 +2,6 @@
 
 namespace App\Filament\Widgets;
 
-use App\Enums\ConstraintType;
 use App\Exports\ShiftsExport;
 use App\Models\Constraint;
 use App\Models\Shift;
@@ -163,11 +162,7 @@ class CalendarWidget extends FullCalendarWidget
 
         return CreateAction::make()
             ->action(function (array $data) {
-                if (
-                    ($data['constraint_type'] == ConstraintType::VACATION->value ||
-                        $data['constraint_type'] == ConstraintType::MEDICAL->value)
-                    && auth()->user()->getRoleNames()->count() === 1
-                ) {
+                if (auth()->user()->getRoleNames()->count() === 1) {
                     Constraint::requestConstraint($data);
                 } else {
                     Constraint::create([
@@ -327,11 +322,7 @@ class CalendarWidget extends FullCalendarWidget
                     }
                     if ($arguments['save'] ?? false) {
                         if ($this->model == Constraint::class) {
-                            if (
-                                ($data['constraint_type'] === ConstraintType::VACATION->value ||
-                                    $data['constraint_type'] === ConstraintType::MEDICAL->value) &&
-                                auth()->user()->getRoleNames()->count() === 1
-                            ) {
+                            if (auth()->user()->getRoleNames()->count() === 1) {
                                 $dataToEdit = [
                                     'oldConstraint' => $record,
                                     'newConstraint' => $data,

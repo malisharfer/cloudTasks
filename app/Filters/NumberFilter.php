@@ -13,6 +13,16 @@ use Illuminate\Database\Eloquent\Builder;
 
 class NumberFilter extends Filter
 {
+    protected $isFloat = false;
+
+    public function isFloat(bool $isFloat): static
+    {
+        $this->isFloat = $isFloat;
+        $this->setUp();
+
+        return $this;
+    }
+
     protected function setUp(): void
     {
         parent::setup();
@@ -89,35 +99,36 @@ class NumberFilter extends Filter
                 ])
                 ->columns(1),
         ])
-            ->query(fn (Builder $query, array $data) => $query
-                ->when(
-                    isset($data['range_equal']),
-                    fn ($q) => $q->where($this->getName(), $data['range_equal'])
-                )
-                ->when(
-                    isset($data['range_not_equal']),
-                    fn ($q) => $q->where($this->getName(), '!=', $data['range_not_equal'])
-                )
-                ->when(
-                    isset($data['range_between_from']) && isset($data['range_between_to']),
-                    fn ($q) => $q->whereBetween($this->getName(), [$data['range_between_from'], $data['range_between_to']])
-                )
-                ->when(
-                    isset($data['range_greater_than']),
-                    fn ($q) => $q->where($this->getName(), '>', $data['range_greater_than'])
-                )
-                ->when(
-                    isset($data['range_greater_than_equal']),
-                    fn ($q) => $q->where($this->getName(), '>=', $data['range_greater_than_equal'])
-                )
-                ->when(
-                    isset($data['range_less_than']),
-                    fn ($q) => $q->where($this->getName(), '<', $data['range_less_than'])
-                )
-                ->when(
-                    isset($data['range_less_than_equal']),
-                    fn ($q) => $q->where($this->getName(), '<=', $data['range_less_than_equal'])
-                )
+            ->query(
+                fn (Builder $query, array $data) => $query
+                    ->when(
+                        isset($data['range_equal']),
+                        fn ($q) => $q->where($this->getName(), $this->isFloat ? $data['range_equal'] * 100 : $data['range_equal'])
+                    )
+                    ->when(
+                        isset($data['range_not_equal']),
+                        fn ($q) => $q->where($this->getName(), '!=', $this->isFloat ? $data['range_not_equal'] * 100 : $data['range_not_equal'])
+                    )
+                    ->when(
+                        isset($data['range_between_from']) && isset($data['range_between_to']),
+                        fn ($q) => $q->whereBetween($this->getName(), [$this->isFloat ? $data['range_between_from'] * 100 : $data['range_between_from'], $this->isFloat ? $data['range_between_to'] * 100 : $data['range_between_to']])
+                    )
+                    ->when(
+                        isset($data['range_greater_than']),
+                        fn ($q) => $q->where($this->getName(), '>', $this->isFloat ? $data['range_greater_than'] * 100 : $data['range_greater_than'])
+                    )
+                    ->when(
+                        isset($data['range_greater_than_equal']),
+                        fn ($q) => $q->where($this->getName(), '>=', $this->isFloat ? $data['range_greater_than_equal'] * 100 : $data['range_greater_than_equal'])
+                    )
+                    ->when(
+                        isset($data['range_less_than']),
+                        fn ($q) => $q->where($this->getName(), '<', $this->isFloat ? $data['range_less_than'] * 100 : $data['range_less_than'])
+                    )
+                    ->when(
+                        isset($data['range_less_than_equal']),
+                        fn ($q) => $q->where($this->getName(), '<=', $this->isFloat ? $data['range_less_than_equal'] * 100 : $data['range_less_than_equal'])
+                    )
             )
             ->indicateUsing(function (array $data): array {
                 $indicators = [];

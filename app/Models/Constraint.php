@@ -81,9 +81,8 @@ class Constraint extends Model
             Hidden::make('end_date')
                 ->required(),
             Placeholder::make('')
-                ->content(__('Please note! This constraint will only be approved for you after approval from the commander.'))
-                ->visible(fn (Get $get) => ($get('constraint_type') === ConstraintType::VACATION->value || $get('constraint_type') === ConstraintType::MEDICAL->value)
-                    && auth()->user()->getRoleNames()->count() === 1)
+                ->content(__('The constraint will only be approved after approval by the commander'))
+                ->visible(fn () => auth()->user()->getRoleNames()->count() === 1)
                 ->hiddenOn('view')
                 ->extraAttributes(['style' => 'color: red; font-family: Arial, Helvetica, sans-serif; font-size: 20px']),
             Grid::make()
