@@ -120,7 +120,7 @@ class Shift extends Model
                         fn (?Shift $record): bool => $record !== null
                         && Carbon::parse($record->start_date)->isAfter(now())
                         && ! $record->soldier_id
-                        && \Str::contains($_SERVER['HTTP_REFERER'], 'my-soldiers-shifts')
+                        && \Str::contains($_SERVER['HTTP_REFERER'], 'all-shifts')
                         && current(array_diff(collect(auth()->user()->getRoleNames())->toArray(), ['soldier']))
                     )
                     ->hiddenOn('view'),
