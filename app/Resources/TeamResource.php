@@ -92,7 +92,7 @@ class TeamResource extends Resource
                                 ->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
                         )
                         ->formatStateUsing(fn (?Team $team, string $operation) => $operation === 'edit' ?
-                            collect($team->members)->map(fn (Soldier $soldier) => $soldier->id) :
+                            collect($team->members)->map(fn (Soldier $soldier) => $soldier->id)->toArray() :
                             null)
                         ->live()
                         ->optionsLimit(Soldier::count())
