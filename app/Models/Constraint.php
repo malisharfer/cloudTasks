@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ConstraintType;
+use App\Traits\CommanderSoldier;
 use App\Traits\EventsByRole;
 use Cache;
 use Carbon\Carbon;
@@ -52,11 +53,10 @@ class Constraint extends Model
             Select::make('soldier_id')
                 ->label(__('Soldier'))
                 ->hiddenOn('view')
-                ->visible(fn () => in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray())
-                && \Str::contains($_SERVER['HTTP_REFERER'], 'my-soldiers-constraint'))
-                ->options(fn () => Cache::remember('users', 30 * 60, fn () => User::all()
+                ->visible(fn () => auth()->user()->getRoleNames()->count() > 1
+                    && \Str::contains($_SERVER['HTTP_REFERER'], 'my-soldiers-constraint')
                 )
-                    ->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName]))
+                ->options(fn () => CommanderSoldier::getCommanderSoldier())
                 ->afterStateUpdated(fn ($state) => session()->put('soldier_id', $state))
                 ->required(),
             ToggleButtons::make('constraint_type')
@@ -75,10 +75,11 @@ class Constraint extends Model
                 ->options(fn (Constraint $constraint) => [
                     $constraint->constraint_type->getLabel(),
                 ]),
-
             Hidden::make('start_date')
+                ->label(__('Start date'))
                 ->required(),
             Hidden::make('end_date')
+                ->label(__('End date'))
                 ->required(),
             Placeholder::make('')
                 ->content(__('The constraint will only be approved after approval by the commander'))
@@ -86,7 +87,6 @@ class Constraint extends Model
                 ->hiddenOn('view')
                 ->extraAttributes(['style' => 'color: red; font-family: Arial, Helvetica, sans-serif; font-size: 20px']),
             Grid::make()
-                ->visible(fn ($get) => in_array($get('constraint_type'), ['Medical', 'Vacation', 'School', 'Not task', 'Low priority not task']))
                 ->schema([
                     DateTimePicker::make('start_date')
                         ->label(__('Start date'))
@@ -224,7 +224,7 @@ class Constraint extends Model
             unset($options[ConstraintType::NOT_THURSDAY_EVENING->value]);
             unset($options[ConstraintType::NOT_EVENING->value]);
         }
-        if ($withLimit && ! (in_array('shifts-assignment', auth()->user()->getRoleNames()->toArray()))) {
+        if ($withLimit && auth()->user()->getRoleNames()->count() == 1) {
             $usedCounts = self::getUsedCountsForCurrentMonth($startDate, $endDate);
             $limits = Soldier::where('id', auth()->user()->userable_id)->pluck('constraints_limit')->first() ?: ConstraintType::getLimit();
             $constraintsWithinLimit = [];
