@@ -284,7 +284,7 @@ class CalendarWidget extends FullCalendarWidget
                             : true
                         )
                         : true;
-                    if (! empty($arguments) && $this->model === Shift::class) {
+                    if (! empty($arguments) && $this->model === Shift::class && isset($this->mountedActionsArguments[0]['oldEvent'])) {
                         $oldDate = date('l', strtotime($this->mountedActionsArguments[0]['oldEvent']['start']));
                         $newDate = date('l', strtotime($this->mountedActionsData[0]['start_date']));
                         $startOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];

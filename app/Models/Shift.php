@@ -134,7 +134,7 @@ class Shift extends Model
                     ->label(__('Parallel weight')),
                 DateTimePicker::make('start_date')
                     ->label(__('Start date'))
-                    ->minDate(today())
+                    // ->minDate(today())
                     ->required(),
                 DateTimePicker::make('end_date')
                     ->label(__('End date'))
