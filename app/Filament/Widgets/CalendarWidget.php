@@ -246,18 +246,18 @@ class CalendarWidget extends FullCalendarWidget
                         'end_date' => $arguments['event']['end'] ?? $record->end_date,
                     ])
                 ->visible(function (Model $record, $arguments) {
-                    if ($record->start_date < now()) {
-                        if (! empty($arguments) && $arguments['type'] == 'drop') {
-                            $this->refreshRecords();
-                        }
+                    // if ($record->start_date < now()) {
+                    //     if (! empty($arguments) && $arguments['type'] == 'drop') {
+                    //         $this->refreshRecords();
+                    //     }
 
-                        return false;
-                    }
-                    if (! empty($arguments['event']) && $arguments['event']['start'] < now()) {
-                        $this->refreshRecords();
+                    //     return false;
+                    // }
+                    // if (! empty($arguments['event']) && $arguments['event']['start'] < now()) {
+                    //     $this->refreshRecords();
 
-                        return false;
-                    }
+                    //     return false;
+                    // }
 
                     return true;
                 })
