@@ -104,6 +104,7 @@ class Shift extends Model
                                     return $manual_assignment->getSoldiers();
                                 }
                             )
+                            ->searchable()
                             ->default(null)
                             ->placeholder(fn (?Shift $shift, Get $get) => self::soldierIdPlaceholder($get('soldier_type'), $shift))
                             ->visible(
