@@ -11,6 +11,8 @@ class Course
     public $soldiers;
 
     public $hasGap;
+   
+    public $used;
 
     public function __construct($number, $max, $soldiers)
     {
@@ -18,6 +20,7 @@ class Course
         $this->max = $max;
         $this->soldiers = collect($soldiers);
         $this->hasGap = false;
+        $this->used = 0;
     }
 
     public function remaining($max)

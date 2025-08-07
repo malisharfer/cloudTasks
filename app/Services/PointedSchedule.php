@@ -368,12 +368,16 @@ class PointedSchedule
         }
     }
 
-    protected function rotation($course, $rotationSize)
+    protected function rotation(Course $course, $rotationSize)
     {
         $hasGap = false;
-        foreach ($course->soldiers as $soldier) {
+        $maxAssigned = 0;
+        $soldiers = $course->soldiers->filter(fn(Soldier $soldier)=>$soldier->pointsMaxData->used <= $course->used);
+        foreach ($soldiers as $soldier) {
             $assignedPoints = $this->assignRotationShiftsToSoldier($soldier, $rotationSize);
-
+            if($assignedPoints > $maxAssigned){
+                $maxAssigned = $assignedPoints;
+            }
             $gap = $rotationSize - $assignedPoints;
             if ($gap > $this->allowedGap) {
                 return false;
@@ -385,7 +389,7 @@ class PointedSchedule
         if ($hasGap) {
             $course->hasGap = true;
         }
-
+        $course->used += $maxAssigned;
         return true;
     }
 

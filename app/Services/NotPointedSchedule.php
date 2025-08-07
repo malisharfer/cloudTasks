@@ -197,8 +197,9 @@ class NotPointedSchedule
         while ($course->remaining($this->maxName) > 0 && $courseGap < $this->allowedGap && $this->isUnassignedShiftsExist()) {
             $rotationResult = $this->rotation($course);
             if ($rotationResult == RotationResult::SUCCESS_WITH_GAP) {
-                $courseGap += 1;
+                $courseGap += 1;                
             }
+            $course->used += 1;
         }
     }
 
@@ -210,7 +211,8 @@ class NotPointedSchedule
     protected function rotation(Course $course)
     {
         $isGapExists = false;
-        collect($course->soldiers)->each(function (Soldier $soldier) use (&$isGapExists) {
+        $soldiers = $course->soldiers->filter(fn(Soldier $soldier)=>$soldier->{$this->maxName}->used <= $course->used);
+        collect($soldiers)->each(function (Soldier $soldier) use (&$isGapExists) {
             $success = $this->assignRotationShiftToSoldier($soldier);
             if (! $success) {
                 $isGapExists = true;

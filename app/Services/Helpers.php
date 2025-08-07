@@ -47,7 +47,7 @@ class Helpers
             $soldier->id,
             $soldier->course,
             new MaxData($soldier->capacity, $capacityHold['points'] ?? 0),
-            new MaxData($soldier->max_shifts, $capacityHold['count'] ?? 0),
+            new MaxData($soldier->max_shifts, $capacityHold['regular'] ?? 0),
             new MaxData($soldier->max_nights, $capacityHold['sumNights'] ?? 0),
             new MaxData($soldier->max_weekends, $capacityHold['sumWeekends'] ?? 0),
             new MaxData($soldier->max_alerts, $capacityHold['sumAlerts'] ?? 0),
@@ -81,25 +81,24 @@ class Helpers
         $points = 0;
         $nights = 0;
         $weekends = 0;
-        $count = 0;
+        $regular = 0;
         $alerts = 0;
         $inParallel = 0;
         collect($shifts)
             ->filter(fn (ShiftService $shift) => $shift->id != 0)
-            ->each(function (ShiftService $shift) use (&$count, &$points, &$nights, &$weekends, &$alerts, &$inParallel) {
-                $count++;
+            ->each(function (ShiftService $shift) use (&$regular, &$points, &$nights, &$weekends, &$alerts, &$inParallel) {
                 $points += $shift->points;
                 match ($shift->kind) {
                     TaskKind::WEEKEND->value => $weekends += $shift->points,
-                    TaskKind::NIGHT->value => $nights++,
+                    TaskKind::NIGHT->value => [$nights++, $regular++],
                     TaskKind::ALERT->value => $alerts++,
                     TaskKind::INPARALLEL->value => $inParallel++,
-                    TaskKind::REGULAR->value => null
+                    TaskKind::REGULAR->value => $regular++,
                 };
             });
 
         return [
-            'count' => $count,
+            'regular' => $regular,
             'points' => $points,
             'sumWeekends' => $weekends,
             'sumNights' => $nights,
