@@ -107,6 +107,8 @@ class Soldier extends Model
             Shift::where('soldier_id', $record->id)->update(['soldier_id' => null]);
             Constraint::where('soldier_id', $record->id)
                 ->delete();
+            Team::where('commander_id', $record->id)->update(['commander_id' => null]);
+            Department::where('commander_id', $record->id)->update(['commander_id' => null]);    
         });
     }
 }
