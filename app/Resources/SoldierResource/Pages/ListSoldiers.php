@@ -102,8 +102,13 @@ class ListSoldiers extends ListRecords
                         $soldiers->map(function ($soldier) use ($updateData) {
                             collect($updateData)->map(function ($value, $key) use ($soldier) {
                                 if ($key == 'qualifications') {
-                                    $qualifications = collect($soldier->qualifications);
-                                    $qualifications->push(...$value);
+                                    $qualifications = collect($soldier->qualifications) ?? collect([]);
+                                    $newQualifications = $value ? collect($value) : collect([]);
+                                    collect($newQualifications)->each(function ($qualification) use (&$qualifications) {
+                                        if (! $qualifications->contains($qualification)) {
+                                            $qualifications->push($qualification);
+                                        }
+                                    });
                                     $soldier->qualifications = $qualifications;
                                 } else {
                                     $soldier->{$key} = $value;
