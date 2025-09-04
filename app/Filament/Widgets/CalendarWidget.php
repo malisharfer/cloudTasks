@@ -167,8 +167,7 @@ class CalendarWidget extends FullCalendarWidget
             ->mountUsing(
                 fn (Form $form, array $arguments) => $form->fill([
                     'start_date' => $arguments['start'] ?? null,
-                    'end_date' => $arguments['end'] ?? null,
-                ])
+                    'end_date' => $arguments['end'] ?? ($arguments['start'] ? Carbon::parse($arguments['start'])->addHour(): null),                ])
             )
             ->label($this->model::getTitle().' '.__('New'))
             ->modalHeading(__('Create').' '.$this->model::getTitle())
