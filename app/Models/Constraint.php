@@ -75,12 +75,12 @@ class Constraint extends Model
                 ->options(fn (Constraint $constraint) => [
                     $constraint->constraint_type->getLabel(),
                 ]),
-            Hidden::make('start_date')
-                ->label(__('Start date'))
-                ->required(),
-            Hidden::make('end_date')
-                ->label(__('End date'))
-                ->required(),
+            // Hidden::make('start_date')
+            //     ->label(__('Start date'))
+            //     ->required(),
+            // Hidden::make('end_date')
+            //     ->label(__('End date'))
+            //     ->required(),
             Placeholder::make('')
                 ->content(__('The constraint will only be approved after approval by the commander'))
                 ->visible(fn () => auth()->user()->getRoleNames()->count() === 1)
@@ -91,10 +91,12 @@ class Constraint extends Model
                     DateTimePicker::make('start_date')
                         ->label(__('Start date'))
                         ->minDate(today())
+                        ->native(true)
                         ->required(),
                     DateTimePicker::make('end_date')
                         ->label(__('End date'))
                         ->after('start_date')
+                        ->native(true)
                         ->required(),
                 ]),
         ];
