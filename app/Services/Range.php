@@ -59,27 +59,42 @@ class Range
     {
         $startHour = $this->start->hour;
         $endTomorrow = $this->end->copy()->addDay();
-        if ($startHour >= '20' && $startHour <= '23') {
-            return [
-                new Range(Carbon::create($this->start->year, $this->start->month, $this->start->day, 00, 00), $this->start),
-                new Range($this->end, Carbon::create($endTomorrow->year, $endTomorrow->month, $endTomorrow->day, 7, 59)),
-            ];
-        }
-        if ($startHour >= '0' && $startHour <= '1') {
-            $startYesterday = $this->start->copy()->subDay();
-
-            return [
-                new Range(Carbon::create($startYesterday->year, $startYesterday->month, $startYesterday->day, 00, 00), $this->start),
-                new Range($this->end, Carbon::create($endTomorrow->year, $endTomorrow->month, $endTomorrow->day, 7, 59)),
-            ];
-        }
+        $startSpaceDay = ($startHour >= '0' && $startHour <= '3') ?
+            $this->start->copy()->subDay():
+            $this->start->copy();
+        return [
+            new Range($startSpaceDay->setHour(00), $this->start),
+            new Range($this->end,$endTomorrow->setHour(7)->setminutes(59)),
+        ];
     }
 
     public function getNightInWeekendSpaces()
     {
+        $startSpace = $this->start->englishDayOfWeek == DaysInWeek::THURSDAY->value ?
+        $this->start->copy()->setHour(00) :
+        $this->start->copy()->setHour(8)->setMinutes(30);
+
         return [
-            new Range($this->start->copy()->setHour(8)->setMinutes(30), $this->start->copy()),
+            new Range($startSpace, $this->start->copy()),
             new Range($this->end->copy(), $this->end->copy()->setHour(19)->setMinutes(59)),
         ];
+    }
+
+    public function getAlertSpaces()
+    {
+        $startHour = $this->start->hour;
+        $endTomorrow = $this->end->copy()->addDay();
+        $spaceStartDay = ($startHour >= '0' && $startHour <= '3') ?
+            $this->start->copy()->subDay():
+            $this->start->copy();
+        return [
+            new Range($spaceStartDay->copy()->setHour(00), $this->start),
+            new Range($endTomorrow->copy()->setHour(00), $endTomorrow->copy()->setHour(7)->setMinutes(59)),
+        ];
+    }
+
+    public function getThursdaySpace()
+    {
+        return new Range($this->end, $this->end->copy()->next(Carbon::SUNDAY)->setHour(7)->setMinutes(59));        
     }
 }

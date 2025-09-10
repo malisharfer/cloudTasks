@@ -48,6 +48,7 @@ class Shift
         return match ($this->kind) {
             TaskKind::WEEKEND->value => $this->getWeekendSpaces($shifts),
             TaskKind::NIGHT->value => $this->range->getNightSpaces(),
+            TaskKind::ALERT->value => $this->range->getAlertSpaces(),
             default => []
         };
     }
@@ -57,6 +58,9 @@ class Shift
         $spaces = collect([]);
         if ($this->isNight()) {
             $spaces->push(...$this->range->getNightInWeekendSpaces());
+        }
+        if($this->range->start->englishDayOfWeek == DaysInWeek::THURSDAY->value){
+            $spaces->push($this->range->getThursdaySpace());
         }
         if ($this->isFullWeekend($shifts)) {
             $spaces->push($this->range->getDayAfterWeekend());
