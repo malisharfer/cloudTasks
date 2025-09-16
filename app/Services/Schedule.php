@@ -40,7 +40,7 @@ class Schedule
         $taskKinds = collect([
             TaskKind::NIGHT->value => 1,
             TaskKind::REGULAR->value => 3,
-            TaskKind::ALERT->value => 1,
+            TaskKind::ALERT->value => 2,
         ]);
         $taskKinds->each(function ($gap, $taskKind) {
             $shifts = $this->shifts->filter(fn (Shift $shift): bool => $shift->kind == $taskKind &&

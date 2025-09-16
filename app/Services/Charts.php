@@ -78,8 +78,24 @@ class Charts
                                     ->whereNull('is_weekend')
                                     ->orWhere('is_weekend', false);
                             })
-                            ->whereHas('task', function ($subQuery) {
-                                $subQuery->withTrashed()->where('kind', $this->kind);
+                            ->where(function ($query) {
+                                $query
+                                    ->when($this->kind == TaskKind::REGULAR->value, function ($query) {
+                                        $query
+                                            ->whereHas('task', function ($subQuery) {
+                                                $subQuery->withTrashed()->where(function ($query) {
+                                                    $query
+                                                        ->where('kind', $this->kind)
+                                                        ->orWhere('kind', TaskKind::NIGHT->value);
+                                                });
+                                            });
+                                    })
+                                    ->when($this->kind != TaskKind::REGULAR->value, function ($query) {
+                                        $query
+                                            ->whereHas('task', function ($subQuery) {
+                                                $subQuery->withTrashed()->where('kind', $this->kind);
+                                            });
+                                    });
                             });
                     });
             })
@@ -105,7 +121,7 @@ class Charts
             'points' => $this->howMuchPoints($shifts),
             TaskKind::WEEKEND->value => $this->howMuchWeekends($shifts),
             TaskKind::NIGHT->value => $this->howMuchBy(TaskKind::NIGHT->value, $shifts),
-            TaskKind::REGULAR->value => $this->howMuchBy(TaskKind::REGULAR->value, $shifts),
+            TaskKind::REGULAR->value => $this->howMuchBy(TaskKind::REGULAR->value, $shifts) + $this->howMuchBy(TaskKind::NIGHT->value, $shifts),
             TaskKind::ALERT->value => $this->howMuchBy(TaskKind::ALERT->value, $shifts),
             TaskKind::INPARALLEL->value => $this->howMuchBy(TaskKind::INPARALLEL->value, $shifts),
         };
