@@ -113,7 +113,7 @@ class ManualAssignment
                     $soldiersShifts->push(...Helpers::addShiftsSpaces($soldiersShifts));
 
                     $concurrentsShifts = $this->getSoldiersShifts($soldier->id, true);
-
+                    $soldiersShifts->push(...Helpers::addPrevMonthSpaces($soldier->id, $this->shift->range->start));
                     $capacityHold = Helpers::capacityHold($soldiersShifts);
 
                     return Helpers::buildSoldier($soldier, $constraints, $soldiersShifts, $capacityHold, $concurrentsShifts);
@@ -130,7 +130,7 @@ class ManualAssignment
         $myShifts->push(...Helpers::addShiftsSpaces($myShifts));
 
         $concurrentsShifts = $this->getSoldiersShifts($me->id, true);
-        
+        $myShifts->push(...Helpers::addPrevMonthSpaces($me->id,$this->shift->range->start));
         $capacityHold = Helpers::capacityHold($myShifts);
 
         $soldier = Helpers::buildSoldier($me, $constraints, $myShifts, $capacityHold, $concurrentsShifts);

@@ -111,15 +111,13 @@ class Helpers
     {
         $allSpaces = collect([]);
         collect($shifts)->map(function (ShiftService $shift) use ($shifts, &$allSpaces) {
-            $spaces = ($shift->kind === TaskKind::WEEKEND->value || $shift->kind === TaskKind::NIGHT->value) ? $shift->getShiftSpaces($shifts) : null;
+            $spaces = $shift->getShiftSpaces($shifts);
             if (! empty($spaces)) {
-                collect($spaces)->map(fn (Range $space) => $allSpaces->push(new ShiftService(0, 0, '', $space->start, $space->end, 0, TaskKind::REGULAR->value, [])));
-            }
+                collect($spaces)->map(fn(Range $space) => $allSpaces->push(new ShiftService(0, 0, '', $space->start, $space->end, 0, TaskKind::REGULAR->value, [])));            }
         });
 
         return $allSpaces;
     }
-
     public static function getSoldiersShifts($soldierId, $range, $inParallel)
     {
         return Shift::with('task')
@@ -144,6 +142,28 @@ class Helpers
 
         return self::buildConstraints($constraints, $newRange);
     }
+
+    public static function addPrevMonthSpaces(int $soldierId, $date)
+    {
+        $lastDay = $date->copy()->startOfMonth()->subDay();
+        $lastMonthShifts = self::getLastDayOfLastMonthShifts($soldierId, $lastDay);
+        return self::addShiftsSpaces($lastMonthShifts);
+    }
+
+    protected static function getLastDayOfLastMonthShifts($soldierId, $lastDay)
+    {
+        return Shift::where('soldier_id', $soldierId)
+            ->whereHas('task', function ($query) {
+                $query->withTrashed()->where('kind', '!=', TaskKind::INPARALLEL->value);
+            })
+            ->where(function ($query) use ($lastDay) {
+                $query->whereDate('start_date', $lastDay)
+                    ->orWhereDate('end_date', $lastDay);
+            })
+            ->get()
+            ->map(fn(Shift $shift): ShiftService => self::buildShift($shift));
+    }
+
 
     public static function updateShiftTable($assignments)
     {

@@ -47,7 +47,7 @@ class Algorithm
 
                 $shifts = $this->getSoldiersShifts($soldier->id, false);
 
-                $shifts->push(...Helpers::addShiftsSpaces($shifts));
+                $shifts->push(...Helpers::addPrevMonthSpaces($soldier->id, $this->date));
 
                 $capacityHold = Helpers::capacityHold($shifts);
 

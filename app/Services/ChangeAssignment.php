@@ -25,8 +25,9 @@ class ChangeAssignment
         $constraints = $this->getConstraints($soldier);
         $shifts = $this->getSoldiersShifts($soldier->id, false);
         $shifts->push(...Helpers::addShiftsSpaces($shifts));
+        $shifts->push(...Helpers::addPrevMonthSpaces($soldier->id, $this->shift->range->start));
         $concurrentsShifts = $this->getSoldiersShifts($soldier->id, true);
-
+        $soldierShifts->push(...Helpers::addPrevMonthSpaces($soldier->id, $this->shift->range->start));  
         return Helpers::buildSoldier($soldier, $constraints, $shifts, [], $concurrentsShifts);
     }
 
@@ -90,6 +91,7 @@ class ChangeAssignment
                 $soldierShifts = $this->getSoldiersShifts($soldierDetails->id, false);
                 $soldierShifts->push(...Helpers::addShiftsSpaces($soldierShifts));
                 $concurrentsShifts = $this->getSoldiersShifts($soldierDetails->id, true);
+                $soldierShifts->push(...Helpers::addPrevMonthSpaces($soldierDetails->id, $this->shift->range->start));
                 $soldier = Helpers::buildSoldier($soldierDetails, $constraints, $soldierShifts, [], $concurrentsShifts);
                 if (! $soldier->isAvailableByConcurrentsShifts($this->shift)) {
                     $data['soldiersWithConcurrents']->push($soldier_id);

@@ -71,7 +71,7 @@ class Range
     public function getNightInWeekendSpaces()
     {
         $startSpace = $this->start->englishDayOfWeek == DaysInWeek::THURSDAY->value ?
-        $this->start->copy()->setHour(00) :
+        $this->start->copy()->setHour(00)->setMinutes(00) :
         $this->start->copy()->setHour(8)->setMinutes(30);
 
         return [
@@ -88,10 +88,16 @@ class Range
             $this->start->copy()->subDay():
             $this->start->copy();
         return [
-            new Range($spaceStartDay->copy()->setHour(00), $this->start),
-            new Range($endTomorrow->copy()->setHour(00), $endTomorrow->copy()->setHour(7)->setMinutes(59)),
+            new Range($spaceStartDay->copy()->setHour(00)->setMinutes(00), $this->start),
+            new Range($endTomorrow->copy()->setHour(00)->setMinutes(00), $endTomorrow->copy()->setHour(7)->setMinutes(59)),
         ];
     }
+
+    public function getThursdaySpace()
+    {
+        return new Range($this->end, $this->end->copy()->next(Carbon::SUNDAY)->setHour(7)->setMinutes(59));        
+    }
+
 
     public function getThursdaySpace()
     {
