@@ -18,7 +18,6 @@ class ChangeAssignment
         $this->shift = Helpers::buildShift($shift);
         $this->soldier = $this->buildSoldier();
     }
-
     protected function buildSoldier(): SoldierService
     {
         $soldier = Soldier::find(Shift::find($this->shift->id)->soldier_id);
@@ -27,7 +26,6 @@ class ChangeAssignment
         $shifts->push(...Helpers::addShiftsSpaces($shifts));
         $shifts->push(...Helpers::addPrevMonthSpaces($soldier->id, $this->shift->range->start));
         $concurrentsShifts = $this->getSoldiersShifts($soldier->id, true);
-        $soldierShifts->push(...Helpers::addPrevMonthSpaces($soldier->id, $this->shift->range->start));  
         return Helpers::buildSoldier($soldier, $constraints, $shifts, [], $concurrentsShifts);
     }
 

@@ -98,9 +98,4 @@ class Range
         return new Range($this->end, $this->end->copy()->next(Carbon::SUNDAY)->setHour(7)->setMinutes(59));        
     }
 
-
-    public function getThursdaySpace()
-    {
-        return new Range($this->end, $this->end->copy()->next(Carbon::SUNDAY)->setHour(7)->setMinutes(59));        
-    }
 }
