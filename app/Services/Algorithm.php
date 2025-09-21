@@ -46,7 +46,7 @@ class Algorithm
                 $constraints = Helpers::buildConstraints($soldier->constraints, new Range($this->date->copy()->startOfMonth(), $this->date->copy()->endOfMonth()));
 
                 $shifts = $this->getSoldiersShifts($soldier->id, false);
-
+                $shifts->push(...Helpers::addShiftsSpaces($shifts));
                 $shifts->push(...Helpers::addPrevMonthSpaces($soldier->id, $this->date));
 
                 $capacityHold = Helpers::capacityHold($shifts);

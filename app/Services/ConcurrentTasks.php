@@ -66,6 +66,7 @@ class ConcurrentTasks
                 $constraints = Helpers::buildConstraints($soldier->constraints, new Range($this->date->copy()->startOfMonth(), $this->date->copy()->endOfMonth()));
                 $shifts = $this->getSoldiersShifts($soldier->id, false);
                 $concurrentsShifts = $this->getSoldiersShifts($soldier->id, true);
+                $shifts->push(...Helpers::addShiftsSpaces($shifts));
                 $shifts->push(...Helpers::addPrevMonthSpaces($soldier->id, $this->date));
                 $capacityHold = Helpers::capacityHold($shifts);
 
