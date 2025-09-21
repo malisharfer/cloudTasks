@@ -36,12 +36,14 @@ class Shift extends Model
         'parallel_weight',
         'start_date',
         'end_date',
+        'manually_assigned',
     ];
 
     protected $casts = [
         'start_date' => 'datetime:Y-m-d H:i:s',
         'end_date' => 'datetime:Y-m-d H:i:s',
         'parallel_weight' => Integer::class,
+        'manually_assigned' => 'boolean',
     ];
 
     public function task(): BelongsTo

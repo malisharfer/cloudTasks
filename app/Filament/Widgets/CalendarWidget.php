@@ -334,6 +334,9 @@ class CalendarWidget extends FullCalendarWidget
                             collect($filteredData)->map(function ($value, $key) use ($record) {
                                 $record->{$key} = $value;
                             });
+                            if ($this->model == Shift::class) {
+                                $record->manually_assigned = true;
+                            }
                             $record->save();
                         }
                         method_exists($this->model, 'afterSave') && $this->model::afterSave($data, $record);

@@ -18,6 +18,7 @@ class ShiftFactory extends Factory
             'parallel_weight' => fake()->randomDigit(),
             'start_date' => now(),
             'end_date' => Carbon::now()->addDay(),
+            'manually_assigned' => false,
         ];
     }
 }

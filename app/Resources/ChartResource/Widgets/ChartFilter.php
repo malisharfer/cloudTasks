@@ -13,6 +13,7 @@ use App\Services\RecurringEvents;
 use Carbon\Carbon;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -20,6 +21,7 @@ use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Widgets\Widget;
 use Maatwebsite\Excel\Facades\Excel;
+
 
 class ChartFilter extends Widget implements HasForms
 {
@@ -100,20 +102,35 @@ class ChartFilter extends Widget implements HasForms
                                     'month' => $form->getState()['year'].'-'.$form->getState()['month'],
                                 ])))
                                 ->extraAttributes(['style' => 'color: white; background-color: #a0cddf']),
-                            Action::make('Reset assignment')
-                                ->action(fn () => $this->resetShifts($form))
-                                ->requiresConfirmation()
-                                ->modalHeading(fn () => __('Reset assignment confirmation modal heading', [
+                                Action::make('Reset assignment')
+                                ->color('danger')
+                                ->label(__('Reset assignment'))
+                                ->icon('heroicon-o-arrow-path')
+                                ->after(fn () => $this->successNotification(__('The assignment has been reset', [
+                                    'month' => $form->getState()['year'].'-'.$form->getState()['month'],
+                                ])))
+                                ->modalHeading(fn (): array|string|null => __('Reset assignment confirmation modal heading', [
                                     'month' => $form->getState()['year'].'-'.$form->getState()['month'],
                                 ]))
                                 ->modalDescription(__('Are you sure? This cannot be undone!'))
                                 ->modalSubmitActionLabel(__('Yes, reset it'))
-                                ->after(fn () => $this->successNotification(__('The assignment has been reset', [
-                                    'month' => $form->getState()['year'].'-'.$form->getState()['month'],
-                                ])))
-                                ->color('danger')
-                                ->label(__('Reset assignment'))
-                                ->icon('heroicon-o-arrow-path'),
+                                ->form([
+                                    Radio::make('reset_type')
+                                        ->label(__('Which assignment to reset?'))
+                                        ->options([
+                                            'automatic_assignment' => __('Automatic assignment'),
+                                            'manual_assignment' => __('Manual assignment'),
+                                            'all_assignment' => __('All assignment'),
+                                        ])
+                                        ->required(),
+                                ])
+                                ->action(function (array $data) use ($form): void {
+                                    match ($data['reset_type']) {
+                                        'automatic_assignment' => $this->resetShiftsByCondition($form, false),
+                                        'manual_assignment' => $this->resetShiftsByCondition($form, true),
+                                        'all_assignment' => $this->resetShifts($form),
+                                    };
+                                }),
                             Action::make('Delete shifts')
                                 ->color('danger')
                                 ->action(fn () => $this->deleteShifts($form))
@@ -168,10 +185,22 @@ class ChartFilter extends Widget implements HasForms
         // (Carbon::now()->format('m') == Carbon::parse($form->getState()['year'].'-'.$form->getState()['month'])->format('m'))
         //     ? Carbon::now()->addDay()->format('Y-m-d')
         //     : 
+            Carbon::parse($form->getState()['year'].'-'.$form->getState()['month'])->startOfMonth()->format('Y-m-d');        Shift::whereNotNull('soldier_id')
+            ->whereBetween('start_date', [$startDate, (Carbon::parse($form->getState()['year'].'-'.$form->getState()['month'])->endOfMonth()->addDay())->format('Y-m-d')])
+            ->update(['soldier_id' => null, 'manually_assigned' => false]);
+    }
+
+    protected function resetShiftsByCondition($form, $manual_assignment)
+    {
+        $startDate = 
+        // (Carbon::now()->format('m') == Carbon::parse($form->getState()['year'].'-'.$form->getState()['month'])->format('m'))
+        //     ? Carbon::now()->addDay()->format('Y-m-d')
+        //     : 
             Carbon::parse($form->getState()['year'].'-'.$form->getState()['month'])->startOfMonth()->format('Y-m-d');
         Shift::whereNotNull('soldier_id')
             ->whereBetween('start_date', [$startDate, (Carbon::parse($form->getState()['year'].'-'.$form->getState()['month'])->endOfMonth()->addDay())->format('Y-m-d')])
-            ->update(['soldier_id' => null]);
+            ->where('manually_assigned', $manual_assignment)
+            ->update(['soldier_id' => null, 'manually_assigned' => false]);
     }
 
     protected function deleteShifts($form)

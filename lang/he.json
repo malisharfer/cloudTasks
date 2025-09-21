@@ -336,5 +336,9 @@
     "Commander approved edit constraint times":" שלום <strong>:soldierName!</strong><br> בקשתך להזזת האילוץ <strong>:constraintName</strong> שלך <br> מ <em>:startDate</em> - <em>:endDate</em><br> ל <em>:toStartDate</em> - <em>:toEndDate</em><br> אושרה והשינוי בוצע .<br> המשך יום קסום!",
     "Commander approved edit constraint type": "שלום  <strong>:soldierName!</strong><br> בקשתך לעריכת האילוץ <strong>:constraintName</strong> שלך<br> ב <em>:startDate</em> - <em>:endDate</em><br> לאילוץ <strong>:toConstraintName</strong><br> ב <em>:toStartDate</em> - <em>:toEndDate</em><br> אושרה והשינוי בוצע .<br> המשך יום קסום!",
     "Commander deny edit constraint times":" שלום <strong>:soldierName</strong>!<br> בקשתך להזזת האילוץ <strong>:constraintName</strong> שלך <br> מ <em>:startDate</em> - <em>:endDate</em><br> ל <em>:toStartDate</em> - <em>:toEndDate</em> נדחתה.<br> המשך יום קסום!",
-    "Commander deny edit constraint type": "שלום  <strong>:soldierName</strong>!<br> בקשתך לעריכת האילוץ <strong>:constraintName</strong> שלך<br> ב <em>:startDate</em> - <em>:endDate</em><br> לאילוץ <strong>:toConstraintName</strong><br> ב <em>:toStartDate</em> - <em>:toEndDate</em> נדחתה.<br> המשך יום קסום!"
+    "Commander deny edit constraint type": "שלום  <strong>:soldierName</strong>!<br> בקשתך לעריכת האילוץ <strong>:constraintName</strong> שלך<br> ב <em>:startDate</em> - <em>:endDate</em><br> לאילוץ <strong>:toConstraintName</strong><br> ב <em>:toStartDate</em> - <em>:toEndDate</em> נדחתה.<br> המשך יום קסום!",
+    "Which assignment to reset?": "איזה שיבוץ לאפס?",
+    "Automatic assignment": "אוטומטי",
+    "Manual assignment": "ידני",
+    "All assignment": "הכל"
 }

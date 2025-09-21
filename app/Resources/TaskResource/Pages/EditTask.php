@@ -41,7 +41,6 @@ class EditTask extends EditRecord
                 return;
             }
             $soldierId = $this->data['soldier_type'] === 'me' ? auth()->user()->userable_id : $this->data['soldier_id'];
-            Shift::where('task_id', $this->data['id'])->update(['soldier_id' => $soldierId]);
-        }
+            Shift::where('task_id', $this->data['id'])->update(['soldier_id' => $soldierId, 'manually_assigned' => true]);        }
     }
 }

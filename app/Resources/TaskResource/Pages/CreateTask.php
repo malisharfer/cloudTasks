@@ -34,6 +34,7 @@ class CreateTask extends CreateRecord
         $shift_for_assignment = Shift::latest()->first();
         $soldierId = ($this->data['soldier_type'] === 'me') ? auth()->user()->userable_id : $this->data['soldier_id'];
         $shift_for_assignment->soldier_id = $soldierId;
+        $shift_for_assignment->manually_assigned = true;
         $shift_for_assignment->save();
     }
 

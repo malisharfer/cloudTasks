@@ -16,6 +16,7 @@ return new class extends Migration
             $table->integer('parallel_weight')->nullable();
             $table->dateTime('start_date');
             $table->dateTime('end_date');
+            $table->boolean('manually_assigned')->default(false);
             $table->timestamps();
         });
     }
