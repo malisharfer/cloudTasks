@@ -66,12 +66,7 @@ class TaskResource extends Resource
             ->schema([
                 Section::make()->schema(self::getTaskDetails())->columns(),
                 Section::make()->schema(self::getRecurring())->columns(),
-                Section::make()->schema(self::additionalDetails())->columns(),
-                Section::make()->schema(self::assignSoldier())->columns()
-                    ->visible(
-                        fn (Get $get) => $get('recurring.type') == 'One time'
-                        && $get('recurring.date')
-                    ),
+                Section::make()->schema(self::assignSoldier())->columns(),
             ]);
     }
 
@@ -179,9 +174,10 @@ class TaskResource extends Resource
                     ->multiple()
                     ->searchable()
                     ->options(collect(RecurringType::cases())->mapWithKeys(fn ($type) => [$type->value => $type->getLabel()]))
-                    ->query(fn (Builder $query, array $data) => collect($data['values'])->map(function ($type) use ($query) {
-                        return $query->orWhereJsonContains('recurring', $type);
-                    })
+                    ->query(
+                        fn (Builder $query, array $data) => collect($data['values'])->map(function ($type) use ($query) {
+                            return $query->orWhereJsonContains('recurring', $type);
+                        })
                     )
                     ->default(null),
                 NumberFilter::make('parallel_weight')
@@ -263,6 +259,23 @@ class TaskResource extends Resource
                 ->step(0.01)
                 ->label(__('Duration'))
                 ->required(),
+                Select::make('kind')
+                ->label(__('Kind'))
+                ->live()
+                ->required()
+                ->placeholder(fn () => __('Select task kind'))
+                ->options(collect(TaskKind::cases())->mapWithKeys(fn ($type) => [$type->value => $type->getLabel()])),
+            Select::make('concurrent_tasks')
+                ->label(__('Concurrent tasks'))
+                ->multiple()
+                ->placeholder(fn () => Task::count() > 0 ? __('Select concurrent tasks') : __('No tasks'))
+                ->options(Task::select('type')
+                    ->distinct()
+                    ->orderBy('type')
+                    ->pluck('type', 'type')
+                    ->all())
+                ->visible(fn (Get $get) => $get('kind') === TaskKind::INPARALLEL->value),
+
         ];
     }
 
@@ -348,29 +361,12 @@ class TaskResource extends Resource
                         ->extraAttributes(['style' => 'color: red; font-family: Arial, Helvetica, sans-serif; font-size: 20px'])
                         ->live()
                         ->visible(fn (Get $get) => $get('soldier_type') === 'all'),
-                ]),
-        ];
-    }
-
-    public static function additionalDetails(): array
-    {
-        return [
-            Select::make('kind')
-                ->label(__('Kind'))
-                ->live()
-                ->required()
-                ->placeholder(fn () => __('Select task kind'))
-                ->options(collect(TaskKind::cases())->mapWithKeys(fn ($type) => [$type->value => $type->getLabel()])),
-            Select::make('concurrent_tasks')
-                ->label(__('Concurrent tasks'))
-                ->multiple()
-                ->placeholder(fn () => Task::count() > 0 ? __('Select concurrent tasks') : __('No tasks'))
-                ->options(Task::select('type')
-                    ->distinct()
-                    ->orderBy('type')
-                    ->pluck('type', 'type')
-                    ->all())
-                ->visible(fn (Get $get) => $get('kind') === TaskKind::INPARALLEL->value),
+                        ])
+                        ->visible(
+                            fn (Get $get) => $get('recurring.type') == 'One time'
+                            && $get('recurring.date')
+                            && $get('kind')
+                        ),
         ];
     }
 
@@ -417,7 +413,7 @@ class TaskResource extends Resource
             return $manual_assignment->getSoldiers($get('department_name'));
         }
 
-        return Cache::remember('users', 30 * 60, fn () => User::all())
+        return Cache::remember('users', 30 * 60, fn () => User::all()->sortBy('first_name'))
             ->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName]);
     }
 

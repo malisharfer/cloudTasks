@@ -98,7 +98,7 @@ class Shift extends Model
                             ->options(
                                 function (?Shift $shift, Get $get) {
                                     if ($get('soldier_type') === 'all') {
-                                        return Cache::remember('users', 30 * 60, fn () => User::all())
+                                        return Cache::remember('users', 30 * 60, fn () => User::all()->sortBy('first_name'))
                                             ->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName]);
                                     }
                                     $manual_assignment = new ManualAssignment($shift, $get('soldier_type'));
@@ -149,8 +149,7 @@ class Shift extends Model
     protected static function soldierIdPlaceholder($soldierType, $shift)
     {
         if ($soldierType === 'all') {
-            return Cache::remember('users', 30 * 60, fn () => User::all())->count() > 0 ? __('Select a soldier') : __('No suitable soldiers');
-        }
+            return Cache::remember('users', 30 * 60, fn () => User::all()->sortBy('first_name'))->count() > 0 ? __('Select a soldier') : __('No suitable soldiers');        }
         $manual_assignment = new ManualAssignment($shift, $soldierType);
 
         return
@@ -533,7 +532,7 @@ class Shift extends Model
                                         ->label(__('Soldier'))
                                         ->options(
                                             fn (Get $get) => match ($get('soldiers')) {
-                                                'all' => Cache::remember('users', 30 * 60, fn () => User::all())->where('userable_id', '!=', $record->soldier_id)
+                                                'all' => Cache::remember('users', 30 * 60, fn () => User::all()->sortBy('first_name'))->where('userable_id', '!=', $record->soldier_id)
                                                     ->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName]),
                                                 'matching' => $changeAssignment->getMatchingSoldiers(),
                                                 default => $changeAssignment->getMatchingSoldiers(),
@@ -802,8 +801,7 @@ class Shift extends Model
                 ]),
                 Select::make('soldier_id')
                     ->label(__('Soldier'))
-                    ->options(fn (): array => Cache::remember('users', 30 * 60, fn () => User::all())->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
-                        ->toArray())
+                    ->options(fn (): array => Cache::remember('users', 30 * 60, fn () => User::all()->sortBy('first_name'))->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])                        ->toArray())
                     ->multiple()
                     ->live()
                     ->reactive()

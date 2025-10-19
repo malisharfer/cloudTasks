@@ -9,6 +9,7 @@ use App\Services\RecurringEvents;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Wizard\Step;
 use Filament\Forms\Get;
+use Filament\Forms\Components\Placeholder;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Resources\Pages\CreateRecord\Concerns\HasWizard;
 
@@ -64,20 +65,22 @@ class CreateTask extends CreateRecord
                 ->schema([
                     Section::make()->schema(TaskResource::getRecurring())->columns(),
                 ]),
-            Step::make('Additional_details')
-                ->label(__('Additional settings'))
-                ->schema([
-                    Section::make()->schema(TaskResource::additionalDetails())->columns(),
-                ]),
             Step::make('Assign_soldier')
                 ->label(__('Soldier assignment'))
                 ->schema([
-                    Section::make()->schema(TaskResource::assignSoldier())->columns(),
-                ])
-                ->visible(
-                    fn (Get $get) => $get('recurring.type') == 'One time'
-                            && $get('recurring.date')
-                ),
+                    Section::make()
+                        ->schema(fn (Get $get) => ($get('recurring.type') == 'One time'
+                             && $get('recurring.date')
+                             && $get('kind'))
+                            ? TaskResource::assignSoldier()
+                            : [
+                                Placeholder::make('')
+                                    ->content(__('Assigning a soldier is only for a one-time task').'.'),
+                            ]
+                        )
+                        ->columns(),
+                ]),
+
         ];
     }
 }

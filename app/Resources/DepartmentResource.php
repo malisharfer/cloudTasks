@@ -53,7 +53,7 @@ class DepartmentResource extends Resource
                         ->label(__('Commander'))
                         ->relationship('commander', 'id')
                         ->options(
-                            fn () => Cache::remember('users', 30 * 60, fn () => User::all())->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
+                            fn () => Cache::remember('users', 30 * 60, fn () => User::all()->sortBy('first_name'))->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
                         )
                         ->placeholder(__('Select commander'))
                         ->optionsLimit(Soldier::count())

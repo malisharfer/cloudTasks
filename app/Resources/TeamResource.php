@@ -55,7 +55,7 @@ class TeamResource extends Resource
                         ->label(__('Commander'))
                         ->relationship('commander')
                         ->options(
-                            fn () => Cache::remember('users', 30 * 60, fn () => User::all())->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
+                            fn () => Cache::remember('users', 30 * 60, fn () => User::all()->sortBy('first_name'))->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
                         )
                         ->live()
                         ->afterStateUpdated(function ($state, Get $get, Set $set) {
@@ -85,7 +85,7 @@ class TeamResource extends Resource
                     Select::make('members')
                         ->label(__('Members'))
                         ->options(
-                            fn (Get $get) => Cache::remember('users', 30 * 60, fn () => User::all())
+                            fn (Get $get) => Cache::remember('users', 30 * 60, fn () => User::all()->sortBy('first_name'))
                                 ->filter(function ($user) use ($get): bool {
                                     return $user->userable_id !== (int) $get('commander_id');
                                 })
@@ -154,7 +154,7 @@ class TeamResource extends Resource
                             Select::make('members')
                                 ->label(__('Members'))
                                 ->options(
-                                    fn (Team $record) => Cache::remember('users', 30 * 60, fn () => User::all())
+                                    fn (Team $record) => Cache::remember('users', 30 * 60, fn () => User::all()->sortBy('first_name'))
                                         ->filter(function ($user) use ($record) {
                                             return $record->commander_id !== $user->userable_id;
                                         })

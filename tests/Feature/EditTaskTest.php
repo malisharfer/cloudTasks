@@ -15,7 +15,11 @@ beforeEach(function () {
 });
 
 it('should change the concurrent_tasks to empty array if the kind is not `in_parallel`', function () {
-    $task = Task::factory()->create(['kind' => TaskKind::INPARALLEL->value, 'concurrent_tasks' => ['go']]);
+    $task = Task::factory()->create([
+        'kind' => TaskKind::INPARALLEL->value,
+        'concurrent_tasks' => ['go'],
+        'recurring' => ['type' => RecurringType::DAILY->value],
+    ]);
 
     livewire(EditTask::class, [
         'record' => $task->id,

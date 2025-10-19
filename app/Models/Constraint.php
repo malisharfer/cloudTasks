@@ -356,7 +356,7 @@ class Constraint extends Model
             ->form(fn () => [
                 Select::make('soldier_id')
                     ->label(__('Soldier'))
-                    ->options(fn (): array => Cache::remember('users', 30 * 60, fn () => User::all())->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
+                    ->options(fn (): array => Cache::remember('users', 30 * 60, fn () => User::all()->sortBy('first_name'))->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
                         ->toArray())
                     ->multiple(),
                 Select::make('constraint_type')

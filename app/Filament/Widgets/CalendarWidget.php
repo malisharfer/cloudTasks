@@ -164,11 +164,15 @@ class CalendarWidget extends FullCalendarWidget
                     ]);
                 }
             })
-            ->mountUsing(
-                fn (Form $form, array $arguments) => $form->fill([
-                    'start_date' => $arguments['start'] ?? null,
-                    'end_date' => $arguments['end'] ?? ($arguments['start'] ? Carbon::parse($arguments['start'])->addHour(): null),                ])
-            )
+            ->mountUsing(function (Form $form, array $arguments) {
+                $start = $arguments['start'] ?? null;
+                $end = $arguments['end'] ?? null;
+
+                $form->fill([
+                    'start_date' => $start,
+                    'end_date' => $end ?? ($start ? Carbon::parse($start)->addHour() : null),
+                ]);
+            })
             ->label($this->model::getTitle().' '.__('New'))
             ->modalHeading(__('Create').' '.$this->model::getTitle())
             ->disabled(function (array $arguments) use ($today) {

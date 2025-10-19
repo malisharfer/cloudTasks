@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Shift;
+use App\Enums\RecurringType;
 use App\Models\Task;
 use App\Resources\TaskResource\Pages\EditTask;
 use Database\Seeders\PermissionSeeder;
@@ -15,7 +16,7 @@ beforeEach(function () {
 });
 
 it('should delete the shifts of the same task type whose time has not yet expired', function () {
-    $task = Task::factory()->create();
+    $task = Task::factory()->create(['recurring' => ['type' => RecurringType::ONETIME->value]]);
     Shift::factory()->count(5)->create([
         'task_id' => $task->id,
         'start_date' => now()->addDay(),
@@ -31,7 +32,7 @@ it('should delete the shifts of the same task type whose time has not yet expire
 });
 
 it('should not delete the shifts of the same task type whose time have already expired', function () {
-    $task = Task::factory()->create();
+    $task = Task::factory()->create(['recurring' => ['type' => RecurringType::ONETIME->value]]);
     Shift::factory()->count(3)->create([
         'task_id' => $task->id,
         'start_date' => now()->addDay(),
