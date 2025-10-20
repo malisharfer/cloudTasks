@@ -64,7 +64,7 @@ class Algorithm
 
     public function run()
     {
-        set_time_limit(0);
+        // set_time_limit(0);
         $shifts = $this->getShiftWithTasks();
         $soldiers = $this->getSoldiersDetails();
         $scheduleAlgorithm = new Schedule($shifts, $soldiers);
