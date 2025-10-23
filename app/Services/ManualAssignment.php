@@ -2,12 +2,14 @@
 
 namespace App\Services;
 
+use App\Enums\TaskKind;
 use App\Models\Department;
 use App\Models\Shift;
 use App\Models\Soldier;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\Soldier as SoldierService;
+use App\Services\Shift as ShiftService;
 
 class ManualAssignment
 {
@@ -17,11 +19,14 @@ class ManualAssignment
 
     public $soldiers;
 
+    public $range;
+
     public function __construct(Shift $shift, string $soldierType)
     {
         $this->shift = Helpers::buildShift($shift);
         $this->soldierType = $soldierType;
         $this->soldiers = [];
+        $this->range = new Range($this->shift->range->start->copy()->startOfMonth(), $this->shift->range->end->copy()->endOfMonth());
     }
 
     public function getSoldiers($departmentName = null)
@@ -47,6 +52,7 @@ class ManualAssignment
         $this->soldiers = Soldier::whereJsonContains('qualifications', $this->shift->taskType)
             ->where('is_reservist', true)
             ->where('id', '!=', auth()->user()->userable_id)
+            ->with($this->withRelations())
             ->get();
     }
 
@@ -78,6 +84,7 @@ class ManualAssignment
             ->where('is_reservist', false)
             ->where('id', '!=', $currentUserId)
             ->whereIn('id', $members)
+            ->with($this->withRelations())
             ->get();
     }
 
@@ -91,7 +98,9 @@ class ManualAssignment
                 $query->whereIn('id', $department?->teams->flatMap(fn (Team $team) => $team->members->pluck('id')) ?? collect())
                     ->orWhereIn('id', $department?->teams->pluck('commander_id') ?? collect())
                     ->orWhere('id', $department?->commander_id);
-            })->get();
+            })
+            ->with($this->withRelations())
+            ->get();
     }
 
     protected function filterMatching()
@@ -99,7 +108,16 @@ class ManualAssignment
         $this->soldiers = Soldier::whereJsonContains('qualifications', $this->shift->taskType)
             ->where('is_reservist', false)
             ->where('id', '!=', auth()->user()->userable_id)
+            ->with($this->withRelations())
             ->get();
+    }
+
+    protected function withRelations(): array
+    {
+        return [
+            'constraints' => fn($q) => $q->whereBetween('start_date', [$this->range->start, $this->range->end]),
+            'shifts' => fn($q) => $q->whereBetween('start_date', [$this->range->start, $this->range->end])
+        ];
     }
 
     protected function getSoldiersDetails()
@@ -107,12 +125,13 @@ class ManualAssignment
         $this->soldiers = $this->soldiers
             ->map(
                 function (Soldier $soldier) {
-                    $constraints = $this->getConstraints($soldier);
-                    $soldiersShifts = $this->getSoldiersShifts($soldier->id, false);
+                    $constraints = Helpers::buildConstraints($soldier->constraints);
+
+                    $soldiersShifts = $this->mapSoldierShifts($soldier->shifts, false);
+                    $concurrentsShifts = $this->mapSoldierShifts($soldier->shifts, true);
 
                     $soldiersShifts->push(...Helpers::addShiftsSpaces($soldiersShifts));
 
-                    $concurrentsShifts = $this->getSoldiersShifts($soldier->id, true);
                     $soldiersShifts->push(...Helpers::addPrevMonthSpaces($soldier->id, $this->shift->range->start));
                     $capacityHold = Helpers::capacityHold($soldiersShifts);
 
@@ -123,14 +142,19 @@ class ManualAssignment
 
     public function amIAvailable(): bool
     {
-        $me = Soldier::find(auth()->user()->userable_id);
-        $constraints = $this->getConstraints($me);
-        $myShifts = $this->getSoldiersShifts($me->id, false);
+
+        $me = Soldier::with($this->withRelations())
+            ->find(auth()->user()->userable_id);
+
+        $constraints = Helpers::buildConstraints($me->constraints);
+
+        $myShifts = $this->mapSoldierShifts($me->shifts, false);
 
         $myShifts->push(...Helpers::addShiftsSpaces($myShifts));
 
-        $concurrentsShifts = $this->getSoldiersShifts($me->id, true);
-        $myShifts->push(...Helpers::addPrevMonthSpaces($me->id,$this->shift->range->start));
+        $concurrentsShifts = $this->mapSoldierShifts($me->shifts, true);
+
+        $myShifts->push(...Helpers::addPrevMonthSpaces($me->id, $this->shift->range->start));
         $capacityHold = Helpers::capacityHold($myShifts);
 
         $soldier = Helpers::buildSoldier($me, $constraints, $myShifts, $capacityHold, $concurrentsShifts);
@@ -139,19 +163,17 @@ class ManualAssignment
             && $soldier->isAvailableByConcurrentsShifts($this->shift);
     }
 
-    protected function getConstraints(Soldier $soldier)
+    protected function mapSoldierShifts($shifts, $inParallel)
     {
-        return $this->soldierType != 'reserves' ? Helpers::getConstraintBy($soldier->id, new Range($this->shift->range->start->copy()->startOfMonth(), $this->shift->range->end->copy()->endOfMonth())) : collect([]);
-    }
-
-    protected function getSoldiersShifts($soldierId, $inParallel)
-    {
-        return Helpers::getSoldiersShifts($soldierId, new Range($this->shift->range->start->copy()->startOfMonth(), $this->shift->range->end->copy()->endOfMonth()), $inParallel);
+        return $shifts->filter(fn(Shift $shift) => $inParallel
+            ? $shift->task->kind == TaskKind::INPARALLEL->value
+            : $shift->task->kind != TaskKind::INPARALLEL->value)
+            ->map(fn(Shift $shift): ShiftService => Helpers::buildShift($shift));
     }
 
     protected function getAvailableSoldiers()
     {
-        $availableSoldiers = $this->soldiers->filter(fn (SoldierService $soldier) => $soldier->isAbleTake($this->shift, true));
+        $availableSoldiers = $this->soldiers->filter(fn(SoldierService $soldier) => $soldier->isAbleTake($this->shift, true));
 
         $soldiersWithConcurrentsShifts = collect([]);
         $availableSoldiers->map(function (SoldierService $soldier) use ($soldiersWithConcurrentsShifts) {

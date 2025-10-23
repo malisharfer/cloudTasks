@@ -41,8 +41,7 @@ class Task extends Model
     {
         static::deleting(fn (Task $task) => Shift::where('task_id', $task->id)
             ->where('start_date', '>', now())
-            ->get()
-            ->map(fn (Shift $shift) => $shift->delete())
+            ->delete()
         );
     }
 }

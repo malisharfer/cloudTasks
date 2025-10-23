@@ -287,20 +287,20 @@ class CalendarWidget extends FullCalendarWidget
                             : true
                         )
                         : true;
-                    if (! empty($arguments) && $this->model === Shift::class && isset($this->mountedActionsArguments[0]['oldEvent'])) {
-                        $oldDate = date('l', strtotime($this->mountedActionsArguments[0]['oldEvent']['start']));
-                        $newDate = date('l', strtotime($this->mountedActionsData[0]['start_date']));
-                        $startOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
-                        if ((in_array($oldDate, $startOfWeek) !== in_array($newDate, $startOfWeek))) {
-                            Notification::make()
-                                ->info()
-                                ->title(__('Update dragged shift details!'))
-                                ->body(__('Pay attention to update the shift details according to the changes you made .'))
-                                ->color('info')
-                                ->persistent()
-                                ->send();
-                        }
-                    }
+                    // if (! empty($arguments) && $this->model === Shift::class && isset($this->mountedActionsArguments[0]['oldEvent'])) {
+                    //     $oldDate = date('l', strtotime($this->mountedActionsArguments[0]['oldEvent']['start']));
+                    //     $newDate = date('l', strtotime($this->mountedActionsData[0]['start_date']));
+                    //     $startOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
+                    //     if ((in_array($oldDate, $startOfWeek) !== in_array($newDate, $startOfWeek))) {
+                    //         Notification::make()
+                    //             ->info()
+                    //             ->title(__('Update dragged shift details!'))
+                    //             ->body(__('Pay attention to update the shift details according to the changes you made .'))
+                    //             ->color('info')
+                    //             ->persistent()
+                    //             ->send();
+                    //     }
+                    // }
 
                     return [
                         $action->makeExtraModalAction(__('Save'), ['save' => true])
@@ -373,7 +373,8 @@ class CalendarWidget extends FullCalendarWidget
             : (object) $this->mountedActionsData;
         $range = new Range($record->start_date, $record->end_date);
 
-        return $record->soldier_id !== null && ! $range->isPass();
+        return $record->soldier_id !== null;
+        // return $record->soldier_id !== null && ! $range->isPass();
     }
 
     protected function viewAction(): Action

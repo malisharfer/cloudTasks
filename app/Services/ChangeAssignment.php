@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Enums\TaskKind;
 use App\Models\Shift;
 use App\Models\Soldier;
 use App\Services\Constraint as ConstraintService;
+use App\Services\Shift as ShiftService;
 use App\Services\Soldier as SoldierService;
 
 class ChangeAssignment
@@ -18,14 +20,20 @@ class ChangeAssignment
         $this->shift = Helpers::buildShift($shift);
         $this->soldier = $this->buildSoldier();
     }
+
     protected function buildSoldier(): SoldierService
     {
-        $soldier = Soldier::find(Shift::find($this->shift->id)->soldier_id);
-        $constraints = $this->getConstraints($soldier);
-        $shifts = $this->getSoldiersShifts($soldier->id, false);
+        $soldier = Soldier::with($this->withRelations())->find(Shift::find($this->shift->id)->soldier_id);
+
+        $constraints = Helpers::buildConstraints($soldier->constraints);
+
+        $shifts = $this->mapSoldierShifts($soldier->shifts, false);
+
         $shifts->push(...Helpers::addShiftsSpaces($shifts));
         $shifts->push(...Helpers::addPrevMonthSpaces($soldier->id, $this->shift->range->start));
-        $concurrentsShifts = $this->getSoldiersShifts($soldier->id, true);
+
+        $concurrentsShifts = $this->mapSoldierShifts($soldier->shifts, true);
+
         return Helpers::buildSoldier($soldier, $constraints, $shifts, [], $concurrentsShifts);
     }
 
@@ -33,20 +41,26 @@ class ChangeAssignment
     {
         return Soldier::where('id', '!=', $this->soldier->id)
             ->whereJsonContains('qualifications', $this->shift->taskType)
-            ->get()
+            ->with($this->withRelations())
+            ->lazy()
             ->map(function ($soldier) {
-                $constraints = $this->getConstraints($soldier);
-                $soldierShifts = $this->getSoldiersShifts($soldier->id, false);
+                $constraints = Helpers::buildConstraints($soldier->constraints);
+
+                $soldierShifts = $this->mapSoldierShifts($soldier->shifts, false);
+
                 $soldierShifts->push(...Helpers::addShiftsSpaces($soldierShifts));
-                $concurrentsShifts = $this->getSoldiersShifts($soldier->id, true);
+
+                $concurrentsShifts = $this->mapSoldierShifts($soldier->shifts, true);
+
+                $soldierShifts->push(...Helpers::addPrevMonthSpaces($soldier->id, $this->shift->range->start));
 
                 return Helpers::buildSoldier($soldier, $constraints, $soldierShifts, [], $concurrentsShifts);
             })
-            ->filter(fn (SoldierService $soldier) => $soldier->isAvailableBySpaces($this->shift->getShiftSpaces($soldier->shifts))
-                && ! $this->isConflictWithConstraints($soldier, $this->shift->range)
+            ->filter(fn(SoldierService $soldier) => $soldier->isAvailableBySpaces($this->shift->getShiftSpaces($soldier->shifts))
+                && !$this->isConflictWithConstraints($soldier, $this->shift->range)
                 && $soldier->isAvailableByShifts($this->shift))
-            ->mapWithKeys(fn (SoldierService $soldier) => ! $soldier->isAvailableByConcurrentsShifts($this->shift) ?
-                [$soldier->id => Soldier::find($soldier->id)->user->displayName.' 📌']
+            ->mapWithKeys(fn(SoldierService $soldier) => !$soldier->isAvailableByConcurrentsShifts($this->shift) ?
+                [$soldier->id => Soldier::find($soldier->id)->user->displayName . ' 📌']
                 : [$soldier->id => Soldier::find($soldier->id)->user->displayName])
             ->toArray();
     }
@@ -57,8 +71,7 @@ class ChangeAssignment
             'shifts' => collect([]),
             'soldiersWithConcurrents' => collect([]),
         ]);
-        Shift::with('task')
-            ->whereNotNull('soldier_id')
+        Shift::whereNotNull('soldier_id')
             ->where('soldier_id', '!=', $this->soldier->id)
             ->where('start_date', '>', now())
             ->whereMonth('start_date', $this->shift->range->start->month)
@@ -72,31 +85,37 @@ class ChangeAssignment
             ->get()
             ->filter(function (Shift $shift) use (&$data) {
                 $newShift = Helpers::buildShift($shift);
-                if (! $this->soldier->isAvailableByConcurrentsShifts($newShift)) {
+                if (!$this->soldier->isAvailableByConcurrentsShifts($newShift)) {
                     $data['shifts']->push(['shift' => $shift, 'hasConcurrentsShifts' => true]);
                 }
 
                 return
                     $this->soldier->isAvailableBySpaces($newShift->getShiftSpaces($this->soldier->shifts))
-                    && ! $this->isConflictWithConstraints($this->soldier, $newShift->range)
+                    && !$this->isConflictWithConstraints($this->soldier, $newShift->range)
                     && $this->soldier->isAvailableByShifts($newShift)
                     && $this->soldier->isAvailableByConcurrentsShifts($newShift);
             })
             ->groupBy('soldier_id')
             ->filter(function ($shifts, $soldier_id) use (&$data) {
-                $soldierDetails = Soldier::find($soldier_id);
-                $constraints = $this->getConstraints($soldierDetails);
-                $soldierShifts = $this->getSoldiersShifts($soldierDetails->id, false);
+                $soldierDetails = Soldier::with($this->withRelations())->find($soldier_id);
+                $constraints = Helpers::buildConstraints($soldierDetails->constraints);
+
+                $soldierShifts = $this->mapSoldierShifts($soldierDetails->shifts, false);
+
                 $soldierShifts->push(...Helpers::addShiftsSpaces($soldierShifts));
-                $concurrentsShifts = $this->getSoldiersShifts($soldierDetails->id, true);
+
+                $concurrentsShifts = $this->mapSoldierShifts($soldierDetails->shifts, true);
+
                 $soldierShifts->push(...Helpers::addPrevMonthSpaces($soldierDetails->id, $this->shift->range->start));
+
                 $soldier = Helpers::buildSoldier($soldierDetails, $constraints, $soldierShifts, [], $concurrentsShifts);
-                if (! $soldier->isAvailableByConcurrentsShifts($this->shift)) {
+
+                if (!$soldier->isAvailableByConcurrentsShifts($this->shift)) {
                     $data['soldiersWithConcurrents']->push($soldier_id);
                 }
 
                 return $soldier->isAvailableBySpaces($this->shift->getShiftSpaces($soldier->shifts))
-                    && ! $this->isConflictWithConstraints($soldier, $this->shift->range)
+                    && !$this->isConflictWithConstraints($soldier, $this->shift->range)
                     && $soldier->isAvailableByShifts($this->shift);
 
             })
@@ -109,14 +128,23 @@ class ChangeAssignment
         return $data;
     }
 
-    protected function getConstraints(Soldier $soldier)
+    protected function mapSoldierShifts($shifts, $inParallel)
     {
-        return ! $soldier->is_reservist ? Helpers::getConstraintBy($soldier->id, new Range($this->shift->range->start->copy()->startOfMonth(), $this->shift->range->end->copy()->endOfMonth())) : collect([]);
+        return $shifts->filter(fn(Shift $shift) => $inParallel
+            ? $shift->task->kind == TaskKind::INPARALLEL->value
+            : $shift->task->kind != TaskKind::INPARALLEL->value)
+            ->map(fn(Shift $shift): ShiftService => Helpers::buildShift($shift));
     }
 
-    protected function getSoldiersShifts($soldierId, $inParallel)
+
+    protected function withRelations(): array
     {
-        return Helpers::getSoldiersShifts($soldierId, new Range($this->shift->range->start->copy()->startOfMonth(), $this->shift->range->end->copy()->endOfMonth()), $inParallel);
+        $range = new Range($this->shift->range->start->copy()->startOfMonth(), $this->shift->range->end->copy()->endOfMonth());
+
+        return [
+            'constraints' => fn($q) => $q->whereBetween('start_date', [$range->start, $range->end]),
+            'shifts' => fn($q) => $q->whereBetween('start_date', [$range->start, $range->end])
+        ];
     }
 
     protected function isConflictWithConstraints($soldier, $range): bool

@@ -240,11 +240,13 @@ class TaskResource extends Resource
             TextInput::make('type')
                 ->label(__('Type'))
                 ->required(),
-            TextInput::make('parallel_weight')
-                ->numeric()
-                ->minValue(0)
-                ->default(0)
-                ->step(0.25)
+            Select::make('parallel_weight')
+                ->options([
+                    0 => '0',
+                    0.5 => '0.5',
+                    1 => '1',
+                    2 => '2',
+                ])
                 ->label(__('Parallel weight')),
             ColorPicker::make('color')
                 ->label(__('Color'))

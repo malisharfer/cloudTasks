@@ -117,25 +117,24 @@ class SoldierResource extends Resource
                     ->sortable()
                     ->date(),
                 TextColumn::make('capacity_hold')
-                    ->default(function () {
-                        $now = now();
-
-                        return Shift::where('soldier_id', auth()->user()->userable_id)
-                            ->where(function ($query) use ($now) {
-                                $query->whereYear('start_date', $now->year)
-                                    ->whereMonth('start_date', $now->month)
-                                    ->orWhere(function ($query) use ($now) {
-                                        $query->whereYear('end_date', $now->year)
-                                            ->whereMonth('end_date', $now->month);
-                                    });
+                ->default(function ($record) {
+                        $userId = $record->id;
+                        $startOfMonth = now()->startOfMonth();
+                        $endOfMonth = now()->endOfMonth();
+                        $total = 0;
+                        Shift::where('soldier_id', $userId)
+                            ->where(function ($query) use ($startOfMonth, $endOfMonth) {
+                                $query
+                                    ->whereBetween('start_date', [$startOfMonth, $endOfMonth])
+                                    ->orWhereBetween('end_date', [$startOfMonth, $endOfMonth]);
                             })
-                            ->with([
-                                'task' => function ($query) {
-                                    $query->withTrashed();
-                                },
-                            ])
-                            ->get()
-                            ->sum(fn (Shift $shift) => $shift->parallel_weight ?? $shift->task->parallel_weight);
+                            ->with(['task' => fn($q) => $q->withTrashed()])
+                            ->chunk(100, function ($shifts) use (&$total) {
+                                foreach ($shifts as $shift) {
+                                    $total += $shift->parallel_weight ?? $shift->task?->parallel_weight ?? 0;
+                                }
+                            });
+                        return $total;
                     })
                     ->label(__('Capacity hold'))
                     ->numeric(),

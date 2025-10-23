@@ -88,6 +88,11 @@ class Soldier extends Model
     {
         return $this->hasMany(Constraint::class);
     }
+    
+    public function shifts(): HasMany
+    {
+        return $this->hasMany(Shift::class);
+    }
 
     public function updateReserveDays()
     {

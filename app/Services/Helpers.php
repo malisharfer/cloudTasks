@@ -15,7 +15,7 @@ class Helpers
 {
     public static function buildShift(Shift $shift): ShiftService
     {
-        $task = $shift->task()->withTrashed()->first() ?? $shift->task;
+        $task = $shift->task ?? $shift->task()->withTrashed()->first();
 
         return new ShiftService(
             $shift->id,
@@ -29,7 +29,7 @@ class Helpers
         );
     }
 
-    protected static function kind(Shift $shift, $task)
+    public static function kind(Shift $shift, $task)
     {
         if ($shift->is_weekend === true) {
             return TaskKind::WEEKEND->value;
@@ -47,7 +47,7 @@ class Helpers
             $soldier->id,
             $soldier->course,
             new MaxData($soldier->capacity, $capacityHold['points'] ?? 0),
-            new MaxData($soldier->max_shifts, $capacityHold['regular'] ?? 0),
+            new MaxData($soldier->max_shifts, $capacityHold['regulars'] ?? 0),
             new MaxData($soldier->max_nights, $capacityHold['sumNights'] ?? 0),
             new MaxData($soldier->max_weekends, $capacityHold['sumWeekends'] ?? 0),
             new MaxData($soldier->max_alerts, $capacityHold['sumAlerts'] ?? 0),
@@ -59,14 +59,9 @@ class Helpers
         );
     }
 
-    public static function buildConstraints($constraints, $newRange)
+    public static function buildConstraints($constraints)
     {
         return $constraints
-            ->filter(function (Constraint $constraint) use ($newRange) {
-                $range = new Range($constraint->start_date, $constraint->end_date);
-
-                return $range->isSameMonth($newRange);
-            })
             ->map(
                 fn (Constraint $constraint): ConstraintService => new ConstraintService(
                     $constraint->start_date,
@@ -81,24 +76,24 @@ class Helpers
         $points = 0;
         $nights = 0;
         $weekends = 0;
-        $regular = 0;
+        $regulars = 0;
         $alerts = 0;
         $inParallel = 0;
         collect($shifts)
             ->filter(fn (ShiftService $shift) => $shift->id != 0)
-            ->each(function (ShiftService $shift) use (&$regular, &$points, &$nights, &$weekends, &$alerts, &$inParallel) {
+            ->each(function (ShiftService $shift) use (&$regulars, &$points, &$nights, &$weekends, &$alerts, &$inParallel) {
                 $points += $shift->points;
                 match ($shift->kind) {
                     TaskKind::WEEKEND->value => $weekends += $shift->points,
-                    TaskKind::NIGHT->value => [$nights++, $regular++],
+                    TaskKind::NIGHT->value => [$nights++, $regulars++],
                     TaskKind::ALERT->value => $alerts++,
                     TaskKind::INPARALLEL->value => $inParallel++,
-                    TaskKind::REGULAR->value => $regular++,
+                    TaskKind::REGULAR->value => $regulars++,
                 };
             });
 
         return [
-            'regular' => $regular,
+            'regulars' => $regulars,
             'points' => $points,
             'sumWeekends' => $weekends,
             'sumNights' => $nights,
@@ -113,15 +108,16 @@ class Helpers
         collect($shifts)->map(function (ShiftService $shift) use ($shifts, &$allSpaces) {
             $spaces = $shift->getShiftSpaces($shifts);
             if (! empty($spaces)) {
-                collect($spaces)->map(fn(Range $space) => $allSpaces->push(new ShiftService(0, 0, '', $space->start, $space->end, 0, TaskKind::REGULAR->value, [])));            }
+                collect($spaces)->map(fn (Range $space) => $allSpaces->push(new ShiftService(0, 0, '', $space->start, $space->end, 0, TaskKind::REGULAR->value, [])));
+            }
         });
 
         return $allSpaces;
     }
+
     public static function getSoldiersShifts($soldierId, $range, $inParallel)
     {
-        return Shift::with('task')
-            ->where('soldier_id', $soldierId)
+        return Shift::where('soldier_id', $soldierId)
             ->whereHas('task', function ($query) use ($inParallel) {
                 $query->withTrashed()
                     ->when($inParallel, fn ($query) => $query->where('kind', TaskKind::INPARALLEL->value))
@@ -138,36 +134,36 @@ class Helpers
     public static function getConstraintBy(int $soldierId, $newRange)
     {
         $constraints = Constraint::where('soldier_id', $soldierId)
+            ->whereBetween('start_date', [$newRange->start, $newRange->end])
             ->get();
 
-        return self::buildConstraints($constraints, $newRange);
+        return self::buildConstraints($constraints);
     }
 
     public static function addPrevMonthSpaces(int $soldierId, $date)
     {
         $lastDay = $date->copy()->startOfMonth()->subDay();
         $lastMonthShifts = self::getLastDayOfLastMonthShifts($soldierId, $lastDay);
+
         return self::addShiftsSpaces($lastMonthShifts);
     }
 
     protected static function getLastDayOfLastMonthShifts($soldierId, $lastDay)
     {
         return Shift::where('soldier_id', $soldierId)
-            ->whereHas('task', function ($query) {
-                $query->withTrashed()->where('kind', '!=', TaskKind::INPARALLEL->value);
-            })
             ->where(function ($query) use ($lastDay) {
                 $query->whereDate('start_date', $lastDay)
                     ->orWhereDate('end_date', $lastDay);
             })
-            ->get()
-            ->map(fn(Shift $shift): ShiftService => self::buildShift($shift));
+            ->whereHas('task', function ($query) {
+                $query->withTrashed()->where('kind', '!=', TaskKind::INPARALLEL->value);
+            })
+            ->lazy()
+            ->map(fn (Shift $shift): ShiftService => self::buildShift($shift));
     }
-
 
     public static function updateShiftTable($assignments)
     {
-        set_time_limit(0);
         if (empty($assignments)) {
             return;
         }

@@ -45,13 +45,13 @@ class ConcurrentTasks
         $endOfMonth = $this->date->copy()->endOfMonth();
 
         return Shift::whereNull('soldier_id')
+            ->where(function ($query) use ($startOfMonth, $endOfMonth) {
+                $query->where('start_date', '<=', $endOfMonth)
+                ->where('start_date', '>=', $startOfMonth);
+            })
             ->whereHas('task', function ($query) {
                 $query->withTrashed()
                     ->where('kind', TaskKind::INPARALLEL->value);
-            })
-            ->where(function ($query) use ($startOfMonth, $endOfMonth) {
-                $query->where('start_date', '<=', $endOfMonth)
-                    ->where('start_date', '>=', $startOfMonth);
             })
             ->get()
             ->map(fn (Shift $shift): ShiftService => Helpers::buildShift($shift));
@@ -59,20 +59,36 @@ class ConcurrentTasks
 
     protected function getSoldiersDetails()
     {
-        return Soldier::with('constraints')
-            ->where('is_reservist', false)
-            ->get()
+        $range = new Range($this->date->copy()->startOfMonth(), $this->date->copy()->endOfMonth());
+
+        return Soldier::where('is_reservist', false)
+            ->with([
+                'constraints' => fn ($q) => $q->whereBetween('start_date', [$range->start, $range->end]),
+                'shifts' => fn ($q) => $q->whereBetween('start_date', [$range->start, $range->end])
+            ])
+            ->lazy()
             ->map(function (Soldier $soldier) {
-                $constraints = Helpers::buildConstraints($soldier->constraints, new Range($this->date->copy()->startOfMonth(), $this->date->copy()->endOfMonth()));
-                $shifts = $this->getSoldiersShifts($soldier->id, false);
-                $concurrentsShifts = $this->getSoldiersShifts($soldier->id, true);
+                $constraints = Helpers::buildConstraints($soldier->constraints);
+
+                $shifts = $this->mapSoldierShifts($soldier->shifts, false);
+                $concurrentsShifts = $this->mapSoldierShifts($soldier->shifts, true);
+
                 $shifts->push(...Helpers::addShiftsSpaces($shifts));
                 $shifts->push(...Helpers::addPrevMonthSpaces($soldier->id, $this->date));
+
                 $capacityHold = Helpers::capacityHold($shifts);
 
                 return Helpers::buildSoldier($soldier, $constraints, $shifts, $capacityHold, $concurrentsShifts);
             })
             ->shuffle();
+    }
+
+    protected function mapSoldierShifts($shifts, $inParallel)
+    {
+        return $shifts->filter(fn(Shift $shift) => $inParallel
+            ? $shift->task->kind == TaskKind::INPARALLEL->value
+            : $shift->task->kind != TaskKind::INPARALLEL->value)
+            ->map(fn(Shift $shift): ShiftService => Helpers::buildShift($shift));
     }
 
     protected function getSoldiersShifts($soldierId, $inParallel)

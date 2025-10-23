@@ -23,29 +23,36 @@ class Algorithm
         $startOfMonth = $this->date->copy()->startOfMonth();
         $endOfMonth = $this->date->copy()->endOfMonth();
 
-        return Shift::with('task')
+        return Shift::query()
+            ->with(['task' => fn ($q) => $q->withTrashed()])
             ->whereNull('soldier_id')
+            ->whereBetween('start_date', [$startOfMonth, $endOfMonth])
             ->whereHas('task', function ($query) {
                 $query->withTrashed()
                     ->where('kind', '!=', TaskKind::INPARALLEL->value);
             })
-            ->where(function ($query) use ($startOfMonth, $endOfMonth) {
-                $query->where('start_date', '<=', $endOfMonth)
-                    ->where('start_date', '>=', $startOfMonth);
-            })
-            ->get()
+            ->lazy()
             ->map(fn (Shift $shift): ShiftService => Helpers::buildShift($shift));
     }
 
     protected function getSoldiersDetails()
     {
-        return Soldier::with('constraints')
-            ->where('is_reservist', false)
-            ->get()
-            ->map(function (Soldier $soldier) {
-                $constraints = Helpers::buildConstraints($soldier->constraints, new Range($this->date->copy()->startOfMonth(), $this->date->copy()->endOfMonth()));
+        $range = new Range($this->date->copy()->startOfMonth(), $this->date->copy()->endOfMonth());
 
-                $shifts = $this->getSoldiersShifts($soldier->id, false);
+        return Soldier::where('is_reservist', false)
+            ->with([
+                'constraints' => fn ($q) => $q->whereBetween('start_date', [$range->start, $range->end]),
+                'shifts' => fn ($q) => $q->whereBetween('start_date', [$range->start, $range->end])
+                    ->whereHas('task', function ($query) {
+                        $query->withTrashed()->where('kind', '!=', TaskKind::INPARALLEL->value);
+                    }),
+            ])
+            ->lazy()
+            ->map(function (Soldier $soldier) {
+                $constraints = Helpers::buildConstraints($soldier->constraints);
+
+                $shifts = $soldier->shifts->map(fn (Shift $shift): ShiftService => Helpers::buildShift($shift));
+
                 $shifts->push(...Helpers::addShiftsSpaces($shifts));
                 $shifts->push(...Helpers::addPrevMonthSpaces($soldier->id, $this->date));
 
