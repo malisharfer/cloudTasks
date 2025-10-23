@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('soldiers', function (Blueprint $table) {
-            // $table->index('team_id');
-            // $table->index('type');
-            // $table->index('course');
-            // $table->index('qualifications');
-            // $table->index('is_reservist');
+            $table->index('team_id');
+            $table->index('type');
+            $table->index('course');
+            $table->index('qualifications');
+            $table->index('is_reservist');
         });
     }
 

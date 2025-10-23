@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('tasks', function (Blueprint $table) {
-            // $table->index('parallel_weight');
-            // $table->index('type');
-            // $table->index('kind');
-            // $table->index('department_name');
+            $table->index('parallel_weight');
+            $table->index('type');
+            $table->index('kind');
+            $table->index('department_name');
         });
     }
 

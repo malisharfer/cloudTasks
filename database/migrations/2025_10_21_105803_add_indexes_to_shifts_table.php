@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('shifts', function (Blueprint $table) {
-            // $table->index('soldier_id');
-            // $table->index('task_id');
-            // $table->index(['start_date', 'end_date']); 
+            $table->index('soldier_id');
+            $table->index('task_id');
+            $table->index(['start_date', 'end_date']); 
         });
     }
 
