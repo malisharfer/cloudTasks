@@ -1,0 +1,52 @@
+@media (max-width:700px) {
+    .fi-section {
+        overflow-x: auto;
+    }
+
+    .fi-section-content-ctn:has(.filament-fullcalendar) {
+        width: 650px;
+    }
+
+    .filament-fullcalendar .fc-toolbar-title {
+        font-size: 1.875rem !important;
+        line-height: 2.25rem !important
+    }
+
+    .filament-fullcalendar.fc .fc-button {
+        min-height: 2.25rem;
+        border-radius: .5rem;
+        padding: .25rem 6px;
+        font-size: .875rem;
+        line-height: 1.25rem;
+        font-weight: 500;
+    }
+
+    .fc-event-main .fc-event-time {
+        display: none;
+    }
+
+    .fc-event-title .fc-sticky {
+        display: none;
+    }
+}
+
+.dark .fc-day-past {
+    background-color: #201f1f;
+    color: #5d5c5c;
+    cursor: not-allowed;
+    --fc-highlight-color: #ae2828;
+}
+
+.dark .fc-day-sat{
+    background-color: #514a4a;
+}
+
+.fc-day-past {
+    background-color:#ffffff ;
+    color: #d0d0d0;
+    --fc-highlight-color: #ffffff;
+}
+
+.fc-day-sat{
+    background-color: #f5f2f2;
+}
