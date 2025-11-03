@@ -144,7 +144,7 @@ class ManualAssignment
         $me = Soldier::with($this->withRelations())
             ->find(auth()->user()->userable_id);
         $constraints = Helpers::buildConstraints($me->constraints);
-        $myShifts = $this->mapSoldierShifts($me->shifts, false);
+        $myShifts = Helpers::mapSoldierShifts($me->shifts, false);
 
         $myShifts = Helpers::mapSoldierShifts($me->shifts, false);
 
