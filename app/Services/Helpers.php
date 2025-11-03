@@ -117,8 +117,8 @@ class Helpers
     public static function mapSoldierShifts($shifts, $inParallel)
     {
         return $shifts->filter(fn (Shift $shift) => $inParallel
-            ? $shift->task->kind == TaskKind::INPARALLEL->value
-            : $shift->task->kind != TaskKind::INPARALLEL->value)
+            ? $shift?->task?->kind == TaskKind::INPARALLEL->value
+            : $shift?->task?->kind != TaskKind::INPARALLEL->value)
             ->map(fn (Shift $shift): ShiftService => Helpers::buildShift($shift));
     }
 
