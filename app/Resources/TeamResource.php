@@ -128,8 +128,8 @@ class TeamResource extends Resource
                                 });
                             });
                         }
-                    )
-                    ->sortable(),
+                    ),
+                    // ->sortable(),
                 TextColumn::make('department.name')
                     ->label(__('Department'))
                     ->url(fn (Team $record): string => route('filament.app.resources.departments.index', ['department_id' => $record->department_id]))
