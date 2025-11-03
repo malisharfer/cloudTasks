@@ -332,7 +332,7 @@ class PointedSchedule
             ->values()
             ->all();
 
-        return new Course($number, $capacity, $sortedSoldiers);
+        return new Course($number, $capacity, 'pointsMaxData', $sortedSoldiers);
     }
 
     protected function assign()
@@ -354,7 +354,7 @@ class PointedSchedule
     protected function assignShiftsForCourse(Course $course, $isSingleRotation)
     {
         $rotationSize = $this->maximalRotationSize;
-        while (! $course->hasGap && $course->remaining('pointsMaxData') > 0 && $rotationSize >= $this->minimalRotationSize) {
+        while (! $course->hasGap && $course->remaining() > 0 && $rotationSize >= $this->minimalRotationSize) {
             $rotationResult = $this->rotation($course, $rotationSize);
             if ($rotationResult) {
                 $this->saveRotationAssignments();
@@ -372,10 +372,12 @@ class PointedSchedule
     {
         $hasGap = false;
         $maxAssigned = 0;
-        $soldiers = $course->soldiers->filter(fn(Soldier $soldier)=>$soldier->pointsMaxData->used <= $course->used);
+        $soldiers = $course->soldiers->filter(fn (Soldier $soldier) => $soldier->pointsMaxData->used <= $course->used);
+
         foreach ($soldiers as $soldier) {
             $assignedPoints = $this->assignRotationShiftsToSoldier($soldier, $rotationSize);
-            if($assignedPoints > $maxAssigned){
+
+            if ($assignedPoints > $maxAssigned) {
                 $maxAssigned = $assignedPoints;
             }
             $gap = $rotationSize - $assignedPoints;
@@ -390,6 +392,7 @@ class PointedSchedule
             $course->hasGap = true;
         }
         $course->used += $maxAssigned;
+
         return true;
     }
 

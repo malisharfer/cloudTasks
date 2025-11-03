@@ -157,11 +157,7 @@ class CalendarWidget extends FullCalendarWidget
                 if (auth()->user()->getRoleNames()->count() === 1) {
                     Constraint::requestConstraint($data);
                 } else {
-                    Constraint::create([
-                        'constraint_type' => $data['constraint_type'],
-                        'start_date' => $data['start_date'],
-                        'end_date' => $data['end_date'],
-                    ]);
+                    Constraint::createConstraint($data);
                 }
             })
             ->mountUsing(function (Form $form, array $arguments) {
@@ -287,7 +283,7 @@ class CalendarWidget extends FullCalendarWidget
                             : true
                         )
                         : true;
-                    // if (! empty($arguments) && $this->model === Shift::class && isset($this->mountedActionsArguments[0]['oldEvent'])) {
+                    // if (! empty($arguments) && $this->model === Shift::class) {
                     //     $oldDate = date('l', strtotime($this->mountedActionsArguments[0]['oldEvent']['start']));
                     //     $newDate = date('l', strtotime($this->mountedActionsData[0]['start_date']));
                     //     $startOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];

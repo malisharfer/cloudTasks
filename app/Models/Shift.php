@@ -106,7 +106,6 @@ class Shift extends Model
                                     return $manual_assignment->getSoldiers();
                                 }
                             )
-                            ->searchable()
                             ->default(null)
                             ->placeholder(fn (?Shift $shift, Get $get) => self::soldierIdPlaceholder($get('soldier_type'), $shift))
                             ->visible(
@@ -149,7 +148,8 @@ class Shift extends Model
     protected static function soldierIdPlaceholder($soldierType, $shift)
     {
         if ($soldierType === 'all') {
-            return Cache::remember('users', 30 * 60, fn () => User::all()->sortBy('first_name'))->count() > 0 ? __('Select a soldier') : __('No suitable soldiers');        }
+            return Cache::remember('users', 30 * 60, fn () => User::all()->sortBy('first_name'))->count() > 0 ? __('Select a soldier') : __('No suitable soldiers');
+        }
         $manual_assignment = new ManualAssignment($shift, $soldierType);
 
         return
@@ -801,7 +801,8 @@ class Shift extends Model
                 ]),
                 Select::make('soldier_id')
                     ->label(__('Soldier'))
-                    ->options(fn (): array => Cache::remember('users', 30 * 60, fn () => User::all()->sortBy('first_name'))->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])                        ->toArray())
+                    ->options(fn (): array => Cache::remember('users', 30 * 60, fn () => User::all()->sortBy('first_name'))->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName])
+                        ->toArray())
                     ->multiple()
                     ->live()
                     ->reactive()

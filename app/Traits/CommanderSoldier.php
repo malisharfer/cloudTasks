@@ -39,6 +39,6 @@ trait CommanderSoldier
             }),
         };
 
-        return $query->get()->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName]);
+        return $query->get()->sortBy('first_name')->mapWithKeys(fn ($user) => [$user->userable_id => $user->displayName]);
     }
 }

@@ -26,7 +26,9 @@ class Charts
     {
         $data = collect([]);
         $shifts = $this->getShifts();
-        $soldiersIds = Soldier::where('course', $this->course)->pluck('id');
+        $soldiersIds = Soldier::where('course', $this->course)
+            ->where('is_reservist', false)
+            ->pluck('id');
         $shifts->each(function ($shifts, $soldierId) use (&$soldiersIds, &$data) {
             $soldiersIds = $soldiersIds->reject(function ($id) use ($soldierId) {
                 return $id == $soldierId;

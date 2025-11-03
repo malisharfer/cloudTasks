@@ -12,8 +12,8 @@ use App\Services\Algorithm;
 use App\Services\RecurringEvents;
 use Carbon\Carbon;
 use Filament\Forms\Components\Actions\Action;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -21,7 +21,6 @@ use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Widgets\Widget;
 use Maatwebsite\Excel\Facades\Excel;
-
 
 class ChartFilter extends Widget implements HasForms
 {
@@ -102,7 +101,7 @@ class ChartFilter extends Widget implements HasForms
                                     'month' => $form->getState()['year'].'-'.$form->getState()['month'],
                                 ])))
                                 ->extraAttributes(['style' => 'color: white; background-color: #a0cddf']),
-                                Action::make('Reset assignment')
+                            Action::make('Reset assignment')
                                 ->color('danger')
                                 ->label(__('Reset assignment'))
                                 ->icon('heroicon-o-arrow-path')
@@ -183,9 +182,10 @@ class ChartFilter extends Widget implements HasForms
     {
         $startDate = 
         // (Carbon::now()->format('m') == Carbon::parse($form->getState()['year'].'-'.$form->getState()['month'])->format('m'))
-        //     ? Carbon::now()->addDay()->format('Y-m-d')
-        //     : 
-            Carbon::parse($form->getState()['year'].'-'.$form->getState()['month'])->startOfMonth()->format('Y-m-d');        Shift::whereNotNull('soldier_id')
+            // ? Carbon::now()->addDay()->format('Y-m-d')
+            // :
+            Carbon::parse($form->getState()['year'].'-'.$form->getState()['month'])->startOfMonth()->format('Y-m-d');
+        Shift::whereNotNull('soldier_id')
             ->whereBetween('start_date', [$startDate, (Carbon::parse($form->getState()['year'].'-'.$form->getState()['month'])->endOfMonth()->addDay())->format('Y-m-d')])
             ->update(['soldier_id' => null, 'manually_assigned' => false]);
     }
@@ -195,7 +195,7 @@ class ChartFilter extends Widget implements HasForms
         $startDate = 
         // (Carbon::now()->format('m') == Carbon::parse($form->getState()['year'].'-'.$form->getState()['month'])->format('m'))
         //     ? Carbon::now()->addDay()->format('Y-m-d')
-        //     : 
+        //     :
             Carbon::parse($form->getState()['year'].'-'.$form->getState()['month'])->startOfMonth()->format('Y-m-d');
         Shift::whereNotNull('soldier_id')
             ->whereBetween('start_date', [$startDate, (Carbon::parse($form->getState()['year'].'-'.$form->getState()['month'])->endOfMonth()->addDay())->format('Y-m-d')])
@@ -209,7 +209,7 @@ class ChartFilter extends Widget implements HasForms
         // (Carbon::now()->format('m') == Carbon::parse($form->getState()['year'].'-'.$form->getState()['month'])->format('m'))
         //     ? Carbon::now()->addDay()->format('Y-m-d')
         //     : 
-             Carbon::parse($form->getState()['year'].'-'.$form->getState()['month'])->startOfMonth()->format('Y-m-d');
+            Carbon::parse($form->getState()['year'].'-'.$form->getState()['month'])->startOfMonth()->format('Y-m-d');
         Shift::whereBetween('start_date', [$startDate, (Carbon::parse($form->getState()['year'].'-'.$form->getState()['month'])->endOfMonth()->addDay())->format('Y-m-d')])
             ->delete();
     }

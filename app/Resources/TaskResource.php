@@ -242,10 +242,10 @@ class TaskResource extends Resource
                 ->required(),
             Select::make('parallel_weight')
                 ->options([
-                    0 => '0',
-                    0.5 => '0.5',
-                    1 => '1',
-                    2 => '2',
+                    '0' => '0',
+                    '0.5' => '0.5',
+                    '1' => '1',
+                    '2' => '2',
                 ])
                 ->label(__('Parallel weight')),
             ColorPicker::make('color')
@@ -261,7 +261,7 @@ class TaskResource extends Resource
                 ->step(0.01)
                 ->label(__('Duration'))
                 ->required(),
-                Select::make('kind')
+            Select::make('kind')
                 ->label(__('Kind'))
                 ->live()
                 ->required()
@@ -277,7 +277,6 @@ class TaskResource extends Resource
                     ->pluck('type', 'type')
                     ->all())
                 ->visible(fn (Get $get) => $get('kind') === TaskKind::INPARALLEL->value),
-
         ];
     }
 
@@ -363,12 +362,12 @@ class TaskResource extends Resource
                         ->extraAttributes(['style' => 'color: red; font-family: Arial, Helvetica, sans-serif; font-size: 20px'])
                         ->live()
                         ->visible(fn (Get $get) => $get('soldier_type') === 'all'),
-                        ])
-                        ->visible(
-                            fn (Get $get) => $get('recurring.type') == 'One time'
-                            && $get('recurring.date')
-                            && $get('kind')
-                        ),
+                ])
+                ->visible(
+                    fn (Get $get) => $get('recurring.type') == 'One time'
+                    && $get('recurring.date')
+                    && $get('kind')
+                ),
         ];
     }
 

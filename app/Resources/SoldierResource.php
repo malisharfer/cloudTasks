@@ -117,7 +117,7 @@ class SoldierResource extends Resource
                     ->sortable()
                     ->date(),
                 TextColumn::make('capacity_hold')
-                ->default(function ($record) {
+                    ->default(function ($record) {
                         $userId = $record->id;
                         $startOfMonth = now()->startOfMonth();
                         $endOfMonth = now()->endOfMonth();
@@ -128,12 +128,13 @@ class SoldierResource extends Resource
                                     ->whereBetween('start_date', [$startOfMonth, $endOfMonth])
                                     ->orWhereBetween('end_date', [$startOfMonth, $endOfMonth]);
                             })
-                            ->with(['task' => fn($q) => $q->withTrashed()])
+                            ->with(['task' => fn ($q) => $q->withTrashed()])
                             ->chunk(100, function ($shifts) use (&$total) {
                                 foreach ($shifts as $shift) {
                                     $total += $shift->parallel_weight ?? $shift->task?->parallel_weight ?? 0;
                                 }
                             });
+
                         return $total;
                     })
                     ->label(__('Capacity hold'))

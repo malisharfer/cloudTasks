@@ -104,10 +104,10 @@ class Soldier
             foreach ($spaces as $space) {
                 if (
                     $this->shifts->contains(
-                        fn(Shift $shift) => $shift->id != 0 &&
+                        fn (Shift $shift) => $shift->id != 0 &&
                         $shift->range->isConflict($space)
                     )
-                    || $this->concurrentsShifts->contains(fn(Shift $concurrentsShift) => $concurrentsShift->range->isConflict($space))
+                    || $this->concurrentsShifts->contains(fn (Shift $concurrentsShift) => $concurrentsShift->range->isConflict($space))
                 ) {
                     return false;
                 }

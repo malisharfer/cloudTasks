@@ -59,7 +59,7 @@ class Shift
         if ($this->isNight()) {
             $spaces->push(...$this->range->getNightInWeekendSpaces());
         }
-        if($this->range->start->englishDayOfWeek == DaysInWeek::THURSDAY->value){
+        if ($this->range->start->englishDayOfWeek == DaysInWeek::THURSDAY->value) {
             $spaces->push($this->range->getThursdaySpace());
         }
         if ($this->isFullWeekend($shifts)) {

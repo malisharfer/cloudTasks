@@ -10,7 +10,6 @@ use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\ToggleButtons;
@@ -57,7 +56,8 @@ class Constraint extends Model
                     && \Str::contains($_SERVER['HTTP_REFERER'], 'my-soldiers-constraint')
                 )
                 ->options(fn () => CommanderSoldier::getCommanderSoldier())
-                ->afterStateUpdated(fn ($state) => session()->put('soldier_id', $state))
+                ->afterStateUpdated(fn ($state) => session()->put('soldiers_ids', $state))
+                ->multiple(fn ($get) => $get('id') === null)
                 ->required(),
             ToggleButtons::make('constraint_type')
                 ->required()
@@ -75,12 +75,6 @@ class Constraint extends Model
                 ->options(fn (Constraint $constraint) => [
                     $constraint->constraint_type->getLabel(),
                 ]),
-            // Hidden::make('start_date')
-            //     ->label(__('Start date'))
-            //     ->required(),
-            // Hidden::make('end_date')
-            //     ->label(__('End date'))
-            //     ->required(),
             Placeholder::make('')
                 ->content(__('The constraint will only be approved after approval by the commander'))
                 ->visible(fn () => auth()->user()->getRoleNames()->count() === 1)
@@ -302,23 +296,33 @@ class Constraint extends Model
         }
     }
 
+    public static function createConstraint($data)
+    {
+        $soldiers = self::getCurrentUserSoldier();
+        $soldiers = gettype($soldiers) == 'integer' ? [$soldiers] : $soldiers;
+        collect($soldiers)->each(function ($soldierId) use ($data) {
+            $constraint = new Constraint;
+            $constraint->soldier_id = $soldierId;
+            $constraint->constraint_type = $data['constraint_type'];
+            $constraint->start_date = $data['start_date'];
+            $constraint->end_date = $data['end_date'];
+            $constraint->save();
+        });
+        session()->put('soldiers_ids', null);
+    }
+
     protected static function booted()
     {
-        static::creating(function ($constraint) {
-            $constraint->soldier_id = $constraint->soldier_id ?: ($constraint->getCurrentUserSoldier() ?: null);
-            session()->put('soldier_id', null);
-        });
-
         static::updating(function ($constraint) {
             $constraint->soldier_id = $constraint->soldier_id ?: ($constraint->getCurrentUserSoldier() ?: null);
-            session()->put('soldier_id', null);
+            session()->put('soldiers_ids', null);
         });
     }
 
-    private function getCurrentUserSoldier()
+    protected static function getCurrentUserSoldier()
     {
-        if (session()->get('soldier_id')) {
-            return session()->get('soldier_id');
+        if (session()->get('soldiers_ids')) {
+            return session()->get('soldiers_ids');
         }
         $user = auth()->user();
         if ($user && $user->userable instanceof Soldier) {

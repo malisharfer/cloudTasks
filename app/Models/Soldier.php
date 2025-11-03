@@ -88,7 +88,7 @@ class Soldier extends Model
     {
         return $this->hasMany(Constraint::class);
     }
-    
+
     public function shifts(): HasMany
     {
         return $this->hasMany(Shift::class);
@@ -113,7 +113,7 @@ class Soldier extends Model
             Constraint::where('soldier_id', $record->id)
                 ->delete();
             Team::where('commander_id', $record->id)->update(['commander_id' => null]);
-            Department::where('commander_id', $record->id)->update(['commander_id' => null]);    
+            Department::where('commander_id', $record->id)->update(['commander_id' => null]);
         });
     }
 }

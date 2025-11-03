@@ -60,11 +60,12 @@ class Range
         $startHour = $this->start->hour;
         $endTomorrow = $this->end->copy()->addDay();
         $startSpaceDay = ($startHour >= '0' && $startHour <= '3') ?
-            $this->start->copy()->subDay():
+            $this->start->copy()->subDay() :
             $this->start->copy();
+
         return [
-            new Range($startSpaceDay->setHour(00), $this->start),
-            new Range($this->end,$endTomorrow->setHour(7)->setminutes(59)),
+            new Range($startSpaceDay->setHour(00)->setMinutes(00), $this->start),
+            new Range($this->end, $endTomorrow->setHour(7)->setminutes(59)),
         ];
     }
 
@@ -85,8 +86,9 @@ class Range
         $startHour = $this->start->hour;
         $endTomorrow = $this->end->copy()->addDay();
         $spaceStartDay = ($startHour >= '0' && $startHour <= '3') ?
-            $this->start->copy()->subDay():
+            $this->start->copy()->subDay() :
             $this->start->copy();
+
         return [
             new Range($spaceStartDay->copy()->setHour(00)->setMinutes(00), $this->start),
             new Range($endTomorrow->copy()->setHour(00)->setMinutes(00), $endTomorrow->copy()->setHour(7)->setMinutes(59)),
@@ -95,7 +97,6 @@ class Range
 
     public function getThursdaySpace()
     {
-        return new Range($this->end, $this->end->copy()->next(Carbon::SUNDAY)->setHour(7)->setMinutes(59));        
+        return new Range($this->end, $this->end->copy()->next(Carbon::SUNDAY)->setHour(7)->setMinutes(59));
     }
-
 }

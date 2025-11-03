@@ -176,7 +176,7 @@ class NotPointedSchedule
             ->values()
             ->all();
 
-        return new Course($number, $capacity, $sortedSoldiers);
+        return new Course($number, $capacity, $this->maxName, $sortedSoldiers);
     }
 
     protected function getSoldierWeight(Soldier $soldier)
@@ -194,10 +194,10 @@ class NotPointedSchedule
     protected function assignShiftsForCourse(Course $course)
     {
         $courseGap = 0;
-        while ($course->remaining($this->maxName) > 0 && $courseGap < $this->allowedGap && $this->isUnassignedShiftsExist()) {
+        while ($course->remaining() > 0 && $courseGap < $this->allowedGap && $this->isUnassignedShiftsExist()) {
             $rotationResult = $this->rotation($course);
             if ($rotationResult == RotationResult::SUCCESS_WITH_GAP) {
-                $courseGap += 1;                
+                $courseGap += 1;
             }
             $course->used += 1;
         }
@@ -211,7 +211,7 @@ class NotPointedSchedule
     protected function rotation(Course $course)
     {
         $isGapExists = false;
-        $soldiers = $course->soldiers->filter(fn(Soldier $soldier)=>$soldier->{$this->maxName}->used <= $course->used);
+        $soldiers = $course->soldiers->filter(fn (Soldier $soldier) => $soldier->{$this->maxName}->used <= $course->used);
         collect($soldiers)->each(function (Soldier $soldier) use (&$isGapExists) {
             $success = $this->assignRotationShiftToSoldier($soldier);
             if (! $success) {
