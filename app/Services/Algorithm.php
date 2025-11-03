@@ -51,7 +51,7 @@ class Algorithm
             ->map(function (Soldier $soldier) {
                 $constraints = Helpers::buildConstraints($soldier->constraints);
 
-                Helpers::mapSoldierShifts($soldier->shifts, false);
+                $shifts = Helpers::mapSoldierShifts($soldier->shifts, false);
 
                 $shifts->push(...Helpers::addShiftsSpaces($shifts));
                 $shifts->push(...Helpers::addPrevMonthSpaces($soldier->id, $this->date));
