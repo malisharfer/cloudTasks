@@ -120,6 +120,7 @@ class RecurringEvents
             CarbonPeriod::between($this->month->copy()->startOfMonth(), $this->month->copy()->endOfMonth());
     }
 
+
     protected function createShifts(array $dates)
     {
         collect($dates)->map(function ($date) {

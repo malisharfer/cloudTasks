@@ -126,13 +126,13 @@ class ManualAssignment
             ->map(
                 function (Soldier $soldier) {
                     $constraints = Helpers::buildConstraints($soldier->constraints);
-                    $soldiersShifts = $this->mapSoldierShifts($soldier->shifts, false);
-                    $concurrentsShifts = $this->mapSoldierShifts($soldier->shifts, true);
+                    $soldiersShifts = Helpers::mapSoldierShifts($soldier->shifts, false);
+                    $concurrentsShifts = Helpers::mapSoldierShifts($soldier->shifts, true);
 
                     $soldiersShifts->push(...Helpers::addShiftsSpaces($soldiersShifts));
 
                     $soldiersShifts->push(...Helpers::addPrevMonthSpaces($soldier->id, $this->shift->range->start));
-                    $capacityHold = Helpers::capacityHold($soldiersShifts);
+                    $capacityHold = Helpers::capacityHold($soldiersShifts, $concurrentsShifts);
 
                     return Helpers::buildSoldier($soldier, $constraints, $soldiersShifts, $capacityHold, $concurrentsShifts);
                 }
@@ -146,24 +146,18 @@ class ManualAssignment
         $constraints = Helpers::buildConstraints($me->constraints);
         $myShifts = $this->mapSoldierShifts($me->shifts, false);
 
+        $myShifts = Helpers::mapSoldierShifts($me->shifts, false);
+
         $myShifts->push(...Helpers::addShiftsSpaces($myShifts));
 
-        $concurrentsShifts = $this->mapSoldierShifts($me->shifts, true);
+        $concurrentsShifts = Helpers::mapSoldierShifts($me->shifts, true);
         $myShifts->push(...Helpers::addPrevMonthSpaces($me->id, $this->shift->range->start));
-        $capacityHold = Helpers::capacityHold($myShifts);
+        $capacityHold = Helpers::capacityHold($myShifts, $concurrentsShifts);
 
         $soldier = Helpers::buildSoldier($me, $constraints, $myShifts, $capacityHold, $concurrentsShifts);
 
         return $soldier->isAbleTake($this->shift, true)
             && $soldier->isAvailableByConcurrentsShifts($this->shift);
-    }
-
-    protected function mapSoldierShifts($shifts, $inParallel)
-    {
-        return $shifts->filter(fn (Shift $shift) => $inParallel
-            ? $shift->task->kind == TaskKind::INPARALLEL->value
-            : $shift->task->kind != TaskKind::INPARALLEL->value)
-            ->map(fn (Shift $shift): ShiftService => Helpers::buildShift($shift));
     }
 
     protected function getAvailableSoldiers()

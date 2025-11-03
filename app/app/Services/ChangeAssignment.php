@@ -27,12 +27,12 @@ class ChangeAssignment
 
         $constraints = Helpers::buildConstraints($soldier->constraints);
 
-        $shifts = $this->mapSoldierShifts($soldier->shifts, false);
+        $shifts = Helpers::mapSoldierShifts($soldier->shifts, false);
 
         $shifts->push(...Helpers::addShiftsSpaces($shifts));
         $shifts->push(...Helpers::addPrevMonthSpaces($soldier->id, $this->shift->range->start));
 
-        $concurrentsShifts = $this->mapSoldierShifts($soldier->shifts, true);
+        $concurrentsShifts = Helpers::mapSoldierShifts($soldier->shifts, true);
 
         return Helpers::buildSoldier($soldier, $constraints, $shifts, [], $concurrentsShifts);
     }
@@ -46,11 +46,11 @@ class ChangeAssignment
             ->map(function ($soldier) {
                 $constraints = Helpers::buildConstraints($soldier->constraints);
 
-                $soldierShifts = $this->mapSoldierShifts($soldier->shifts, false);
+                $soldierShifts = Helpers::mapSoldierShifts($soldier->shifts, false);
 
                 $soldierShifts->push(...Helpers::addShiftsSpaces($soldierShifts));
 
-                $concurrentsShifts = $this->mapSoldierShifts($soldier->shifts, true);
+                $concurrentsShifts = Helpers::mapSoldierShifts($soldier->shifts, true);
 
                 $soldierShifts->push(...Helpers::addPrevMonthSpaces($soldier->id, $this->shift->range->start));
 
@@ -100,11 +100,11 @@ class ChangeAssignment
                 $soldierDetails = Soldier::with($this->withRelations())->find($soldier_id);
                 $constraints = Helpers::buildConstraints($soldierDetails->constraints);
 
-                $soldierShifts = $this->mapSoldierShifts($soldierDetails->shifts, false);
+                $soldierShifts = Helpers::mapSoldierShifts($soldierDetails->shifts, false);
 
                 $soldierShifts->push(...Helpers::addShiftsSpaces($soldierShifts));
 
-                $concurrentsShifts = $this->mapSoldierShifts($soldierDetails->shifts, true);
+                $concurrentsShifts = Helpers::mapSoldierShifts($soldierDetails->shifts, true);
 
                 $soldierShifts->push(...Helpers::addPrevMonthSpaces($soldierDetails->id, $this->shift->range->start));
                 $soldier = Helpers::buildSoldier($soldierDetails, $constraints, $soldierShifts, [], $concurrentsShifts);
@@ -124,14 +124,6 @@ class ChangeAssignment
             });
 
         return $data;
-    }
-
-    protected function mapSoldierShifts($shifts, $inParallel)
-    {
-        return $shifts->filter(fn (Shift $shift) => $inParallel
-            ? $shift->task->kind == TaskKind::INPARALLEL->value
-            : $shift->task->kind != TaskKind::INPARALLEL->value)
-            ->map(fn (Shift $shift): ShiftService => Helpers::buildShift($shift));
     }
 
     protected function withRelations(): array

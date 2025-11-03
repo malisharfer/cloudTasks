@@ -93,7 +93,7 @@ class MyDatabaseNotifications extends DatabaseNotifications
             [],
             $soldierB->user
         );
-        if ($requesterId != $soldierAId->user->id && $requesterId != $soldierBId->user->id) {
+        if ($requesterId != $soldierAId && $requesterId != $soldierBId) {
             $this->sendNotification(
                 __('Exchange shift'),
                 __(
@@ -267,7 +267,7 @@ class MyDatabaseNotifications extends DatabaseNotifications
                 $soldierB->user
             );
         }
-        if ($requesterId != $soldierAId->user->id && $requesterId != $soldierBId->user->id) {
+        if ($requesterId != $soldierAId && $requesterId != $soldierBId) {
             $this->sendNotification(
                 __('Deny exchange shift request'),
                 __(

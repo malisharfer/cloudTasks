@@ -35,7 +35,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.REGISTRY_LOGIN_SERVER }}/love_48
+          images: ${{ secrets.REGISTRY_LOGIN_SERVER }}/newspace2_2
           flavor: |
             latest=false
           tags: |

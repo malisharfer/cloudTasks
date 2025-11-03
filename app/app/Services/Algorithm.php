@@ -51,22 +51,17 @@ class Algorithm
             ->map(function (Soldier $soldier) {
                 $constraints = Helpers::buildConstraints($soldier->constraints);
 
-                $shifts = $soldier->shifts->map(fn (Shift $shift): ShiftService => Helpers::buildShift($shift));
+                Helpers::mapSoldierShifts($soldier->shifts, false);
 
                 $shifts->push(...Helpers::addShiftsSpaces($shifts));
                 $shifts->push(...Helpers::addPrevMonthSpaces($soldier->id, $this->date));
 
-                $capacityHold = Helpers::capacityHold($shifts);
+                $capacityHold = Helpers::capacityHold($shifts, []);
 
                 return Helpers::buildSoldier($soldier, $constraints, $shifts, $capacityHold);
             })
             ->filter(fn ($soldier) => $soldier->hasMaxes())
             ->shuffle();
-    }
-
-    protected function getSoldiersShifts($soldierId, $inParallel)
-    {
-        return Helpers::getSoldiersShifts($soldierId, new Range($this->date->copy()->startOfMonth(), $this->date->copy()->endOfMonth()), $inParallel);
     }
 
     public function run()
