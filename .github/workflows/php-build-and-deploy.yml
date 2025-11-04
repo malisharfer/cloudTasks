@@ -28,7 +28,7 @@ jobs:
         uses: azure/docker-login@v1
         with:
           login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
-          username: ${{ secrets.AZ_USERNAME }
+          username: ${{ secrets.AZ_USERNAME }}
           password: ${{ secrets.AZ_PASSWORD }}
 
       - name: 📃 Docker metadata
