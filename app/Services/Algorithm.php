@@ -19,11 +19,12 @@ class Algorithm
 
     protected function getShiftWithTasks()
     {
-        // $startOfMonth = max($this->date->copy()->startOfMonth(), Carbon::tomorrow());
         $startOfMonth = $this->date->copy()->startOfMonth();
         $endOfMonth = $this->date->copy()->endOfMonth();
 
-        return Shift::query()
+        $results = collect();
+
+        Shift::query()
             ->with(['task' => fn ($q) => $q->withTrashed()])
             ->whereNull('soldier_id')
             ->whereBetween('start_date', [$startOfMonth, $endOfMonth])
@@ -31,40 +32,51 @@ class Algorithm
                 $query->withTrashed()
                     ->where('kind', '!=', TaskKind::INPARALLEL->value);
             })
-            ->lazy()
-            ->map(fn (Shift $shift): ShiftService => Helpers::buildShift($shift));
+            ->chunk(300, function ($shifts) use (&$results) {
+                $mapped = $shifts->map(fn (Shift $shift): ShiftService => Helpers::buildShift($shift));
+                $results = $results->merge($mapped);
+            });
+
+        return $results;
     }
 
     protected function getSoldiersDetails()
     {
-        $range = new Range($this->date->copy()->startOfMonth(), $this->date->copy()->endOfMonth());
+        $range = new Range(
+            $this->date->copy()->startOfMonth(),
+            $this->date->copy()->endOfMonth()
+        );
 
-        return Soldier::where('is_reservist', false)
+        $results = collect();
+
+        Soldier::where('is_reservist', false)
             ->with([
-                'constraints' => fn ($q) => $q->whereBetween('start_date', [$range->start, $range->end]),
-                'shifts' => fn ($q) => $q->whereBetween('start_date', [$range->start, $range->end])
+                'constraints' => fn($q) => $q->whereBetween('start_date', [$range->start, $range->end]),
+                'shifts' => fn($q) => $q->whereBetween('start_date', [$range->start, $range->end])
                     ->whereHas('task', function ($query) {
                         $query->withTrashed()->where('kind', '!=', TaskKind::INPARALLEL->value);
                     }),
             ])
-            ->lazy()
-            ->map(function (Soldier $soldier) {
-                $constraints = Helpers::buildConstraints($soldier->constraints);
+            ->chunk(100, function ($soldiers) use (&$results) {
+                $mapped = $soldiers
+                    ->map(function (Soldier $soldier) {
+                        $constraints = Helpers::buildConstraints($soldier->constraints);
 
-                $shifts = Helpers::mapSoldierShifts($soldier->shifts, false);
+                        $shifts = Helpers::mapSoldierShifts($soldier->shifts, false);
+                        $shifts->push(...Helpers::addShiftsSpaces($shifts));
+                        $shifts->push(...Helpers::addPrevMonthSpaces($soldier->id, now()));
 
-                $shifts->push(...Helpers::addShiftsSpaces($shifts));
-                $shifts->push(...Helpers::addPrevMonthSpaces($soldier->id, $this->date));
+                        $capacityHold = Helpers::capacityHold($shifts, []);
 
-                $capacityHold = Helpers::capacityHold($shifts, []);
+                        return Helpers::buildSoldier($soldier, $constraints, $shifts, $capacityHold);
+                    })
+                    ->filter(fn($soldier) => $soldier->hasMaxes());
 
-                return Helpers::buildSoldier($soldier, $constraints, $shifts, $capacityHold);
-            })
-            ->filter(fn ($soldier) => $soldier->hasMaxes())
-            ->shuffle();
-    }
+                $results = $results->merge($mapped);
+            });
 
-    public function run()
+        return $results->shuffle();
+    }    public function run()
     {
         $shifts = $this->getShiftWithTasks();
         $soldiers = $this->getSoldiersDetails();

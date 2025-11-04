@@ -132,7 +132,9 @@ class Helpers
 
     protected static function getLastDayOfLastMonthShifts($soldierId, $lastDay)
     {
-        return Shift::where('soldier_id', $soldierId)
+        $results = collect();
+
+        Shift::where('soldier_id', $soldierId)
             ->where(function ($query) use ($lastDay) {
                 $query->whereDate('start_date', $lastDay)
                     ->orWhereDate('end_date', $lastDay);
@@ -140,13 +142,17 @@ class Helpers
             ->whereHas('task', function ($query) {
                 $query->withTrashed()->where('kind', '!=', TaskKind::INPARALLEL->value);
             })
-            ->lazy()
-            ->map(fn (Shift $shift): ShiftService => self::buildShift($shift));
+            ->chunk(100, function ($shifts) use (&$results) {
+                $mapped = $shifts->map(fn (Shift $shift): ShiftService => self::buildShift($shift));
+                $results = $results->merge($mapped);
+            });
+
+        return $results;
     }
 
     public static function updateShiftTable($assignments)
     {
-        set_time_limit(seconds: 0);
+        // set_time_limit(seconds: 0);
         if (empty($assignments)) {
             return;
         }
