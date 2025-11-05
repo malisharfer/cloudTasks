@@ -29,7 +29,6 @@ class CourceSheet implements FromCollection, ShouldAutoSize, WithEvents, WithHea
 
     public function __construct($month, $course)
     {
-        set_time_limit(0);
         $this->month = $month;
         $this->course = $course;
         $this->shifts = Shift::whereNotNull('soldier_id')

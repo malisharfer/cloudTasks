@@ -341,5 +341,18 @@
     "Which assignment to reset?": "איזה שיבוץ לאפס?",
     "Automatic assignment": "אוטומטי",
     "Manual assignment": "ידני",
-    "All assignment": "הכל"
+    "All assignment": "הכל",
+    "Predicting problems": "חיזוי בעיות",
+    "Weekend tasks not pointed":"משימות סופש לא מנוקדות",
+    "Soldiers with capacity without qualifications":"חיילים ללא הסמכות עם יכולות",
+    "Tasks with incorrect points":"משימות עם ניקוד שגוי",
+    "Qualified soldiers unable to perform shifts":"חיילים מוסמכים ללא יכולות",
+    "Tasks without qualified soldiers":"משימות ללא חיילים מוסמכים",
+    "Tasks without enough available soldiers":"משימות ללא מספיק חיילים היכולים לבצען",
+    "Required VS Available Sentence":":type. :kind: נדרש: :required, זמין: :available.",
+    "Soldiers whose maximum nights are greater than the maximum shifts":"חיילים שהמקסימום לילות שלהם גדול מהמקסימום משמרות",
+    "Soldiers whose maximum weekends are greater than the capacity":"חיילים שהמקסימום סופשים שלהם גדול מסך הנקודות",
+    "Soldiers with capacity without available shifts sentence": "לחייל :name מוגדר :max גדול מ - 0, אך אין לו משמרות מתאימות מסוג זה",
+    "Soldiers with abilities and authority without appropriate shifts":"חיילים עם יכולות והסמכות ללא משמרות מתאימות ",
+    "Unassigned course":"קורס לא נמצא"
 }

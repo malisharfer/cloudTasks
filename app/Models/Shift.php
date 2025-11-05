@@ -8,6 +8,7 @@ use App\Filament\Notifications\MyNotification;
 use App\Services\ChangeAssignment;
 use App\Services\ManualAssignment;
 use App\Traits\EventsByRole;
+use App\Traits\TrimsAttributes;
 use Cache;
 use Carbon\Carbon;
 use Filament\Actions\Action;
@@ -29,8 +30,7 @@ use Livewire\Component;
 
 class Shift extends Model
 {
-    use EventsByRole;
-    use HasFactory;
+    use EventsByRole, HasFactory, TrimsAttributes;
 
     protected $fillable = [
         'parallel_weight',

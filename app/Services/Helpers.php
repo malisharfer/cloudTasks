@@ -117,8 +117,8 @@ class Helpers
     public static function mapSoldierShifts($shifts, $inParallel)
     {
         return $shifts->filter(fn (Shift $shift) => $inParallel
-            ? $shift->task()->withTrashed()->first()->kind == TaskKind::INPARALLEL->value
-            : $shift->task()->withTrashed()->first()->kind != TaskKind::INPARALLEL->value)
+            ? $shift?->task?->kind == TaskKind::INPARALLEL->value
+            : $shift?->task?->kind != TaskKind::INPARALLEL->value)
             ->map(fn (Shift $shift): ShiftService => Helpers::buildShift($shift));
     }
 
@@ -132,9 +132,7 @@ class Helpers
 
     protected static function getLastDayOfLastMonthShifts($soldierId, $lastDay)
     {
-        $results = collect();
-
-        Shift::where('soldier_id', $soldierId)
+        return Shift::where('soldier_id', $soldierId)
             ->where(function ($query) use ($lastDay) {
                 $query->whereDate('start_date', $lastDay)
                     ->orWhereDate('end_date', $lastDay);
@@ -142,17 +140,12 @@ class Helpers
             ->whereHas('task', function ($query) {
                 $query->withTrashed()->where('kind', '!=', TaskKind::INPARALLEL->value);
             })
-            ->chunk(100, function ($shifts) use (&$results) {
-                $mapped = $shifts->map(fn (Shift $shift): ShiftService => self::buildShift($shift));
-                $results = $results->merge($mapped);
-            });
-
-        return $results;
+            ->lazy()
+            ->map(fn (Shift $shift): ShiftService => self::buildShift($shift));
     }
 
     public static function updateShiftTable($assignments)
     {
-        // set_time_limit(seconds: 0);
         if (empty($assignments)) {
             return;
         }

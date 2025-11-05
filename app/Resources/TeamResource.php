@@ -128,8 +128,22 @@ class TeamResource extends Resource
                                 });
                             });
                         }
-                    ),
-                    // ->sortable(),
+                    )
+                    ->sortable(query: function ($query, string $direction): void {
+                        $query
+                            ->orderBy(
+                                User::select('last_name')
+                                    ->whereColumn('users.userable_id', 'teams.commander_id')
+                                    ->limit(1),
+                                $direction
+                            )
+                            ->orderBy(
+                                User::select('first_name')
+                                    ->whereColumn('users.userable_id', 'teams.commander_id')
+                                    ->limit(1),
+                                $direction
+                            );
+                    }),
                 TextColumn::make('department.name')
                     ->label(__('Department'))
                     ->url(fn (Team $record): string => route('filament.app.resources.departments.index', ['department_id' => $record->department_id]))

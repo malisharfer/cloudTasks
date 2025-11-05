@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ConstraintType;
 use App\Traits\CommanderSoldier;
 use App\Traits\EventsByRole;
+use App\Traits\TrimsAttributes;
 use Cache;
 use Carbon\Carbon;
 use Filament\Actions\Action;
@@ -22,8 +23,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Constraint extends Model
 {
-    use EventsByRole;
-    use HasFactory;
+    use EventsByRole, HasFactory, TrimsAttributes;
 
     protected $fillable = [
         'constraint_type',

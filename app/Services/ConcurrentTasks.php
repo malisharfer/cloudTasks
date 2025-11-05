@@ -40,12 +40,11 @@ class ConcurrentTasks
 
     protected function getShiftsWithTasks()
     {
+        // $startOfMonth = max($this->date->copy()->startOfMonth(), Carbon::tomorrow());
         $startOfMonth = $this->date->copy()->startOfMonth();
         $endOfMonth = $this->date->copy()->endOfMonth();
 
-        $results = collect();
-
-        Shift::whereNull('soldier_id')
+        return Shift::whereNull('soldier_id')
             ->where(function ($query) use ($startOfMonth, $endOfMonth) {
                 $query->where('start_date', '<=', $endOfMonth)
                     ->where('start_date', '>=', $startOfMonth);
@@ -54,13 +53,10 @@ class ConcurrentTasks
                 $query->withTrashed()
                     ->where('kind', TaskKind::INPARALLEL->value);
             })
-            ->chunk(500, function ($shifts) use (&$results) {
-                $mapped = $shifts->map(fn (Shift $shift): ShiftService => Helpers::buildShift($shift));
-                $results = $results->merge($mapped);
-            });
-
-        return $results;
+            ->get()
+            ->map(fn (Shift $shift): ShiftService => Helpers::buildShift($shift));
     }
+
     protected function getSoldiersDetails()
     {
         $range = new Range($this->date->copy()->startOfMonth(), $this->date->copy()->endOfMonth());

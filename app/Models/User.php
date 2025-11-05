@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\TrimsAttributes;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasName;
 use Filament\Panel;
@@ -15,7 +16,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser, HasName
 {
-    use HasFactory, HasPermissions, HasRoles, Notifiable;
+    use HasFactory, HasPermissions, HasRoles, Notifiable, TrimsAttributes;
 
     protected $fillable = [
         'first_name',

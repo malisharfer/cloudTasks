@@ -9,9 +9,11 @@ use App\Models\Shift;
 use App\Models\Soldier;
 use App\Models\Task;
 use App\Services\Algorithm;
+use App\Services\PredictingProblems;
 use App\Services\RecurringEvents;
 use Carbon\Carbon;
 use Filament\Forms\Components\Actions\Action;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -20,6 +22,7 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Widgets\Widget;
+use Illuminate\Support\HtmlString;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ChartFilter extends Widget implements HasForms
@@ -142,6 +145,46 @@ class ChartFilter extends Widget implements HasForms
                                     'month' => $form->getState()['year'].'-'.$form->getState()['month'],
                                 ])))
                                 ->icon('heroicon-o-x-circle'),
+                                Action::make('Data problems')
+                                ->color('danger')
+                                ->label(__('Predicting problems'))
+                                ->icon('heroicon-s-exclamation-triangle')
+                                ->modalHeading(__('Predicting problems'))
+                                ->modalSubmitAction(false)
+                                ->modalCancelAction(false)
+                                ->form(function () use ($form) {
+                                    $data = new PredictingProblems($form->getState()['year'].'-'.$form->getState()['month']);
+                                    $data = $data->getData();
+
+                                    return collect($data)->map(function ($value, $key) {
+                                        return Section::make($key)
+                                            ->collapsible()
+                                            ->collapsed()
+                                            ->schema([
+                                                Placeholder::make('')
+                                                    ->content(
+                                                        new HtmlString(
+                                                            collect($value)->map(function ($val) {
+                                                                if ($val instanceof \Illuminate\Support\Collection) {
+                                                                    $title = '<strong>'.e($val->first()).'</strong>';
+                                                                    $soldiers = $val->slice(1);
+
+                                                                    return '
+                                                                        <details style="margin-bottom:8px;">
+                                                                            <summary>'.$title.'</summary>
+                                                                            <div style="margin-right:1rem;">'.
+                                                                                new HtmlString($soldiers->map(fn ($s) => e($s))->join('<br>')).
+                                                                            '</div>
+                                                                        </details>
+                                                                    ';
+                                                                }
+
+                                                                return e($val);
+                                                            })->join('<br>'))
+                                                    ),
+                                            ]);
+                                    })->toArray();
+                                }),
                         ]
                     )
                     ->footerActions(

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\Integer;
+use App\Traits\TrimsAttributes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class Soldier extends Model
 {
-    use HasFactory;
+    use HasFactory, TrimsAttributes;
 
     protected $fillable = [
         'type',

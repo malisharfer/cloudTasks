@@ -2,11 +2,9 @@
 
 namespace App\Services;
 
-use App\Enums\TaskKind;
 use App\Models\Shift;
 use App\Models\Soldier;
 use App\Services\Constraint as ConstraintService;
-use App\Services\Shift as ShiftService;
 use App\Services\Soldier as SoldierService;
 
 class ChangeAssignment

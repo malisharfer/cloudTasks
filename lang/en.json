@@ -54,5 +54,7 @@
     "The assignment has been reset":"The assignment of <strong>:month</strong> has been reset.",
     "The shifts have been deleted":"The shifts of <strong>:month</strong> have been deleted.",
     "Reset assignment confirmation modal heading":"Reset assignment of <strong>:month</strong>",
-    "Delete shifts confirmation modal heading":"Delete shifts of <strong>:month</strong>"
+    "Delete shifts confirmation modal heading":"Delete shifts of <strong>:month</strong>",
+    "Required VS Available Sentence":":type. :kind : Required: :required, Available: :available.",
+    "Soldiers with capacity without available shifts sentence":"Soldier :name has a :max greater than 0, but has no suitable shifts of this type"
 }

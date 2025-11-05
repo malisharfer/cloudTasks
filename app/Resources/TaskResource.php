@@ -241,6 +241,7 @@ class TaskResource extends Resource
                 ->label(__('Type'))
                 ->required(),
             Select::make('parallel_weight')
+                ->default('0')
                 ->options([
                     '0' => '0',
                     '0.5' => '0.5',

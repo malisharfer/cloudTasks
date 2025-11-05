@@ -146,8 +146,6 @@ class ManualAssignment
         $constraints = Helpers::buildConstraints($me->constraints);
         $myShifts = Helpers::mapSoldierShifts($me->shifts, false);
 
-        $myShifts = Helpers::mapSoldierShifts($me->shifts, false);
-
         $myShifts->push(...Helpers::addShiftsSpaces($myShifts));
 
         $concurrentsShifts = Helpers::mapSoldierShifts($me->shifts, true);
