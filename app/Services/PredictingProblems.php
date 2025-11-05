@@ -26,6 +26,7 @@ class PredictingProblems
 
     public function getData()
     {
+        set_time_limit(0);
         $this->maxNightsGreaterThanMaxShifts();
         $this->maxWeekendsGreaterThanCapacity();
         $this->weekendTasksNotPointed();
