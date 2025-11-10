@@ -81,9 +81,9 @@ class PredictingProblems
             ->select('tasks.type', 'tasks.name', 'shifts.start_date', 'shifts.end_date');
 
         if ($isWeekendCondition) {
-            $query->where('is_weekend', true);
+            $query->where('shifts.is_weekend', true);
         } else {
-            $query->where('is_weekend', '!=', true)
+            $query->where('shifts.is_weekend', '!=', true)
                 ->where('tasks.kind', TaskKind::WEEKEND->value);
         }
 
