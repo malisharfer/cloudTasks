@@ -128,10 +128,14 @@ class Shift extends Model
                     ->hiddenOn('view'),
                 Toggle::make('is_weekend')
                     ->label(__('Is weekend')),
-                TextInput::make('parallel_weight')
-                    ->numeric()
-                    ->minValue(0)
-                    ->step(0.25)
+                Select::make('parallel_weight')
+                    ->default('0')
+                    ->options([
+                        '0' => '0',
+                        '0.5' => '0.5',
+                        '1' => '1',
+                        '2' => '2',
+                    ])
                     ->label(__('Parallel weight')),
                 DateTimePicker::make('start_date')
                     ->label(__('Start date'))

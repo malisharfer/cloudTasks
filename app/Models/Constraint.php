@@ -84,7 +84,7 @@ class Constraint extends Model
                 ->schema([
                     DateTimePicker::make('start_date')
                         ->label(__('Start date'))
-                        ->minDate(today())
+                        // ->minDate(today())
                         ->native(true)
                         ->required(),
                     DateTimePicker::make('end_date')

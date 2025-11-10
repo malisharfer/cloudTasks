@@ -7,10 +7,10 @@ use App\Enums\TaskKind;
 use App\Models\Shift;
 use App\Models\Soldier;
 use App\Models\Task;
-use App\Models\User;
 use App\Services\Shift as ShiftService;
 use App\Services\Soldier as SoldierService;
 use Carbon\Carbon;
+use Illuminate\Support\HtmlString;
 
 class PredictingProblems
 {
@@ -26,78 +26,106 @@ class PredictingProblems
 
     public function getData()
     {
-        set_time_limit(0);
         $this->maxNightsGreaterThanMaxShifts();
         $this->maxWeekendsGreaterThanCapacity();
-        $this->weekendTasksNotPointed();
+        $this->weekendShiftsNotPointed();
         $this->wrongTasksWeight();
+        $this->wrongShiftsWeight();
         $this->soldiersWithQualificationsWithoutCapacity();
         $this->soldiersWithCapacityWithoutQualifications();
         $this->taskWithoutQualifiedSoldier();
         $this->shiftsWithoutEnoughAvailablesSoldiers();
-        $this->soldiersWithCapacityWithoutAvailableTasks();
+        $this->soldiersWithCapacityWithoutAvailableShifts();
 
         return $this->data;
     }
 
     protected function maxNightsGreaterThanMaxShifts()
     {
-        $maxNightsGreaterThanMaxShifts = collect();
-        Soldier::whereColumn('max_shifts', '<', 'max_nights')
-            ->get()
-            ->groupBy('course')
-            ->sortKeys()
-            ->each(function ($soldiers, $course) use (&$maxNightsGreaterThanMaxShifts) {
-                $courseNumber = $course ?: __('Unassigned course');
-
-                $soldierNames = $soldiers
-                    ->map(fn ($soldier) => $soldier->user?->displayName)
-                    ->filter()
-                    ->values();
-
-                if ($soldierNames->isNotEmpty()) {
-                    $maxNightsGreaterThanMaxShifts->push(
-                        collect([__('Course').' '.$courseNumber])->merge($soldierNames)
-                    );
-                }
-            });
-        if ($maxNightsGreaterThanMaxShifts->isNotEmpty()) {
-            $this->data->put(__('Soldiers whose maximum nights are greater than the maximum shifts'), $maxNightsGreaterThanMaxShifts);
-        }
+        $this->compareSoldierColumns(
+            'max_shifts',
+            'max_nights',
+            'Soldiers whose maximum nights are greater than the maximum shifts'
+        );
     }
 
     protected function maxWeekendsGreaterThanCapacity()
     {
-        $maxWeekendsGreaterThanCapacity = collect();
-        Soldier::whereColumn('capacity', '<', 'max_weekends')
-            ->get()
-            ->groupBy('course')
-            ->sortKeys()
-            ->each(function ($soldiers, $course) use (&$maxWeekendsGreaterThanCapacity) {
-                $courseNumber = $course ?: __('Unassigned course');
-                $soldierNames = $soldiers
-                    ->map(fn ($soldier) => $soldier->user?->displayName)
-                    ->filter()
-                    ->values();
-                if ($soldierNames->isNotEmpty()) {
-                    $maxWeekendsGreaterThanCapacity->push(
-                        collect([__('Course').' '.$courseNumber])->merge($soldierNames)
-                    );
-                }
-            });
-        if ($maxWeekendsGreaterThanCapacity->isNotEmpty()) {
-            $this->data->put(__('Soldiers whose maximum weekends are greater than the capacity'), $maxWeekendsGreaterThanCapacity);
+        $this->compareSoldierColumns(
+            'capacity',
+            'max_weekends',
+            'Soldiers whose maximum weekends are greater than the capacity'
+        );
+    }
+
+    protected function compareSoldierColumns($columnLeft, $columnRight, $title)
+    {
+        $this->collectSoldiersByCondition(
+            fn ($query): mixed => $query->whereColumn($columnLeft, '<', $columnRight),
+            $title
+        );
+    }
+
+    protected function baseWeekendQuery($isWeekendCondition)
+    {
+        $startOfMonth = $this->date->copy()->startOfMonth();
+        $endOfMonth = $this->date->copy()->endOfMonth();
+
+        $query = Shift::whereBetween('start_date', [$startOfMonth, $endOfMonth])
+            ->join('tasks', 'tasks.id', '=', 'shifts.task_id')
+            ->where('tasks.parallel_weight', 0)
+            ->where(function ($query) {
+                $query->where('shifts.parallel_weight', 0)
+                    ->orWhereNull('shifts.parallel_weight');
+            })
+            ->select('tasks.type', 'tasks.name', 'shifts.start_date', 'shifts.end_date');
+
+        if ($isWeekendCondition) {
+            $query->where('is_weekend', true);
+        } else {
+            $query->where('is_weekend', '!=', true)
+                ->where('tasks.kind', TaskKind::WEEKEND->value);
+        }
+
+        return $query->get()->groupBy('type')->sortKeys();
+    }
+
+    protected function weekendShiftsNotPointed()
+    {
+        $firstGroup = $this->baseWeekendQuery(true);
+        $secondGroup = $this->baseWeekendQuery(false);
+
+        $allGroups = $firstGroup->mergeRecursive($secondGroup);
+        $weekendShiftsNotPointed = collect();
+
+        $allGroups->each(function ($shifts, $type) use (&$weekendShiftsNotPointed) {
+            $typeName = $type ?: __('Unassigned type');
+            $shiftNames = $shifts->map(fn ($shift) => $this->formatShift($shift));
+            if ($shiftNames->isNotEmpty()) {
+                $weekendShiftsNotPointed->push(
+                    collect([__('Task type').': '.$typeName])->merge($shiftNames)
+                );
+            }
+        });
+
+        if ($weekendShiftsNotPointed->isNotEmpty()) {
+            $this->data->put(__('Weekend shifts not pointed'), $weekendShiftsNotPointed);
         }
     }
 
-    protected function weekendTasksNotPointed()
+    protected function formatShift($shift)
     {
-        $weekendTasksNotPointed = Task::where('kind', TaskKind::WEEKEND->value)
-            ->where('parallel_weight', 0)
-            ->pluck('name');
-        if (collect($weekendTasksNotPointed)->isNotEmpty()) {
-            $this->data->put(__('Weekend tasks not pointed'), $weekendTasksNotPointed);
-        }
+        $hasHebrew = preg_match('/\p{Hebrew}/u', $shift->name);
+
+        $nameDirection = $hasHebrew ? 'rtl' : 'ltr';
+
+        return new HtmlString(sprintf(
+            '<span dir="auto"><span dir="%s">%s</span> (%s → %s)</span>',
+            $nameDirection,
+            e($shift->name),
+            e($shift->start_date),
+            e($shift->end_date)
+        ));
     }
 
     protected function wrongTasksWeight()
@@ -114,68 +142,100 @@ class PredictingProblems
         }
     }
 
-    protected function soldiersWithQualificationsWithoutCapacity()
+    protected function wrongShiftsWeight()
     {
-        $soldiersWithQualificationsWithoutCapacity = collect();
-        Soldier::whereJsonLength('qualifications', '>', 0)
-            ->whereNot(function ($query) {
-                $query->where('max_shifts', '>', 0)
-                    ->orWhere('max_nights', '>', 0)
-                    ->orWhere('max_weekends', '>', 0)
-                    ->orWhere('capacity', '>', 0)
-                    ->orWhere('max_alerts', '>', 0)
-                    ->orWhere('max_in_parallel', '>', 0);
+        $startOfMonth = $this->date->copy()->startOfMonth();
+        $endOfMonth = $this->date->copy()->endOfMonth();
+        $wrongShiftsWeight = collect();
+        $shifts = Shift::whereBetween('start_date', [$startOfMonth, $endOfMonth])
+            ->whereNotNull('shifts.parallel_weight')
+            ->where(function ($query) {
+                $query->where('shifts.parallel_weight', '!=', 0)
+                    ->where('shifts.parallel_weight', '!=', 50)
+                    ->where('shifts.parallel_weight', '!=', 100)
+                    ->where('shifts.parallel_weight', '!=', 200);
             })
+            ->join('tasks', 'tasks.id', '=', 'shifts.task_id')
+            ->select('tasks.type', 'tasks.name', 'shifts.start_date', 'shifts.end_date')
             ->get()
+            ->groupBy('type')
+            ->sortKeys();
+        $shifts->each(function ($shifts, $type) use (&$wrongShiftsWeight) {
+            $typeName = $type ?: __('Unassigned type');
+            $shiftNames = $shifts->map(fn ($shift) => $this->formatShift($shift));
+            if ($shiftNames->isNotEmpty()) {
+                $wrongShiftsWeight->push(
+                    collect([__('Task type').': '.$typeName])->merge($shiftNames)
+                );
+            }
+        });
+        if (collect($wrongShiftsWeight)->isNotEmpty()) {
+            $this->data->put(__('Shifts with incorrect points'), $wrongShiftsWeight);
+        }
+    }
+
+    protected function collectSoldiersByCondition($queryCallback, $title): void
+    {
+        $collection = collect();
+
+        Soldier::query()
+            ->tap($queryCallback)
+            ->with('user')
+            ->get(['id', 'course'])
             ->groupBy('course')
             ->sortKeys()
-            ->each(function ($soldiers, $course) use (&$soldiersWithQualificationsWithoutCapacity) {
+            ->each(function ($soldiers, $course) use (&$collection) {
                 $courseNumber = $course ?: __('Unassigned course');
+
                 $soldierNames = $soldiers
                     ->map(fn ($soldier) => $soldier->user?->displayName)
                     ->filter()
                     ->values();
+
                 if ($soldierNames->isNotEmpty()) {
-                    $soldiersWithQualificationsWithoutCapacity->push(
+                    $collection->push(
                         collect([__('Course').' '.$courseNumber])->merge($soldierNames)
                     );
                 }
             });
-        if (collect($soldiersWithQualificationsWithoutCapacity)->isNotEmpty()) {
-            $this->data->put(__('Qualified soldiers unable to perform shifts'), $soldiersWithQualificationsWithoutCapacity);
+
+        if ($collection->isNotEmpty()) {
+            $this->data->put(__($title), $collection);
         }
+    }
+
+    protected function soldiersWithQualificationsWithoutCapacity()
+    {
+        $this->collectSoldiersByCondition(
+            fn ($query) => $query
+                ->whereJsonLength('qualifications', '>', 0)
+                ->whereNot(function ($q) {
+                    $q->where('max_shifts', '>', 0)
+                        ->orWhere('max_nights', '>', 0)
+                        ->orWhere('max_weekends', '>', 0)
+                        ->orWhere('capacity', '>', 0)
+                        ->orWhere('max_alerts', '>', 0)
+                        ->orWhere('max_in_parallel', '>', 0);
+                }),
+            __('Qualified soldiers unable to perform shifts')
+        );
     }
 
     protected function soldiersWithCapacityWithoutQualifications()
     {
-        $soldiersWithCapacityWithoutQualifications = collect();
-        Soldier::where(function ($query) {
-            $query->where('max_shifts', '>', 0)
-                ->orWhere('max_nights', '>', 0)
-                ->orWhere('max_weekends', '>', 0)
-                ->orWhere('capacity', '>', 0)
-                ->orWhere('max_alerts', '>', 0)
-                ->orWhere('max_in_parallel', '>', 0);
-        })
-            ->whereJsonLength('qualifications', 0)
-            ->get()
-            ->groupBy('course')
-            ->sortKeys()
-            ->each(function ($soldiers, $course) use (&$soldiersWithCapacityWithoutQualifications) {
-                $courseNumber = $course ?: __('Unassigned course');
-                $soldierNames = $soldiers
-                    ->map(fn ($soldier) => $soldier->user?->displayName)
-                    ->filter()
-                    ->values();
-                if ($soldierNames->isNotEmpty()) {
-                    $soldiersWithCapacityWithoutQualifications->push(
-                        collect([__('Course').' '.$courseNumber])->merge($soldierNames)
-                    );
-                }
-            });
-        if (collect($soldiersWithCapacityWithoutQualifications)->isNotEmpty()) {
-            $this->data->put(__('Soldiers with capacity without qualifications'), $soldiersWithCapacityWithoutQualifications);
-        }
+        $this->collectSoldiersByCondition(
+            fn ($query) => $query
+                ->where(function ($q) {
+                    $q->where('max_shifts', '>', 0)
+                        ->orWhere('max_nights', '>', 0)
+                        ->orWhere('max_weekends', '>', 0)
+                        ->orWhere('capacity', '>', 0)
+                        ->orWhere('max_alerts', '>', 0)
+                        ->orWhere('max_in_parallel', '>', 0);
+                })
+                ->whereJsonLength('qualifications', 0),
+            __('Soldiers with capacity without qualifications')
+        );
     }
 
     protected function taskWithoutQualifiedSoldier()
@@ -199,10 +259,14 @@ class PredictingProblems
     {
         $onTimeTasks = Task::where('recurring->type', RecurringType::ONETIME->value)
             ->pluck('type', 'id');
-
-        $onTimeTasks->each(function ($type, $id) use (&$tasksTypes) {
-            $shift = Shift::find($id);
-            if ($shift && ! $tasksTypes->contains($type) && $shift->soldier_id !== null) {
+        $startOfMonth = $this->date->copy()->startOfMonth();
+        $endOfMonth = $this->date->copy()->endOfMonth();
+        $onTimeTasks->each(function ($type, $id) use (&$tasksTypes, $startOfMonth, $endOfMonth) {
+            $shift = Shift::whereBetween('start_date', [$startOfMonth, $endOfMonth])
+                ->where('task_id', $id)
+                ->get()
+                ->first();
+            if ($shift && ! $tasksTypes->contains($type) && $shift->soldier_id == null) {
                 $tasksTypes->push($type);
             }
         });
@@ -236,68 +300,44 @@ class PredictingProblems
         }
     }
 
-    protected function analyzeShiftAvailability($shifts, $soldiers)
-    {
-        $result = collect();
-
-        $shifts->groupBy('taskType')->each(function ($shiftsGroup, $taskType) use ($soldiers, &$result) {
-            $this->analyzeTaskTypeAvailability($shiftsGroup, $taskType, $soldiers, $result);
-        });
-
-        return $result;
-    }
-
-    protected function analyzeTaskTypeAvailability($shifts, string $taskType, $soldiers, &$result)
-    {
-        $shiftsRequired = $this->shiftsRequired($shifts);
-        $qualifiedSoldiers = $this->getQualifiedSoldiers($soldiers, $taskType);
-        $soldiersAvailability = $this->soldiersAvailability($qualifiedSoldiers);
-
-        $this->compareRequiredVsAvailable($shiftsRequired, $soldiersAvailability, $taskType, $result);
-    }
-
-    protected function getQualifiedSoldiers($soldiers, string $taskType)
-    {
-        return $soldiers->filter(fn (SoldierService $soldier) => $soldier->isQualified($taskType));
-    }
-
-    protected function compareRequiredVsAvailable($shiftsRequired, $soldiersAvailability, $taskType, &$result)
-    {
-        $shiftsRequired->each(function ($requiredCount, $kind) use ($soldiersAvailability, $taskType, &$result) {
-            $availableCount = $soldiersAvailability[$kind] ?? 0;
-
-            if ($requiredCount > 0 && $requiredCount > $availableCount) {
-                $result->push(__('Required VS Available Sentence', [
-                    'type' => $taskType,
-                    'kind' => __($kind),
-                    'required' => $requiredCount,
-                    'available' => $availableCount,
-                ]));
-            }
-        });
-    }
-
     protected function getSoldiersDetails()
     {
-        $range = new Range($this->date->copy()->startOfMonth(), $this->date->copy()->endOfMonth());
+        $startOfMonth = $this->date->copy()->startOfMonth();
+        $endOfMonth = $this->date->copy()->endOfMonth();
+
+        $soldiersQuery = Soldier::where('is_reservist', false)
+            ->with([
+                'user',
+                'shifts' => fn ($q) => $q->whereBetween('start_date', [$startOfMonth, $endOfMonth]),
+            ]);
 
         $soldiersCollection = collect();
 
-        Soldier::where('is_reservist', false)
-            ->with([
-                'shifts' => fn ($q) => $q->whereBetween('start_date', [$range->start, $range->end]),
-            ])
-            ->chunk(200, function ($soldiers) use (&$soldiersCollection) {
-                $processed = $soldiers->map(function (Soldier $soldier) {
-                    $shifts = Helpers::mapSoldierShifts($soldier->shifts, false);
-                    $concurrentsShifts = Helpers::mapSoldierShifts($soldier->shifts, true);
-                    $capacityHold = Helpers::capacityHold($shifts, $concurrentsShifts);
+        $soldiersQuery->chunkById(200, function ($soldiersChunk) use (&$soldiersCollection) {
+            foreach ($soldiersChunk as $soldier) {
+                $mappedShifts = Helpers::mapSoldierShifts($soldier->shifts, false);
+                $mappedConcurrent = Helpers::mapSoldierShifts($soldier->shifts, true);
 
-                    return Helpers::buildSoldier($soldier, [], [], $capacityHold, $concurrentsShifts);
-                })->filter(fn ($soldier) => $soldier->hasMaxes());
+                $capacityHold = Helpers::capacityHold($mappedShifts, $mappedConcurrent);
 
-                $soldiersCollection = $soldiersCollection->merge($processed);
-            });
+                $builtSoldier = Helpers::buildSoldier(
+                    $soldier,
+                    [],
+                    [],
+                    $capacityHold,
+                    $mappedConcurrent
+                );
+
+                if ($builtSoldier->hasMaxes()) {
+                    $soldiersCollection->push($builtSoldier);
+                }
+
+                unset($soldier->shifts);
+                unset($soldier);
+            }
+
+            gc_collect_cycles();
+        });
 
         return $soldiersCollection;
     }
@@ -313,12 +353,42 @@ class PredictingProblems
             ->with('task')
             ->whereNull('soldier_id')
             ->whereBetween('start_date', [$startOfMonth, $endOfMonth])
-            ->chunk(300, function ($shifts) use (&$shiftsCollection) {
-                $processed = $shifts->map(fn (Shift $shift): ShiftService => Helpers::buildShift($shift));
-                $shiftsCollection = $shiftsCollection->merge($processed);
+            ->orderBy('id')
+            ->chunkById(200, function ($shifts) use (&$shiftsCollection) {
+                foreach ($shifts as $shift) {
+                    $built = Helpers::buildShift($shift);
+                    if ($built) {
+                        $shiftsCollection->push($built);
+                    }
+
+                    unset($shift->task);
+                    unset($shift);
+                }
+
+                gc_collect_cycles();
             });
 
         return $shiftsCollection;
+    }
+
+    protected function analyzeShiftAvailability($shifts, $soldiers)
+    {
+        $result = collect();
+
+        $shifts->groupBy('taskType')->each(function ($shiftsGroup, $taskType) use ($soldiers, &$result) {
+            $this->analyzeTaskTypeAvailability($shiftsGroup, $taskType, $soldiers, $result);
+        });
+
+        return $result;
+    }
+
+    protected function analyzeTaskTypeAvailability($shifts, $taskType, $soldiers, &$result)
+    {
+        $shiftsRequired = $this->shiftsRequired($shifts);
+        $qualifiedSoldiers = $this->getQualifiedSoldiers($soldiers, $taskType);
+        $soldiersAvailability = $this->soldiersAvailability($qualifiedSoldiers);
+
+        $this->compareRequiredVsAvailable($shiftsRequired, $soldiersAvailability, $taskType, $result);
     }
 
     protected function shiftsRequired($shifts)
@@ -339,6 +409,11 @@ class PredictingProblems
         return $shifts->filter(fn (ShiftService $shift) => $shift->kind == $kind);
     }
 
+    protected function getQualifiedSoldiers($soldiers, string $taskType)
+    {
+        return $soldiers->filter(fn (SoldierService $soldier) => $soldier->isQualified($taskType));
+    }
+
     protected function soldiersAvailability($soldiers)
     {
         return collect([
@@ -351,25 +426,33 @@ class PredictingProblems
         ]);
     }
 
-    protected function soldiersWithCapacityWithoutAvailableTasks()
+    protected function compareRequiredVsAvailable($shiftsRequired, $soldiersAvailability, $taskType, &$result)
+    {
+        $taskTypeHtml = new HtmlString('<strong>'.e($taskType).'</strong>');
+        $shiftsRequired->each(function ($requiredCount, $kind) use ($soldiersAvailability, $taskTypeHtml, &$result) {
+            $availableCount = $soldiersAvailability[$kind] ?? 0;
+            $kind = new HtmlString('<em>'.e(__($kind)).'</em>');
+            $required = new HtmlString('<strong>'.e($requiredCount).'</strong>');
+            $available = new HtmlString('<strong>'.e($availableCount).'</strong>');
+            if ($requiredCount > 0 && $requiredCount > $availableCount) {
+                $result->push(new HtmlString(
+                    __('Required VS Available Sentence', [
+                        'type' => $taskTypeHtml,
+                        'kind' => $kind,
+                        'required' => $required,
+                        'available' => $available,
+                    ])
+                ));
+            }
+        });
+    }
+
+    protected function soldiersWithCapacityWithoutAvailableShifts()
     {
         $sumByTaskTypes = $this->calculateShiftsSumByTaskTypes();
-
-        $maxTypes = collect([
-            'max_shifts' => 'Regulars',
-            'max_nights' => 'Nights',
-            'max_weekends' => 'Weekends',
-            'max_alerts' => 'Alerts',
-            'max_in_parallel' => 'In parallels',
-            'capacity' => 'Points',
-        ]);
-
         $soldiersByType = $this->initializeSoldiersByType();
-
-        $soldiersByType = $this->fillSoldiersByType($maxTypes, $sumByTaskTypes, $soldiersByType);
-
+        $soldiersByType = $this->fillSoldiersByType($sumByTaskTypes, $soldiersByType);
         $soldiersByType = $soldiersByType->filter(fn ($names) => $names->count() > 1);
-
         $this->data->put(
             __('Soldiers with abilities and authority without appropriate shifts'),
             $soldiersByType->map(fn ($names) => $names->map(fn ($name) => json_decode(json_encode($name, JSON_UNESCAPED_UNICODE))))
@@ -384,10 +467,10 @@ class PredictingProblems
         collect($taskTypes)->each(function ($type) use (&$sumByTaskTypes) {
             $baseQuery = Shift::whereNull('soldier_id')
                 ->whereBetween('start_date', [$this->date->copy()->startOfMonth(), $this->date->copy()->endOfMonth()])
-                ->whereHas('task', fn ($q) => $q->where('type', $type));
+                ->whereHas('task', fn ($query) => $query->where('type', $type));
 
             $sum = fn ($kinds) => (clone $baseQuery)
-                ->whereHas('task', fn ($q) => $q->whereIn('kind', (array) $kinds))
+                ->whereHas('task', fn ($query) => $query->whereIn('kind', (array) $kinds))
                 ->count();
 
             $sumByTaskTypes[$type] = collect([
@@ -429,46 +512,97 @@ class PredictingProblems
     protected function initializeSoldiersByType()
     {
         return collect([
-            'max_shifts' => collect([__('Max shifts').': ']),
-            'max_nights' => collect([__('Max nights').': ']),
-            'max_weekends' => collect([__('Max weekends').': ']),
-            'max_alerts' => collect([__('Max alerts').': ']),
-            'max_in_parallel' => collect([__('Max in parallel').': ']),
-            'capacity' => collect([__('Capacity').': ']),
-        ]);
+            'max_shifts' => __('Max shifts'),
+            'max_nights' => __('Max nights'),
+            'max_weekends' => __('Max weekends'),
+            'max_alerts' => __('Max alerts'),
+            'max_in_parallel' => __('Max in parallel'),
+            'capacity' => __('Capacity'),
+        ])->map(fn ($label) => collect([$label.':']));
     }
 
-    protected function fillSoldiersByType($maxTypes, $sumByTaskTypes, $soldiersByType)
+    protected function fillSoldiersByType($sumByTaskTypes, $soldiersByType)
     {
-        $maxTypes->each(function ($type, $max) use (&$soldiersByType, $sumByTaskTypes) {
-            $soldiers = Soldier::where($max, '>', 0)->pluck('qualifications', 'id');
+        $maxTypes = collect([
+            'max_shifts' => 'Regulars',
+            'max_nights' => 'Nights',
+            'max_weekends' => 'Weekends',
+            'max_alerts' => 'Alerts',
+            'max_in_parallel' => 'In parallels',
+            'capacity' => 'Points',
+        ]);
 
-            collect($soldiers)->each(function ($qualifications, $id) use (&$soldiersByType, $type, $max, $sumByTaskTypes) {
-                $sum = $this->calculateSoldierSum($id, $qualifications, $type, $sumByTaskTypes);
+        $startOfMonth = $this->date->copy()->startOfMonth();
+        $endOfMonth = $this->date->copy()->endOfMonth();
 
-                if (collect($qualifications)->isNotEmpty() && $sum == 0) {
-                    $soldiersByType[$max]->push(User::where('userable_id', $id)->first()->displayName);
+        $maxTypes->each(function ($type, $max) use (&$soldiersByType, $sumByTaskTypes, $startOfMonth, $endOfMonth) {
+            $soldiersQuery = Soldier::where($max, '>', 0)
+                ->with([
+                    'user',
+                    'shifts' => fn ($q) => $q->whereBetween('start_date', [$startOfMonth, $endOfMonth]),
+                ]);
+
+            $soldiersQuery->chunkById(200, function ($soldiersChunk) use (&$soldiersByType, $sumByTaskTypes, $type, $max) {
+                foreach ($soldiersChunk as $soldier) {
+                    $shifts = Helpers::mapSoldierShifts($soldier->shifts, false);
+                    $concurrentsShifts = Helpers::mapSoldierShifts($soldier->shifts, true);
+                    $capacityHold = Helpers::capacityHold($shifts, $concurrentsShifts);
+                    $builtSoldier = Helpers::buildSoldier(
+                        $soldier,
+                        [],
+                        [],
+                        $capacityHold,
+                        $concurrentsShifts
+                    );
+                    $builtSoldier->userName = $soldier->user?->displayName ?? __('Unknown soldier');
+
+                    if (
+                        $this->usedGreaterThenZero($builtSoldier, $max)
+                        && collect($builtSoldier->qualifications)->isNotEmpty()
+                    ) {
+                        $sum = $this->calculateSoldierSum($builtSoldier, $type, $sumByTaskTypes);
+
+                        if ($sum == 0) {
+                            $soldiersByType[$max]->push($builtSoldier->userName);
+                        }
+                    }
+
+                    unset($soldier->shifts, $soldier);
                 }
+
+                gc_collect_cycles();
             });
         });
 
         return $soldiersByType;
     }
 
-    protected function calculateSoldierSum($id, $qualifications, $type, $sumByTaskTypes)
+    protected function usedGreaterThenZero(SoldierService $soldier, $max)
+    {
+        $maxName = match ($max) {
+            'max_shifts' => 'shiftsMaxData',
+            'max_nights' => 'nightsMaxData',
+            'max_weekends' => 'weekendsMaxData',
+            'max_alerts' => 'alertsMaxData',
+            'max_in_parallel' => 'inParallelMaxData',
+            'capacity' => 'pointsMaxData',
+        };
+
+        return $soldier->{$maxName}->remaining() > 0;
+    }
+
+    protected function calculateSoldierSum(SoldierService $soldier, $type, $sumByTaskTypes)
     {
         $sum = 0;
 
-        collect($qualifications)->each(function ($qualification) use ($id, $type, &$sum, $sumByTaskTypes) {
+        collect($soldier->qualifications)->each(function ($qualification) use ($soldier, $type, &$sum, $sumByTaskTypes) {
             $sum += $sumByTaskTypes->get($qualification, collect())->get($type, 0);
 
-            $soldier = Soldier::find($id);
-
-            if ($type == 'Regulars' && $soldier->max_nights > 0) {
+            if ($type == 'Regulars' && $soldier->nightsMaxData->used > 0) {
                 $sum += $sumByTaskTypes->get($qualification, collect())->get('Nights', 0);
             }
 
-            if ($type == 'Nights' && $soldier->max_shifts == 0) {
+            if ($type == 'Nights' && $soldier->shiftsMaxData->used == 0) {
                 $sum = 0;
             }
         });
@@ -476,64 +610,3 @@ class PredictingProblems
         return $sum;
     }
 }
-
-// protected function tasksWithoutEnoughAvailablesSoldiers()
-// {
-//     $tasksWithoutEnoughAvailablesSoldiers = collect();
-//     $taskTypes = Task::select('type')
-//         ->distinct()
-//         ->orderBy('type')
-//         ->pluck('type')
-//         ->all();
-//     collect($taskTypes)->each(function ($type) use (&$tasksWithoutEnoughAvailablesSoldiers) {
-//         $regularsCount = $this->shiftQuery($type, TaskKind::REGULAR->value)->count();
-//         $alertsCount = $this->shiftQuery($type, TaskKind::ALERT->value)->count();
-//         $nightsCount = $this->shiftQuery($type, TaskKind::NIGHT->value)->count();
-//         $weekendsSum =  $this->shiftQuery($type, TaskKind::WEEKEND->value)
-//             ->get()
-//             ->sum(fn($shift) => $shift->parallel_weight > 0 ? $shift->parallel_weight : $shift->task->parallel_weight);
-//         $points = Shift::whereBetween('start_date', [$this->date->copy()->startOfMonth(), $this->date->copy()->endOfMonth()])
-//             ->whereHas('task', function ($query) use ($type) {
-//                 $query->where('type', $type);
-//             })
-//             ->where(function ($query) {
-//                 $query->where('parallel_weight', '>', 0)
-//                     ->orWhere(function ($query) {
-//                         $query->whereHas('task', function ($query) {
-//                             $query->where('parallel_weight', '>', 0);
-//                         });
-//                     });
-//             })
-//             ->get()
-//             ->sum(fn($shift) => $shift->parallel_weight > 0 ? $shift->parallel_weight : $shift->task->parallel_weight);
-
-//         $soldierQuery = Soldier::whereJsonContains('qualifications', $type);
-//         $regulars = $soldierQuery->sum('max_shifts');
-//         $alerts = $soldierQuery->sum('max_alerts');
-//         $nights = $soldierQuery->sum('max_nights');
-//         $weekends = $soldierQuery->sum('max_weekends');
-//         $capacity = $soldierQuery->sum('capacity');
-//         if ($regularsCount > $regulars) {
-//             $tasksWithoutEnoughAvailablesSoldiers->push($this->requiredVSAvailableSentence($type, __('Regulars'), $regularsCount, $regulars));
-//         }
-//         if ($alertsCount > $alerts) {
-//             $tasksWithoutEnoughAvailablesSoldiers->push($this->requiredVSAvailableSentence($type, __('Alerts'), $alertsCount, $alerts));
-//         }
-//         if ($nightsCount > $nights) {
-//             $tasksWithoutEnoughAvailablesSoldiers->push($this->requiredVSAvailableSentence($type, __('Nights'), $nightsCount, $nights));
-//         }
-//         if ($weekendsSum > $weekends) {
-//             $tasksWithoutEnoughAvailablesSoldiers->push($this->requiredVSAvailableSentence($type, __('Weekends'), $weekendsSum, $weekends));
-//         }
-//         if ($points > $capacity) {
-//             $tasksWithoutEnoughAvailablesSoldiers->push($this->requiredVSAvailableSentence($type, __('Points'), $points, $capacity));
-//         }
-//     });
-//     $this->data->put(__('Tasks without enough available soldiers'), $tasksWithoutEnoughAvailablesSoldiers);
-// }
-// if($sum > 0 &&  $soldiersAvailability[$kind] < 0){
-//     \Log::info(json_encode(['taskType', $taskType]));
-//     \Log::info(json_encode(['Result', $sum / $soldiersAvailability[$kind]]));
-
-// }
-// if (  $sum > 0 &&($soldiersAvailability[$kind]  == 0  || ($sum / $soldiersAvailability[$kind] > 0.75))) {

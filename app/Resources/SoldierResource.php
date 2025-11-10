@@ -112,10 +112,9 @@ class SoldierResource extends Resource
 
                         return $soldier->team ? $soldier->team->name : null;
                     }),
-                TextColumn::make('enlist_date')
-                    ->label(__('Enlist date'))
-                    ->sortable()
-                    ->date(),
+                TextColumn::make('course')
+                    ->label(__('Course'))
+                    ->sortable(),
                 TextColumn::make('capacity_hold')
                     ->default(function ($record) {
                         $userId = $record->id;
