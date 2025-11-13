@@ -21,7 +21,7 @@ class RecurringEvents
 
     public function recurringTask(): void
     {
-        Task::whereNotIn('recurring->type', ['Daily range', 'One time'])
+        Task::whereNotIn('recurring->type', ['Daily range'])
             ->get()
             ->each(fn ($task) => $this->switchTasks($task));
     }
@@ -40,9 +40,14 @@ class RecurringEvents
         $this->createShifts($dates);
     }
 
-    protected function switchTasks(Task $task): void
+    protected function switchTasks(Task $task)
     {
         $this->task = $task;
+        if ($this->task->recurring['type'] == 'One time') {
+            $this->oneTimeTask($task);
+
+            return;
+        }
         $dates = match ($this->task->recurring['type']) {
             'Daily' => $this->dailyRecurring(),
             'Weekly' => $this->weeklyRecurring(),

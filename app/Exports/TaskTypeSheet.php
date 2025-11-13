@@ -45,7 +45,7 @@ class TaskTypeSheet implements FromCollection, ShouldAutoSize, WithHeadings, Wit
 
     protected function getTasksNames()
     {
-        $tasksNames = $this->shifts->groupBy(fn ($shift) => $shift->task->type)
+        $tasksNames = $this->shifts->groupBy(fn ($shift) => $shift->task()->withTrashed()->first()->type)
             ->map(fn ($shifts, $type) => $shifts->pluck('task.name')->unique())
             ->flatten();
         $tasksNamesWithoutWeekendAndThurthday = $tasksNames->filter(fn ($name) => strpos($name, 'סופש') !== false || strpos($name, 'חמישי') !== false)->flatten();
@@ -137,7 +137,14 @@ class TaskTypeSheet implements FromCollection, ShouldAutoSize, WithHeadings, Wit
             $row = [$date];
             foreach ($this->tasksNames as $name) {
                 $shiftForDate = $shiftsByDate->get($date, collect())->first(function ($shift) use ($name) {
-                    return $shift->task && strpos($shift->task->name, $name) !== false;
+                    $taskName = $shift->task()->withTrashed()->first()->name;
+                    $baseName = str_replace([' סופש', ' חמישי'], '', $taskName);
+                    $columnBase = str_replace([' סופש', ' חמישי'], '', $name);
+                    if ($columnBase === $baseName) {
+                        return true;
+                    }
+
+                    return false;
                 });
                 $row[] = ($shiftForDate && $shiftForDate->soldier) ? $shiftForDate->soldier->user->displayName : ' ';
             }

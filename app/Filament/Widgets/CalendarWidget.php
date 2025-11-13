@@ -344,7 +344,11 @@ class CalendarWidget extends FullCalendarWidget
                 }),
             DeleteAction::make()
                 ->outlined()
-                ->label(__('Delete')),
+                ->label(__('Delete'))
+                ->action(function (Model $record) {
+                    $record->delete_cascade = true;
+                    $record->delete();
+                }),
         ];
     }
 

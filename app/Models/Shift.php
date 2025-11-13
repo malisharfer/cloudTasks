@@ -75,6 +75,17 @@ class Shift extends Model
         return $this->task()->withTrashed()->first()->color;
     }
 
+    protected static function booted(): void
+    {
+        static::deleting(function (Shift $shift) {
+            if ($shift->task->recurring['type'] == 'One time' && isset($shift->delete_cascade) && $shift->delete_cascade) {
+                if ($shift->task) {
+                    $shift->task->delete();
+                }
+            }
+        });
+    }
+
     public static function getSchema(): array
     {
         return [

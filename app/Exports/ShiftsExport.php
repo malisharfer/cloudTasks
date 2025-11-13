@@ -22,7 +22,6 @@ class ShiftsExport implements WithMultipleSheets
 
     public function sheets(): array
     {
-        set_time_limit(0);
         $tasksTypes = Task::select('type', 'color')
             ->get()
             ->groupBy('type')

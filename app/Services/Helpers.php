@@ -146,7 +146,6 @@ class Helpers
 
     public static function updateShiftTable($assignments)
     {
-        set_time_limit(seconds: 0);
         if (empty($assignments)) {
             return;
         }
