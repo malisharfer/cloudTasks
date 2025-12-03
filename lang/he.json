@@ -356,5 +356,8 @@
     "Soldiers with capacity without available shifts sentence": "לחייל :name מוגדר :max גדול מ - 0, אך אין לו משמרות מתאימות מסוג זה",
     "Soldiers with abilities and authority without appropriate shifts":"חיילים עם יכולות והסמכות ללא משמרות מתאימות ",
     "Unassigned course":"קורס לא נמצא",
-    "Unassigned type":"סוג לא נמצא"
+    "Unassigned type":"סוג לא נמצא",
+    "Field":"שדה",
+    "Current value":"ערך נוכחי",
+    "Update values":"עדכן ערכים"
 }
